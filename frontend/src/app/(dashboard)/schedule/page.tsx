@@ -49,7 +49,7 @@ export default function WeeklySchedule() {
   const progressStats = useMemo(() => {
     let total = 0;
     let completed = 0;
-    schedule.forEach(day => {
+    schedule.forEach((day: any) => {
       day.tasks.forEach((task: any) => {
         total++;
         if (task.isCompleted) completed++;
@@ -59,7 +59,7 @@ export default function WeeklySchedule() {
   }, [schedule]);
 
   const toggleTask = (dayId: string, taskId: string) => {
-    setSchedule(prev => prev.map(day => {
+    setSchedule((prev: any[]) => prev.map((day: any) => {
       if (day.id === dayId) {
         return {
           ...day,
@@ -119,9 +119,9 @@ export default function WeeklySchedule() {
 
           {/* Accordion List Column */}
           <div className="flex-1 overflow-y-auto pr-2 space-y-4 pb-20">
-            {schedule.map((day, idx) => {
+            {schedule.map((day: any, idx: number) => {
               const isExpanded = expandedDay === day.id;
-              const completedTasksCount = day.tasks.filter(t => t.isCompleted).length;
+              const completedTasksCount = day.tasks.filter((t: any) => t.isCompleted).length;
               const hasTasks = day.tasks.length > 0;
               const isAllDone = hasTasks && completedTasksCount === day.tasks.length;
 
@@ -180,7 +180,7 @@ export default function WeeklySchedule() {
                         <div className="p-6 bg-black/20">
                           {hasTasks ? (
                             <div className="space-y-3">
-                              {day.tasks.map((task, tIdx) => (
+                              {day.tasks.map((task: any, tIdx: number) => (
                                 <motion.div 
                                   key={task.id}
                                   initial={{ x: -10, opacity: 0 }}

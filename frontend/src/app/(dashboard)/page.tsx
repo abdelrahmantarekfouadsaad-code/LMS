@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { Trophy, BookOpen, GraduationCap, Target, PlayCircle, ChevronRight } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import Link from 'next/link';
@@ -12,6 +12,28 @@ import { useUserRole } from '@/hooks/useUserRole';
 import GuestDashboard from '@/components/guest/GuestDashboard';
 import NewsCarousel from '@/components/guest/NewsCarousel';
 import RestrictionModal from '@/components/shared/RestrictionModal';
+
+// Dynamically import framer-motion to avoid clientModules prerender crash
+const MotionDiv = dynamic(
+    () => import('framer-motion').then((mod) => mod.motion.div),
+    { ssr: false }
+);
+const MotionH1 = dynamic(
+    () => import('framer-motion').then((mod) => mod.motion.h1),
+    { ssr: false }
+);
+const MotionCircle = dynamic(
+    () => import('framer-motion').then((mod) => {
+        // SVG elements need a wrapper since next/dynamic expects a React component
+        const MotionCircleComponent = (props: any) => {
+            const MC = mod.motion.circle;
+            return <MC {...props} />;
+        };
+        MotionCircleComponent.displayName = 'MotionCircle';
+        return MotionCircleComponent;
+    }),
+    { ssr: false }
+);
 
 // SVG Circular Progress Component
 const CircularProgress = ({ percentage, color, label }: { percentage: number, color: string, label: string }) => {
@@ -33,7 +55,7 @@ const CircularProgress = ({ percentage, color, label }: { percentage: number, co
                 <svg className="w-full h-full transform -rotate-90 drop-shadow-xl">
                     <circle cx="56" cy="56" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/10" />
                     {/* Animated Progress Circle */}
-                    <motion.circle
+                    <MotionCircle
                         cx="56"
                         cy="56"
                         r="40"
@@ -128,28 +150,28 @@ function StudentDashboard() {
             <main className="flex-1 flex flex-col p-6 lg:p-10 overflow-y-auto hide-scrollbar">
                 {/* Header */}
                 <header className="mb-8 text-start">
-                    <motion.h1
+                    <MotionH1
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2"
                     >
                         {t.welcome}, {session?.user?.name || session?.user?.email || 'Student'} 👋
-                    </motion.h1>
+                    </MotionH1>
                     <p className="text-slate-500 dark:text-slate-400">{t.subtitle}</p>
                 </header>
 
                 {/* News & Announcements Carousel */}
-                <motion.div
+                <MotionDiv
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.5 }}
                     className="mb-10 rounded-2xl overflow-hidden shadow-2xl border border-white/5 min-h-[300px] w-full block bg-slate-800 relative"
                 >
                     <NewsCarousel />
-                </motion.div>
+                </MotionDiv>
 
                 {/* General Evaluation (تقييم عام) */}
-                <motion.div
+                <MotionDiv
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.5 }}
@@ -197,10 +219,10 @@ function StudentDashboard() {
 
                         </div>
                     </div>
-                </motion.div>
+                </MotionDiv>
 
                 {/* NEW SECTION: Enrolled Courses (دوراتي / التعلم الذاتي) */}
-                <motion.div
+                <MotionDiv
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
@@ -249,7 +271,7 @@ function StudentDashboard() {
 
                                     {/* Mini Progress Bar */}
                                     <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
-                                        <motion.div
+                                        <MotionDiv
                                             className={`h-full bg-gradient-to-r ${course.color.replace('/20', '').replace('/20', '')}`}
                                             initial={{ width: 0 }}
                                             animate={{ width: `${course.progress}%` }}
@@ -261,7 +283,7 @@ function StudentDashboard() {
                             </button>
                         ))}
                     </div>
-                </motion.div>
+                </MotionDiv>
 
             </main>
 

@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #F9FAFB;
+    --foreground: #111827;
+  }
+
+  .dark {
+    --background: #0F172A;
+    --foreground: #F8FAFC;
+  }
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors duration-300;
+}
+
+@layer components {
+  /* Ultra-Modern Glassmorphism Utilities */
+  .glass-panel {
+    @apply bg-white/70 border border-slate-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-xl shadow-sm rounded-2xl;
+  }
+
+  .glass-header {
+    @apply sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-slate-800 transition-colors duration-300;
+  }
+
+  .glass-card {
+    @apply glass-panel transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 dark:hover:bg-slate-800/60 cursor-pointer;
+  }
+
+  /* Chat specific glass utilities */
+  .chat-bubble-received {
+    @apply bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 shadow-sm rounded-2xl rounded-ss-sm px-4 py-2 max-w-[85%];
+  }
+
+  .chat-bubble-sent {
+    @apply bg-primary text-white shadow-sm rounded-2xl rounded-se-sm px-4 py-2 max-w-[85%];
+  }
+  
+  /* Scrollbar Polish */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-slate-700 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-slate-600;
+  }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Animation delay utilities for blob animations */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+.animation-delay-4000 {
+  animation-delay: 4s;
+}

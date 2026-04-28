@@ -63,7 +63,7 @@ export default function WeeklySchedule() {
       if (day.id === dayId) {
         return {
           ...day,
-          tasks: day.tasks.map(t => t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t)
+          tasks: day.tasks.map((t: any) => t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t)
         };
       }
       return day;

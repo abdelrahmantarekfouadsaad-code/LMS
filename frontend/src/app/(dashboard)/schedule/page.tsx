@@ -50,7 +50,7 @@ export default function WeeklySchedule() {
     let total = 0;
     let completed = 0;
     schedule.forEach(day => {
-      day.tasks.forEach(task => {
+      day.tasks.forEach((task: any) => {
         total++;
         if (task.isCompleted) completed++;
       });

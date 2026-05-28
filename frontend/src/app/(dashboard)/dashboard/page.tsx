@@ -86,12 +86,12 @@ function StudentDashboard() {
   }).then(res => res.json());
 
   const { data: courses, isLoading } = useSWR(
-    session?.accessToken ? 'http://localhost:8000/api/courses/' : null,
+    session?.accessToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/` : null,
     fetcher
   );
 
   const { data: progressData } = useSWR(
-    session?.accessToken ? 'http://localhost:8000/api/progress/' : null,
+    session?.accessToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/progress/` : null,
     fetcher
   );
 

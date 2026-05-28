@@ -21,7 +21,7 @@ export default function ProjectsPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   
   const { data: projects, error, isLoading } = useSWR(
-    session?.accessToken ? ['http://localhost:8000/api/projects/', session.accessToken] : null,
+    session?.accessToken ? [`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/projects/`, session.accessToken] : null,
     ([url, token]) => fetcher(url, token)
   );
 
@@ -31,7 +31,7 @@ export default function ProjectsPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('http://localhost:8000/api/project-submissions/', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/project-submissions/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -19,7 +19,7 @@ export default function CertificatesPage() {
   const isAr = locale === 'ar';
   
   const { data: certificates, error, isLoading } = useSWR(
-    session?.accessToken ? ['http://localhost:8000/api/certificates/', session.accessToken] : null,
+    session?.accessToken ? [`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/certificates/`, session.accessToken] : null,
     ([url, token]) => fetcher(url, token)
   );
 

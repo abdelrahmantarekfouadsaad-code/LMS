@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
-const DJANGO_API = `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api`;
+const DJANGO_API = `${(process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "")}/api`;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -27,14 +27,27 @@ export const authOptions: NextAuthOptions = {
             headers: { "Content-Type": "application/json" }
           });
           
+          if (!res.ok) {
+            const text = await res.text();
+            console.error("DJANGO_RAW_ERROR:", text);
+            return null;
+          }
+          
           const data = await res.json();
 
-          if (!res.ok || !data.access) return null;
+          if (!data.access) return null;
 
           // Step 2: Fetch full user profile to get role & onboarding state
           const meRes = await fetch(`${DJANGO_API}/accounts/me/`, {
             headers: { Authorization: `Bearer ${data.access}` }
           });
+
+          if (!meRes.ok) {
+            const text = await meRes.text();
+            console.error("DJANGO_RAW_ERROR:", text);
+            return null;
+          }
+
           const meData = await meRes.json();
 
           return {

@@ -8,6 +8,7 @@ import { Loader2, FolderOpen, ExternalLink, Send, X, Briefcase } from 'lucide-re
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
 import { useLocale } from '@/hooks/useLocale';
+import { DJANGO_API } from '@/lib/api-config';
 
 const fetcher = (url: string, token: string) => fetch(url, {
   headers: { Authorization: `Bearer ${token}` }
@@ -21,7 +22,7 @@ export default function ProjectsPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   
   const { data: projects, error, isLoading } = useSWR(
-    session?.accessToken ? [`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/projects/`, session.accessToken] : null,
+    session?.accessToken ? [`${DJANGO_API}/projects/`, session.accessToken] : null,
     ([url, token]) => fetcher(url, token)
   );
 
@@ -31,7 +32,7 @@ export default function ProjectsPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/project-submissions/`, {
+      const res = await fetch(`${DJANGO_API}/project-submissions/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

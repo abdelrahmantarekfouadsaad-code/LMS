@@ -8,6 +8,7 @@ import { Loader2, Download, Award, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
 import { useLocale } from '@/hooks/useLocale';
+import { DJANGO_API } from '@/lib/api-config';
 
 const fetcher = (url: string, token: string) => fetch(url, {
   headers: { Authorization: `Bearer ${token}` }
@@ -19,7 +20,7 @@ export default function CertificatesPage() {
   const isAr = locale === 'ar';
   
   const { data: certificates, error, isLoading } = useSWR(
-    session?.accessToken ? [`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/certificates/`, session.accessToken] : null,
+    session?.accessToken ? [`${DJANGO_API}/certificates/`, session.accessToken] : null,
     ([url, token]) => fetcher(url, token)
   );
 

@@ -10,8 +10,7 @@ import { useCartStore } from '@/store/cartStore';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import EmptyState from '@/components/ui/EmptyState';
-
-
+import { DJANGO_API } from '@/lib/api-config';
 
 // Coming Soon Modal Component
 function ComingSoonModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
@@ -89,7 +88,7 @@ export default function PaymentPortal() {
   }).then(res => res.json());
 
   const { data: methodsData } = useSWR(
-    session?.accessToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/methods/` : null,
+    session?.accessToken ? `${DJANGO_API}/payments/methods/` : null,
     fetcher
   );
   const paymentMethods = methodsData?.results || methodsData || [];

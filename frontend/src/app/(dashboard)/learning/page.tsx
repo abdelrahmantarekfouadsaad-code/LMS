@@ -13,6 +13,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import EmptyState from '@/components/ui/EmptyState';
+import { DJANGO_API } from '@/lib/api-config';
 
 
 
@@ -98,7 +99,7 @@ export default function LearningPage() {
   }).then(res => res.json());
 
   const { data: courses, error, isLoading } = useSWR(
-    session?.accessToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/` : null,
+    session?.accessToken ? `${DJANGO_API}/courses/` : null,
     fetcher
   );
   

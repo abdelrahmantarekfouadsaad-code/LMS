@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { getSession, signOut } from 'next-auth/react';
+import { DJANGO_API } from './api-config';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api',
+  baseURL: DJANGO_API,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -37,7 +38,7 @@ api.interceptors.response.use(
       if (session?.refreshToken) {
         try {
           // Attempt to refresh the token directly via Django
-          const response = await axios.post('http://127.0.0.1:8000/api/auth/token/refresh/', {
+          const response = await axios.post(`${DJANGO_API}/auth/token/refresh/`, {
             refresh: session.refreshToken
           });
           

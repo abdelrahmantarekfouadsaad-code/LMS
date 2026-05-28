@@ -13,6 +13,7 @@ import GuestDashboard from '@/components/guest/GuestDashboard';
 import NewsCarousel from '@/components/guest/NewsCarousel';
 import useSWR from 'swr';
 import EmptyState from '@/components/ui/EmptyState';
+import { DJANGO_API } from '@/lib/api-config';
 
 // SVG Circular Progress Component
 const CircularProgress = ({ percentage, color, label }: { percentage: number, color: string, label: string }) => {
@@ -86,12 +87,12 @@ function StudentDashboard() {
   }).then(res => res.json());
 
   const { data: courses, isLoading } = useSWR(
-    session?.accessToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/` : null,
+    session?.accessToken ? `${DJANGO_API}/courses/` : null,
     fetcher
   );
 
   const { data: progressData } = useSWR(
-    session?.accessToken ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/progress/` : null,
+    session?.accessToken ? `${DJANGO_API}/progress/` : null,
     fetcher
   );
 

@@ -62,7 +62,7 @@ export default function RegisterPage() {
         setError('Registered successfully, but automatic login failed.');
         setIsLoading(false);
       } else {
-        router.push('/dashboard');
+        router.push('/onboarding');
       }
     } catch (err) {
       console.error(err);

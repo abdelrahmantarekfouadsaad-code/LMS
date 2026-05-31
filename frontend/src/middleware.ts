@@ -1,10 +1,38 @@
 import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
-export default withAuth({
-  pages: {
-    signIn: "/login",
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const { pathname } = req.nextUrl;
+
+    if (token) {
+      const isOnboarded = token.isOnboarded;
+      const role = token.role;
+
+      // 1. Force non-onboarded users to the onboarding page
+      if ((!isOnboarded || !role) && pathname !== "/onboarding") {
+        return NextResponse.redirect(new URL("/onboarding", req.url));
+      }
+
+      // 2. Prevent already onboarded users from going back to the onboarding flow
+      if (isOnboarded && role && pathname === "/onboarding") {
+        if (role === "PARENT") {
+          return NextResponse.redirect(new URL("/parent-dashboard", req.url));
+        }
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+    }
   },
-});
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: "/login",
+    },
+  }
+);
 
 export const config = {
   matcher: [
@@ -25,6 +53,7 @@ export const config = {
     "/sessions/:path*",
     "/settings/:path*",
     "/support/:path*",
-    "/parent-dashboard/:path*"
+    "/parent-dashboard/:path*",
+    "/onboarding"
   ]
 };

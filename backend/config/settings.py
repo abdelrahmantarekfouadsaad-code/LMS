@@ -8,9 +8,6 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-master-archite
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
-if not DEBUG:
-    FORCE_SCRIPT_NAME = '/_/backend'
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -146,5 +143,14 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# Production settings under Vercel Reverse Proxy
+if not DEBUG:
+    FORCE_SCRIPT_NAME = '/_/backend'
+    STATIC_URL = '/_/backend/static/'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
+
 
 

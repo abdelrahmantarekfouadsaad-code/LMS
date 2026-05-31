@@ -143,3 +143,22 @@ class TeacherProfile(models.Model):
     
     def __str__(self):
         return f"Teacher: {self.user.full_name}"
+
+
+class PasswordResetOTP(models.Model):
+    """
+    Hashed Password Reset OTP model for secure one-time-password resets.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_otps')
+    otp_code = models.CharField(max_length=255) # secure hashed OTP code
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def is_expired(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+
+    def __str__(self):
+        return f"OTP for {self.user.email} at {self.created_at}"
+

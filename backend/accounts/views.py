@@ -6,7 +6,7 @@ import urllib.request
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User
+from .models import User, PasswordResetOTP
 from .serializers import UserSerializer, OnboardingSerializer, RegisterSerializer
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -170,50 +170,130 @@ class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        import secrets
+        from django.contrib.auth.hashers import make_password
+        from django.conf import settings
+        from django.core.mail import send_mail
+        from django.utils import timezone
+        
         email = request.data.get('email')
         if not email:
             return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
             user = User.objects.get(email=email)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
             
-            # Trigger email to the console backend
-            subject = 'Password Reset Requested'
-            message = f'Your password reset token is: {token}\nCopy this token and paste it into the reset password page.'
-            from_email = 'noreply@lms.com'
-            recipient_list = [user.email]
-            send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+            # Invalidate all previous unused OTPs for the user
+            PasswordResetOTP.objects.filter(user=user, is_used=False).update(is_used=True)
+            
+            # Constraint 2: String-Based OTP Generation
+            otp_code_plain = "".join(secrets.choice("0123456789") for _ in range(6))
+            
+            # Hash it for security
+            otp_code_hashed = make_password(otp_code_plain)
+            
+            # Save OTP record
+            PasswordResetOTP.objects.create(
+                user=user,
+                otp_code=otp_code_hashed
+            )
+            
+            subject = 'Nour Al-Nubuwwah LMS - Password Reset OTP'
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #10b981; margin: 0; font-size: 28px;">نور النبوة LMS</h2>
+                    <p style="color: #64748b; font-size: 14px; margin-top: 5px;">Nour Al-Nubuwwah LMS</p>
+                </div>
+                <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <p style="font-size: 16px; color: #1e293b;">Assalamu Alaikum,</p>
+                    <p style="font-size: 15px; color: #334155; line-height: 1.5;">We received a request to reset your password. Please use the following 6-digit verification code to complete the reset process:</p>
+                    <div style="text-align: center; margin: 35px 0;">
+                        <span style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #1e293b; background-color: #f1f5f9; padding: 12px 28px; border-radius: 8px; border: 1px solid #cbd5e1; display: inline-block;">{otp_code_plain}</span>
+                    </div>
+                    <p style="font-size: 14px; color: #64748b; line-height: 1.5;">This verification code is strictly valid for <strong>10 minutes</strong>. If you did not request this, you can safely ignore this email.</p>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
+                <p style="font-size: 12px; color: #94a3b8; text-align: center;">&copy; {timezone.now().year} Nour Al-Nubuwwah LMS. All rights reserved.</p>
+            </div>
+            """
+            text_content = f"Assalamu Alaikum,\n\nYour password reset OTP is: {otp_code_plain}\n\nThis OTP is valid for 10 minutes."
+            
+            # Send using Resend API if set and not in DEBUG mode; fallback to Django console backend
+            from_email = getattr(settings, 'RESEND_FROM_EMAIL', 'onboarding@resend.dev')
+            resend_api_key = getattr(settings, 'RESEND_API_KEY', None)
+            
+            if resend_api_key and not settings.DEBUG:
+                try:
+                    import resend
+                    resend.api_key = resend_api_key
+                    params = {
+                        "from": f"Nour Al-Nubuwwah LMS <{from_email}>",
+                        "to": [user.email],
+                        "subject": subject,
+                        "html": html_content,
+                    }
+                    resend.Emails.send(params)
+                except Exception as e:
+                    # Log error and fallback
+                    print(f"[ERROR] Resend sending failed: {e}. Falling back to standard send_mail.")
+                    send_mail(subject, text_content, from_email, [user.email], html_message=html_content, fail_silently=False)
+            else:
+                # Local or fallback: print to console via send_mail
+                send_mail(subject, text_content, from_email, [user.email], html_message=html_content, fail_silently=False)
 
-            return Response({'message': 'If an account exists, a reset link has been sent.', 'uid': uid}, status=status.HTTP_200_OK)
+            return Response({'message': 'If an account exists, a 6-digit OTP verification code has been sent.'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            # We don't want to leak whether the email exists, so we still return 200
-            return Response({'message': 'If an account exists, a reset link has been sent.'}, status=status.HTTP_200_OK)
+            # Mask user existence to prevent user enumeration
+            return Response({'message': 'If an account exists, a 6-digit OTP verification code has been sent.'}, status=status.HTTP_200_OK)
+
 
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        uidb64 = request.data.get('uid')
-        token = request.data.get('token')
+        from django.contrib.auth.hashers import check_password
+        
+        email = request.data.get('email')
+        otp = request.data.get('otp')
         new_password = request.data.get('new_password')
 
-        if not all([uidb64, token, new_password]):
-            return Response({'error': 'Missing parameters'}, status=status.HTTP_400_BAD_REQUEST)
+        if not all([email, otp, new_password]):
+            return Response({'error': 'Email, OTP, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(new_password) < 8:
+            return Response({'error': 'Password must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            user = None
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Keep error message generic to prevent user enumeration
+            return Response({'error': 'Invalid request or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user is not None and default_token_generator.check_token(user, token):
-            user.set_password(new_password)
-            user.save()
-            return Response({'message': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Get latest active OTP record for the user
+        otp_record = PasswordResetOTP.objects.filter(user=user, is_used=False).order_by('-created_at').first()
+
+        if not otp_record:
+            return Response({'error': 'No active OTP found. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp_record.is_expired():
+            otp_record.is_used = True
+            otp_record.save()
+            return Response({'error': 'The OTP has expired. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify plaintext OTP against stored hashed OTP
+        if not check_password(otp, otp_record.otp_code):
+            return Response({'error': 'Invalid OTP code. Please check and try again.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mark OTP as used and update user's password
+        otp_record.is_used = True
+        otp_record.save()
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
+
 
 
 class ParentVerifyView(APIView):

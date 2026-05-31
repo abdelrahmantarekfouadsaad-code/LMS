@@ -137,3 +137,8 @@ CELERY_TASK_SERIALIZER = 'json'
 # Email Configuration for local development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Resend Configuration
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+RESEND_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL', 'onboarding@resend.dev')
+
+

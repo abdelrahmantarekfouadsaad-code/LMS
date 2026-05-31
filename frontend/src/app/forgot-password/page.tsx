@@ -7,22 +7,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import axios from 'axios';
 import Toast, { ToastType } from '@/components/ui/Toast';
+import { DJANGO_API } from '@/lib/api-config';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
   
-  // Step 2 State
-  const [token, setToken] = useState('');
-  const [uid, setUid] = useState(''); // in real app, uid might be in url, here we just ask for it or receive it in email, but since it's a test flow we can just put it in the UI or fetch it.
+  // Step 2 State - 6 digit OTP Grid
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(''));
   
-  // Step 3 State
+  // Passwords
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [toast, setToast] = useState<{message: string, type: ToastType, isVisible: boolean}>({message: '', type: 'success', isVisible: false});
+  const [toast, setToast] = useState<{message: string, type: ToastType, isVisible: boolean}>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
 
   const showToast = (message: string, type: ToastType) => {
     setToast({ message, type, isVisible: true });
@@ -33,34 +37,78 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/auth/forgot-password/', { email });
-      showToast(res.data.message || 'If an account exists, a reset link has been sent.', 'success');
-      
-      // For demonstration/testing, we automatically populate uid if the backend returns it in dev mode
-      if (res.data.uid) {
-        setUid(res.data.uid);
-      }
-      
+      const res = await axios.post(`${DJANGO_API}/auth/forgot-password/`, { email });
+      showToast(res.data.message || 'If an account exists, a 6-digit OTP has been sent.', 'success');
       setStep(2);
     } catch (error: any) {
-      showToast(error.response?.data?.error || 'Failed to request reset.', 'error');
+      showToast(error.response?.data?.error || error.response?.data?.detail || 'Failed to request reset.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerifyToken = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token.trim()) {
-      showToast('Please enter the reset token.', 'error');
+  const handleOtpChange = (index: number, value: string) => {
+    // Allow only single numeric character
+    const cleanVal = value.replace(/[^0-9]/g, '');
+    if (!cleanVal) {
+      const newOtp = [...otpDigits];
+      newOtp[index] = '';
+      setOtpDigits(newOtp);
       return;
     }
-    setStep(3);
+    
+    const char = cleanVal[cleanVal.length - 1]; // get the last character typed
+    const newOtp = [...otpDigits];
+    newOtp[index] = char;
+    setOtpDigits(newOtp);
+
+    // Auto-focus next input
+    if (index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (!otpDigits[index] && index > 0) {
+        const prevInput = document.getElementById(`otp-input-${index - 1}`);
+        prevInput?.focus();
+        const newOtp = [...otpDigits];
+        newOtp[index - 1] = '';
+        setOtpDigits(newOtp);
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').trim().replace(/[^0-9]/g, '');
+    if (pastedData.length > 0) {
+      const digits = pastedData.slice(0, 6).split('');
+      const newOtp = [...otpDigits];
+      for (let i = 0; i < 6; i++) {
+        if (digits[i]) {
+          newOtp[i] = digits[i];
+        }
+      }
+      setOtpDigits(newOtp);
+      // Focus the last filled input or the 6th input
+      const focusIndex = Math.min(digits.length, 5);
+      const targetInput = document.getElementById(`otp-input-${focusIndex}`);
+      targetInput?.focus();
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const otp = otpDigits.join('');
+    if (otp.length !== 6) {
+      showToast('Please enter the full 6-digit OTP code.', 'error');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       showToast('Passwords do not match.', 'error');
       return;
@@ -73,9 +121,9 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/auth/reset-password/', {
-        uid,
-        token,
+      await axios.post(`${DJANGO_API}/auth/reset-password/`, {
+        email,
+        otp,
         new_password: newPassword
       });
       showToast('Password has been reset successfully. Redirecting...', 'success');
@@ -83,7 +131,7 @@ export default function ForgotPasswordPage() {
         router.push('/login');
       }, 2000);
     } catch (error: any) {
-      showToast(error.response?.data?.error || 'Invalid or expired token.', 'error');
+      showToast(error.response?.data?.error || error.response?.data?.detail || 'Invalid or expired OTP.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -107,9 +155,7 @@ export default function ForgotPasswordPage() {
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">Reset Password</h2>
           <p className="text-sm text-slate-400">
-            {step === 1 && "Enter your email to receive a reset token."}
-            {step === 2 && "Enter the token sent to your email."}
-            {step === 3 && "Enter your new password to reset."}
+            {step === 1 ? "Enter your email to receive a secure OTP code." : "Enter the 6-digit OTP code and your new password."}
           </p>
         </div>
 
@@ -147,7 +193,7 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-semibold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Send OTP/Token'}
+                {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Send OTP Code'}
               </button>
             </motion.form>
           )}
@@ -158,46 +204,32 @@ export default function ForgotPasswordPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              onSubmit={handleVerifyToken} 
-              className="space-y-5"
-            >
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                  Reset Token (Sent to email)
-                </label>
-                <input
-                  type="text"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  className="block w-full px-3 py-2.5 border border-slate-700 rounded-xl bg-slate-800 text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all sm:text-sm"
-                  placeholder="Paste your token here"
-                  required
-                />
-              </div>
-
-              {/* Developer hidden uid field, populated automatically if generated */}
-              <input type="hidden" value={uid} onChange={(e) => setUid(e.target.value)} />
-
-              {/* If uid is not auto-populated, we can show it here. But for now we rely on the hidden field. */}
-
-              <button
-                type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-semibold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
-              >
-                Verify
-              </button>
-            </motion.form>
-          )}
-
-          {step === 3 && (
-            <motion.form 
-              key="step3"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
               onSubmit={handleResetPassword} 
               className="space-y-5"
             >
+              <div>
+                <label className="block text-center text-sm font-medium text-slate-300 mb-3">
+                  6-Digit Verification Code
+                </label>
+                <div className="grid grid-cols-6 gap-2 sm:gap-3 max-w-xs mx-auto mb-6">
+                  {otpDigits.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      id={`otp-input-${idx}`}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(idx, e)}
+                      onPaste={handlePaste}
+                      className="w-full h-12 text-center text-xl font-bold bg-slate-800 text-white border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                    />
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">
                   New Password
@@ -249,7 +281,16 @@ export default function ForgotPasswordPage() {
           )}
         </AnimatePresence>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center flex flex-col gap-2">
+          {step === 2 && (
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="text-sm font-medium text-primary hover:underline transition-colors bg-transparent border-none cursor-pointer"
+            >
+              Change Email / Request New OTP
+            </button>
+          )}
           <Link href="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
             Back to Sign In
           </Link>

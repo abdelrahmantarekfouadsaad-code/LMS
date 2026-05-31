@@ -8,6 +8,10 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-master-archite
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+if not DEBUG:
+    FORCE_SCRIPT_NAME = '/_/backend'
+
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

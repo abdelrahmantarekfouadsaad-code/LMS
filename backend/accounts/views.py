@@ -219,28 +219,18 @@ class ForgotPasswordView(APIView):
             """
             text_content = f"Assalamu Alaikum,\n\nYour password reset OTP is: {otp_code_plain}\n\nThis OTP is valid for 10 minutes."
             
-            # Send using Resend API if set and not in DEBUG mode; fallback to Django console backend
-            from_email = getattr(settings, 'RESEND_FROM_EMAIL', 'onboarding@resend.dev')
-            resend_api_key = getattr(settings, 'RESEND_API_KEY', None)
+            # Send standard email using Django's SMTP backend via Gmail
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+            sender = f"Nour Al-Nubuwwah LMS <{from_email}>" if from_email else None
             
-            if resend_api_key and not settings.DEBUG:
-                try:
-                    import resend
-                    resend.api_key = resend_api_key
-                    params = {
-                        "from": f"Nour Al-Nubuwwah LMS <{from_email}>",
-                        "to": [user.email],
-                        "subject": subject,
-                        "html": html_content,
-                    }
-                    resend.Emails.send(params)
-                except Exception as e:
-                    # Log error and fallback
-                    print(f"[ERROR] Resend sending failed: {e}. Falling back to standard send_mail.")
-                    send_mail(subject, text_content, from_email, [user.email], html_message=html_content, fail_silently=False)
-            else:
-                # Local or fallback: print to console via send_mail
-                send_mail(subject, text_content, from_email, [user.email], html_message=html_content, fail_silently=False)
+            send_mail(
+                subject,
+                text_content,
+                sender,
+                [user.email],
+                html_message=html_content,
+                fail_silently=False
+            )
 
             return Response({'message': 'If an account exists, a 6-digit OTP verification code has been sent.'}, status=status.HTTP_200_OK)
         except User.DoesNotExist:

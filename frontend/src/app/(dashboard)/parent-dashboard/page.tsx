@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import axios from 'axios';
 import EmptyState from '@/components/ui/EmptyState';
+import { DJANGO_API } from '@/lib/api-config';
 
 export default function ParentDashboard() {
   const { data: session } = useSession();
@@ -21,7 +22,7 @@ export default function ParentDashboard() {
 
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/parents/dashboard/', {
+        const response = await axios.get(`${DJANGO_API}/parents/dashboard/`, {
           headers: {
             Authorization: `Bearer ${session.accessToken}`
           }

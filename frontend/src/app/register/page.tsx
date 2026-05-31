@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { DJANGO_API } from '@/lib/api-config';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/auth/register/', {
+      const res = await fetch(`${DJANGO_API}/auth/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

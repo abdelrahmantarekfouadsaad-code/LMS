@@ -5,6 +5,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import { Loader2 } from 'lucide-react';
+import { DJANGO_WS } from '@/lib/api-config';
 
 interface ChatWindowProps {
   roomType: 'complaints' | 'homework' | 'community';
@@ -13,7 +14,7 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ roomType, roomId, currentUser }: ChatWindowProps) {
-  const wsUrl = `ws://127.0.0.1:8000/ws/chat/${roomType}/${roomId ? roomId + '/' : ''}`;
+  const wsUrl = `${DJANGO_WS}/ws/chat/${roomType}/${roomId ? roomId + '/' : ''}`;
   const { messages, isConnected, sendMessage } = useWebSocket(wsUrl);
   const bottomRef = useRef<HTMLDivElement>(null);
 

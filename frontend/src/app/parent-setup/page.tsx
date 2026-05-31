@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowLeft, CheckCircle2, Users, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-
-const API = 'http://127.0.0.1:8000/api';
+import { DJANGO_API } from '@/lib/api-config';
 
 type Step = 'email' | 'create-password' | 'success';
 
@@ -27,7 +26,7 @@ export default function ParentSetupPage() {
     setError('');
 
     try {
-      const res = await fetch(`${API}/auth/parent-verify/`, {
+      const res = await fetch(`${DJANGO_API}/auth/parent-verify/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -66,7 +65,7 @@ export default function ParentSetupPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API}/auth/parent-create/`, {
+      const res = await fetch(`${DJANGO_API}/auth/parent-create/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

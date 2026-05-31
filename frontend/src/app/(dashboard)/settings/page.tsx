@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import { User, Shield, Moon, Sun, Globe, Save, Loader2 } from 'lucide-react';
 import Toast, { ToastType } from '@/components/ui/Toast';
 import axios from 'axios';
+import { DJANGO_API } from '@/lib/api-config';
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
@@ -46,7 +47,7 @@ export default function SettingsPage() {
       setEmail(session.user.email || '');
       // Fetch profile to get the latest parent_email
       if (session.accessToken) {
-        axios.get('http://127.0.0.1:8000/api/accounts/me/', {
+        axios.get(`${DJANGO_API}/accounts/me/`, {
           headers: { Authorization: `Bearer ${session.accessToken}` }
         }).then(res => {
           if (res.data.parent_email) {
@@ -102,7 +103,7 @@ export default function SettingsPage() {
 
     setIsSavingProfile(true);
     try {
-      const res = await axios.patch('http://127.0.0.1:8000/api/accounts/update_profile/', {
+      const res = await axios.patch(`${DJANGO_API}/accounts/update_profile/`, {
         full_name: fullName,
         email: email,
       }, {
@@ -126,7 +127,7 @@ export default function SettingsPage() {
 
     setIsSavingProfile(true);
     try {
-      await axios.patch('http://127.0.0.1:8000/api/accounts/update_profile/', {
+      await axios.patch(`${DJANGO_API}/accounts/update_profile/`, {
         parent_email: parentEmail
       }, {
         headers: { Authorization: `Bearer ${session.accessToken}` }
@@ -157,7 +158,7 @@ export default function SettingsPage() {
 
     setIsSavingPassword(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/accounts/change_password/', {
+      await axios.post(`${DJANGO_API}/accounts/change_password/`, {
         current_password: currentPassword,
         new_password: newPassword
       }, {

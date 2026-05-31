@@ -25,6 +25,15 @@ api.interceptors.request.use(
   }
 );
 
+const clearSessionAndRedirect = () => {
+  console.warn("Forcing logout and session cleanup...");
+  if (typeof window !== 'undefined') {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+  signOut({ callbackUrl: '/login' });
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -51,10 +60,10 @@ api.interceptors.response.use(
           }
         } catch (refreshError) {
           console.error("Token refresh failed. Forcing logout.");
-          signOut({ callbackUrl: '/login' });
+          clearSessionAndRedirect();
         }
       } else {
-        signOut({ callbackUrl: '/login' });
+        clearSessionAndRedirect();
       }
     }
     return Promise.reject(error);

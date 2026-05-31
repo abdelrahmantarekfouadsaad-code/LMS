@@ -13,7 +13,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import EmptyState from '@/components/ui/EmptyState';
-import { DJANGO_API } from '@/lib/api-config';
+import { fetcher as apiFetcher } from '@/lib/api';
 
 
 
@@ -94,13 +94,9 @@ export default function LearningPage() {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const { data: session } = useSession();
 
-  const fetcher = (url: string) => fetch(url, {
-    headers: { Authorization: `Bearer ${session?.accessToken}` }
-  }).then(res => res.json());
-
   const { data: courses, error, isLoading } = useSWR(
-    session?.accessToken ? `${DJANGO_API}/courses/` : null,
-    fetcher
+    session?.accessToken ? '/courses/' : null,
+    apiFetcher
   );
   
   // Hydration fix for Zustand persist
@@ -111,7 +107,7 @@ export default function LearningPage() {
 
   // Ghost Cart Cleanup: prune stale cart items that reference non-existent courses
   useEffect(() => {
-    if (!mounted || !courses) return;
+    if (!mounted || !Array.isArray(courses)) return;
     const validIds = new Set(courses.map((c: any) => String(c.id)));
     cartItems.forEach(item => {
       if (!validIds.has(String(item.id))) {
@@ -162,7 +158,7 @@ export default function LearningPage() {
              <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-primary w-10 h-10" /></div>
           ) : error ? (
              <div className="text-red-500">Failed to load courses.</div>
-          ) : !courses || courses.length === 0 ? (
+          ) : !Array.isArray(courses) || courses.length === 0 ? (
              <EmptyState 
                title={isAr ? 'لا توجد دورات منشورة بعد' : 'No courses published yet'}
                description={isAr ? 'عد لاحقاً لرؤية الدورات الجديدة.' : 'Check back later for new courses.'}

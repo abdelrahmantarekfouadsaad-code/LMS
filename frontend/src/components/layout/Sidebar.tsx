@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import {
@@ -22,7 +22,8 @@ import {
   FolderOpen,
   MessageSquare,
   Award,
-  Briefcase
+  Briefcase,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
   { nameKey: 'payment', href: '/payment', icon: CreditCard },
   { nameKey: 'community', href: '/community', icon: Users },
   { nameKey: 'chat', href: '/chat', icon: MessageSquare },
+  { nameKey: 'support', href: '/support', icon: HelpCircle },
 ];
 
   const GUEST_ALLOWED_ROUTES = ['/dashboard', '/learning'];
@@ -141,9 +143,9 @@ export default function Sidebar() {
       </div>
 
       {/* Footer / Profile Snippet */}
-      <Link href="/settings" passHref>
-        <div className="p-4 border-t border-white/10 dark:border-slate-700/30 cursor-pointer hover:bg-white/5 transition-colors group">
-          <div className="flex items-center gap-3">
+      <div className="p-4 border-t border-white/10 dark:border-slate-700/30">
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/settings" className="flex items-center gap-3 flex-1 min-w-0 group cursor-pointer">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white font-bold shrink-0 shadow-md">
               {initial}
             </div>
@@ -153,9 +155,9 @@ export default function Sidebar() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex flex-col overflow-hidden whitespace-nowrap flex-1"
+                  className="flex flex-col overflow-hidden whitespace-nowrap flex-1 text-start"
                 >
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-primary transition-colors">{userName}</span>
+                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-primary transition-colors truncate">{userName}</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     {isGuest ? (
                       <span className="inline-flex items-center gap-1 text-amber-500">
@@ -167,17 +169,18 @@ export default function Sidebar() {
                 </motion.div>
               )}
             </AnimatePresence>
-            {isExpanded && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 group-hover:text-primary group-hover:rotate-90 transition-all duration-300">
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </motion.div>
-            )}
-          </div>
+          </Link>
+          {isExpanded && (
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="p-2 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-500/10 dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-500/15 transition-all duration-200 shrink-0"
+              title={t.logout}
+            >
+              <LogOut size={18} />
+            </button>
+          )}
         </div>
-      </Link>
+      </div>
     </motion.aside>
   );
 }

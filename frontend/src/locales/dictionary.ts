@@ -13,6 +13,7 @@ export const DICTIONARY = {
       payment: "Payment",
       chat: "Private Chat",
       support: "Tech Support",
+      logout: "Log Out",
       level: "Level 3 • Fiqh"
     },
     dashboard: {
@@ -207,6 +208,7 @@ export const DICTIONARY = {
       payment: "الدفع",
       chat: "شات",
       support: "الدعم الفني",
+      logout: "تسجيل الخروج",
       level: "المستوى ٣ • فقه"
     },
     dashboard: {

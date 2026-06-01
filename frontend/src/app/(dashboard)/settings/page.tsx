@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { User, Shield, Moon, Sun, Globe, Save, Loader2 } from 'lucide-react';
+import { User, Shield, Moon, Sun, Globe, Save, Loader2, LogOut, LifeBuoy } from 'lucide-react';
 import Toast, { ToastType } from '@/components/ui/Toast';
 import axios from 'axios';
 import { DJANGO_API } from '@/lib/api-config';
@@ -95,6 +95,11 @@ export default function SettingsPage() {
     parentAccount: locale === 'ar' ? 'حساب ولي الأمر' : 'Link Parent Account',
     parentAccountDesc: locale === 'ar' ? 'أدخل البريد الإلكتروني لولي أمرك لربط حسابه.' : 'Enter your parent\'s email to link their account.',
     parentEmail: locale === 'ar' ? 'البريد الإلكتروني لولي الأمر' : 'Parent Email',
+    supportAndLogout: locale === 'ar' ? 'الدعم الفني والجلسة' : 'Support & Session',
+    contactSupportBtn: locale === 'ar' ? 'التواصل مع الدعم الفني' : 'Contact Technical Support',
+    contactSupportDesc: locale === 'ar' ? 'هل تحتاج إلى مساعدة؟ تواصل مع فريق الدعم الفني لدينا.' : 'Need help? Reach out to our technical support team.',
+    logoutBtn: locale === 'ar' ? 'تسجيل الخروج' : 'Log Out',
+    logoutDesc: locale === 'ar' ? 'تسجيل الخروج من جلستك بشكل آمن.' : 'Sign out of your session securely.',
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -383,6 +388,49 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
+              </div>
+            </div>
+
+            {/* Support & Session Section */}
+            <div className="glass-panel p-8">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                <LifeBuoy className="text-primary animate-pulse" /> {t.supportAndLogout}
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Tech Support Reactivation Card */}
+                <div className="flex flex-col justify-between p-5 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 transition-all hover:shadow-md hover:border-primary/30 group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <LifeBuoy className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{t.contactSupportBtn}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t.contactSupportDesc}</p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/support')}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-hover hover:to-emerald-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary/15 text-xs flex items-center justify-center gap-2"
+                  >
+                    <LifeBuoy size={14} /> {t.contactSupportBtn}
+                  </button>
+                </div>
+
+                {/* Secure Log Out Card */}
+                <div className="flex flex-col justify-between p-5 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 transition-all hover:shadow-md hover:border-red-500/30 group">
+                  <div>
+                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <LogOut className="w-5 h-5 text-red-500" />
+                    </div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{t.logoutBtn}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t.logoutDesc}</p>
+                  </div>
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold rounded-xl transition-all shadow-md shadow-red-500/15 text-xs flex items-center justify-center gap-2"
+                  >
+                    <LogOut size={14} /> {t.logoutBtn}
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -659,9 +659,10 @@ class ParentCourseAnalyticsView(APIView):
             
             gemini_failed = False
             try:
-                api_key = getattr(settings, 'GEMINI_API_KEY', '')
+                # Explicitly read from environment first to guarantee compatibility in production/Vercel
+                api_key = os.environ.get('GEMINI_API_KEY') or getattr(settings, 'GEMINI_API_KEY', '')
                 if not api_key:
-                    raise ValueError("GEMINI_API_KEY is not configured in Django settings.")
+                    raise ValueError("GEMINI_API_KEY is not set in environment (os.environ) or settings.")
                 
                 genai.configure(api_key=api_key)
                 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -678,13 +679,15 @@ class ParentCourseAnalyticsView(APIView):
                 else:
                     raise Exception("Received empty response from Gemini API.")
             except Exception as e:
-                # Vercel Serverless Guardrail: Instant Catch & Return Ephemeral Fallback
+                # Vercel Serverless Guardrail: Instant Catch, Trace & Return Debug Ephemeral Fallback
+                import traceback
                 print(f"--- GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
+                print(traceback.format_exc())
                 gemini_failed = True
                 if lang == 'ar':
-                    ai_report = "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
+                    ai_report = f"جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل. (Debug: {str(e)})"
                 else:
-                    ai_report = "The AI report is being prepared, please refresh in a moment."
+                    ai_report = f"The AI report is being prepared, please refresh in a moment. (Debug: {str(e)})"
             
             # Save or update cache in database ONLY if Gemini succeeded (Fix the Fallback Cache Bug)
             if not gemini_failed:

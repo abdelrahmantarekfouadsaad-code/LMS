@@ -667,7 +667,7 @@ class ParentCourseAnalyticsView(APIView):
                     raise ValueError("GEMINI_API_KEY is not set in environment (os.environ) or settings.")
                 
                 # Direct REST API POST call bypassing complex gRPC SDK
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],

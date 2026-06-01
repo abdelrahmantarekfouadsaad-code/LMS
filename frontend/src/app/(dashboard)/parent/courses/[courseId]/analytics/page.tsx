@@ -189,6 +189,23 @@ export default function CourseAnalyticsPage() {
     debugError: analytics?.debug_error || null
   };
 
+  // Safely parse the JSON aiReport
+  let parsedReport: { strengths: string[]; weaknesses: string[]; recommendation: string } | null = null;
+  let parseFailed = false;
+
+  if (stats.aiReport) {
+    try {
+      const parsed = JSON.parse(stats.aiReport);
+      if (parsed && Array.isArray(parsed.strengths) && Array.isArray(parsed.weaknesses) && typeof parsed.recommendation === 'string') {
+        parsedReport = parsed;
+      }
+    } catch (e) {
+      parseFailed = true;
+    }
+  }
+
+  const isValidReport = parsedReport !== null;
+
   // Silent Developer Debugging log in browser console
   useEffect(() => {
     if (stats?.debugError) {
@@ -434,8 +451,65 @@ export default function CourseAnalyticsPage() {
                       <div className="h-4 bg-white/10 rounded w-2/3"></div>
                       <div className="h-20 bg-white/5 border border-white/10 rounded-2xl mt-6"></div>
                     </div>
+                  ) : isValidReport && parsedReport ? (
+                    <div className="space-y-6">
+                      {/* Strengths */}
+                      <div>
+                        <span className="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                          <CheckCircle2 size={14} />
+                          {t.strengths}
+                        </span>
+                        <ul className="space-y-2 text-slate-300 text-sm">
+                          {parsedReport.strengths.map((str, idx) => (
+                            <li key={idx} className="flex items-start gap-2 leading-relaxed">
+                              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{str}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Weaknesses / Improvements */}
+                      <div>
+                        <span className="text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                          <AlertCircle size={14} />
+                          {t.weaknesses}
+                        </span>
+                        <ul className="space-y-2 text-slate-300 text-sm">
+                          {parsedReport.weaknesses.map((weak, idx) => (
+                            <li key={idx} className="flex items-start gap-2 leading-relaxed">
+                              <AlertCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                              <span>{weak}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Recommendation Card inside AI summary */}
+                      <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-2xl backdrop-blur-md">
+                        <h4 className="text-xs font-black text-purple-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-purple-400 animate-pulse" />
+                          {isAr ? 'توصية مسار الدراسة بالذكاء الاصطناعي' : 'AI STUDY PATH RECOMMENDATION'}
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                          {parsedReport.recommendation}
+                        </p>
+                      </div>
+
+                      {/* Sub-card with Sparkles or standard action note */}
+                      <div className="p-4 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-2xl backdrop-blur-md">
+                        <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">
+                          {isAr ? 'تحديث التقرير' : 'Report Lifespan'}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                          {isAr 
+                            ? "يتم تحديث هذا التقرير تلقائياً كل ٢٤ ساعة بناءً على درجات ومستوى حضور الطالب." 
+                            : "This report is generated dynamically by Google Gemini and cached for 24 hours."}
+                        </p>
+                      </div>
+                    </div>
                   ) : (
-                    // Secure JSX rendering of the returned ai_report
+                    // Secure JSX rendering of the returned ai_report (fallback to standard text)
                     <div className="space-y-4">
                       <div className="p-5 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl backdrop-blur-md transition-all duration-300">
                         <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line text-justify font-medium">

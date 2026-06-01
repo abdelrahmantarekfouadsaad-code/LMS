@@ -619,31 +619,36 @@ class ParentCourseAnalyticsView(APIView):
         debug_error = None
         
         if insight:
-            # First check if the signature matches. If it matches, we ALWAYS bypass 24h constraint!
-            if insight.data_signature == current_hash:
-                if lang == 'ar' and insight.report_ar:
-                    ai_report = insight.report_ar
+            if lang == 'ar':
+                last_updated = insight.last_updated_ar
+                cached_report = insight.report_ar
+            else:
+                last_updated = insight.last_updated_en
+                cached_report = insight.report_en
+
+            if cached_report:
+                is_under_24h = last_updated and (now - last_updated) < timedelta(hours=24)
+                
+                # Caching Rules:
+                # a) Under 24h -> RETURN CACHE.
+                if is_under_24h:
+                    ai_report = cached_report
                     use_cached = True
-                elif lang == 'en' and insight.report_en:
-                    ai_report = insight.report_en
+                # b) Over 24h AND current_hash == cache.data_signature -> RETURN CACHE.
+                elif insight.data_signature == current_hash:
+                    ai_report = cached_report
                     use_cached = True
-            
-            # If signature differs or the language-specific cached report doesn't exist yet,
-            # we only use the cache if 24 hours have NOT passed since the last update (to prevent spam).
-            if not use_cached:
-                if lang == 'ar' and insight.report_ar:
-                    if insight.last_updated_ar and (now - insight.last_updated_ar) < timedelta(hours=24):
-                        ai_report = insight.report_ar
-                        use_cached = True
-                elif lang == 'en' and insight.report_en:
-                    if insight.last_updated_en and (now - insight.last_updated_en) < timedelta(hours=24):
-                        ai_report = insight.report_en
-                        use_cached = True
                         
         if not use_cached:
             prompt = (
-                f"You are an academic advisor writing a concise performance evaluation report for the parent of a student taking the course '{course.title}'.\n"
-                f"Student performance metrics:\n"
+                "You are an expert academic advisor. Analyze the student's grades and attendance. Return EXACTLY a JSON object with this structure:\n"
+                "{\n"
+                '  "strengths": ["2 professional academic sentences detailing specific strengths."],\n'
+                '  "weaknesses": ["1 or 2 constructive sentences highlighting areas for improvement."],\n'
+                '  "recommendation": "A detailed, actionable study path paragraph."\n'
+                "}\n"
+                "Respond entirely in the language requested by the user. Do not return markdown blocks, only raw JSON.\n\n"
+                f"Student performance metrics to analyze:\n"
                 f"- Course Title: {course.title}\n"
                 f"- Overall Course Progress: {overall_progress}%\n"
                 f"- Academic Level: {overall_level}\n"
@@ -651,12 +656,7 @@ class ParentCourseAnalyticsView(APIView):
                 f"- Quizzes/Exams: {exams_summary}\n"
                 f"- Assignments: {assignments_summary}\n"
                 f"- Projects: {projects_summary}\n\n"
-                f"Instructions:\n"
-                f"Write exactly a 3-line academic performance summary. The text MUST be in the {'Arabic' if lang == 'ar' else 'English'} language.\n"
-                f"Line 1: Highlight the student's key academic strengths or achievements based on the data above.\n"
-                f"Line 2: Point out specific areas for improvement, such as incomplete assignments or specific grade improvements.\n"
-                f"Line 3: Provide a highly actionable, helpful study recommendation for the parent to support their child.\n"
-                f"Strict Constraint: Return ONLY these 3 lines of plain text, no introductory or concluding sentences, no markdown formatting (like asterisks or bullet points), and no prefix/label like 'Line 1:'."
+                f"Requested Language: {'Arabic' if lang == 'ar' else 'English'}"
             )
             
             gemini_failed = False
@@ -667,12 +667,13 @@ class ParentCourseAnalyticsView(APIView):
                     raise ValueError("GEMINI_API_KEY is not set in environment (os.environ) or settings.")
                 
                 # Direct REST API POST call bypassing complex gRPC SDK
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],
                     "generationConfig": {
-                        "maxOutputTokens": 350,
+                        "responseMimeType": "application/json",
+                        "maxOutputTokens": 1000,
                         "temperature": 0.6
                     }
                 }

@@ -23,7 +23,8 @@ import {
   MessageSquare,
   Award,
   Briefcase,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { nameKey: 'community', href: '/community', icon: Users },
   { nameKey: 'chat', href: '/chat', icon: MessageSquare },
   { nameKey: 'support', href: '/support', icon: HelpCircle },
+  { nameKey: 'settings', href: '/settings', icon: Settings },
 ];
 
   const GUEST_ALLOWED_ROUTES = ['/dashboard', '/learning'];
@@ -66,6 +68,9 @@ export default function Sidebar() {
       }
       return item;
     }).filter(item => PARENT_ALLOWED_ROUTES.includes(item.href));
+  } else {
+    // Standard Student: Hide settings from sidebar navigation, keeping standard list
+    filteredNavItems = NAV_ITEMS.filter(item => item.href !== '/settings');
   }
 
   const userName = session?.user?.name || session?.user?.email || 'Student';

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
-import { Clock, User, BookOpen, Download, ShoppingCart, CheckCircle2, ChevronRight, Plus, X, Loader2 } from 'lucide-react';
+import { Clock, User, BookOpen, Download, ShoppingCart, CheckCircle2, ChevronRight, Plus, X, Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,8 +14,6 @@ import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import EmptyState from '@/components/ui/EmptyState';
 import { fetcher as apiFetcher } from '@/lib/api';
-
-
 
 function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const locale = useLocale();
@@ -90,14 +88,26 @@ export default function LearningPage() {
   const router = useRouter();
   
   const { cartItems, addToCart, removeFromCart } = useCartStore();
-  const { isGuest } = useUserRole();
+  const { isGuest, role } = useUserRole();
+  const isParent = role === 'PARENT';
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const { data: session } = useSession();
 
+  const t = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+
+  // Fetch standard courses
   const { data: courses, error, isLoading } = useSWR(
     session?.accessToken ? '/courses/' : null,
     apiFetcher
   );
+
+  // Fetch parent dashboard data to find child enrolled courses
+  const { data: parentDb } = useSWR(
+    isParent && session?.accessToken ? '/parents/dashboard/' : null,
+    apiFetcher
+  );
+
+  const parentEnrolledCourses = parentDb?.enrolled_courses || [];
   
   // Hydration fix for Zustand persist
   const [mounted, setMounted] = useState(false);
@@ -128,7 +138,7 @@ export default function LearningPage() {
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden relative">
       <Sidebar />
-      <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto hide-scrollbar pb-32">
+      <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto hide-scrollbar pb-32 text-start">
         
         <header className="mb-8 flex items-center justify-between">
           <div>
@@ -137,7 +147,7 @@ export default function LearningPage() {
               animate={{ opacity: 1, x: 0 }}
               className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2"
             >
-              {isAr ? 'التعلم الذاتي' : 'Self Learning'}
+              {isParent ? t.selfLearningTitle : (isAr ? 'التعلم الذاتي' : 'Self Learning')}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, x: -20 }}
@@ -145,9 +155,11 @@ export default function LearningPage() {
               transition={{ delay: 0.1 }}
               className="text-slate-500 dark:text-slate-400"
             >
-              {isAr 
-                ? (isGuest ? 'تصفح الدورات المتاحة للاشتراك' : 'اختر الدورات التي ترغب بالاشتراك بها.') 
-                : (isGuest ? 'Browse available courses for subscription.' : 'Select the courses you want to subscribe to.')}
+              {isParent 
+                ? t.selfLearningSubtitle 
+                : (isAr 
+                    ? (isGuest ? 'تصفح الدورات المتاحة للاشتراك' : 'اختر الدورات التي ترغب بالاشتراك بها.') 
+                    : (isGuest ? 'Browse available courses for subscription.' : 'Select the courses you want to subscribe to.'))}
             </motion.p>
           </div>
         </header>
@@ -157,7 +169,7 @@ export default function LearningPage() {
           {isLoading ? (
              <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-primary w-10 h-10" /></div>
           ) : error ? (
-             <div className="text-red-500">Failed to load courses.</div>
+             <div className="text-red-500">{isAr ? 'فشل تحميل الدورات.' : 'Failed to load courses.'}</div>
           ) : !Array.isArray(courses) || courses.length === 0 ? (
              <EmptyState 
                title={isAr ? 'لا توجد دورات منشورة بعد' : 'No courses published yet'}
@@ -166,8 +178,9 @@ export default function LearningPage() {
              />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {courses.map((course: any, idx: number) => {
+              {Array.isArray(courses) && courses.map((course: any, idx: number) => {
                 const isSelected = mounted ? cartItems.some(item => item.id === course.id) : false;
+                const isEnrolled = isParent && Array.isArray(parentEnrolledCourses) && parentEnrolledCourses.some((c: any) => String(c.id) === String(course.id));
 
                 return (
                   <motion.div 
@@ -178,14 +191,18 @@ export default function LearningPage() {
                     onClick={() => {
                       if (isGuest) {
                         setIsGuestModalOpen(true);
+                      } else if (isEnrolled) {
+                        router.push(`/parent/courses/${course.id}/analytics`);
                       }
                     }}
                     className={`
                       group rounded-2xl overflow-hidden transition-all duration-300 relative flex flex-col
                       ${isGuest ? 'cursor-pointer shadow-xl hover:shadow-2xl border border-white/5 hover:border-white/20 hover:-translate-y-1' : 
-                        isSelected 
+                        isEnrolled 
+                        ? 'cursor-pointer shadow-[0_0_25px_rgba(16,185,129,0.15)] border border-emerald-500/30 hover:border-emerald-500/60 hover:-translate-y-1'
+                        : isSelected 
                         ? 'shadow-[0_0_20px_rgba(var(--tw-colors-primary),0.15)] border border-primary/30' 
-                        : 'shadow-xl hover:shadow-2xl border border-white/5 hover:border-white/20'
+                        : 'shadow-xl hover:shadow-2xl border border-white/5 hover:border-white/20 hover:-translate-y-0.5'
                       }
                     `}
                   >
@@ -194,7 +211,7 @@ export default function LearningPage() {
                       <div className="p-6 pb-0 flex-1">
                         <div className="flex justify-between items-start mb-4">
                           <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10">
-                            <BookOpen className={`w-6 h-6 ${!isGuest && isSelected ? 'text-primary' : 'text-white'}`} />
+                            <BookOpen className={`w-6 h-6 ${!isGuest && (isSelected || isEnrolled) ? 'text-primary dark:text-emerald-400' : 'text-white'}`} />
                           </div>
                           
                           {/* Course Price Tag */}
@@ -203,7 +220,7 @@ export default function LearningPage() {
                           </div>
                         </div>
                         
-                        <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">
+                        <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-primary dark:group-hover:text-emerald-400 transition-colors">
                           {isAr ? course.title_ar || course.title : course.title}
                         </h3>
                         <p className="text-slate-300 text-sm mb-6 flex items-center gap-2">
@@ -217,8 +234,17 @@ export default function LearningPage() {
                           {course.duration || 'Flexible'}
                         </div>
                         
-                        {/* Add to Cart / Remove Button (STUDENT ONLY) */}
-                        {!isGuest && (
+                        {/* Parent Enrolled vs Add to Cart Actions */}
+                        {isEnrolled ? (
+                          <Link
+                            href={`/parent/courses/${course.id}/analytics`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/25 hover:border-emerald-500/40 text-emerald-400 transition-all duration-300 shadow-md"
+                          >
+                            <TrendingUp size={18} />
+                            {t.enrolledBadge}
+                          </Link>
+                        ) : !isGuest && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -242,7 +268,7 @@ export default function LearningPage() {
                             ) : (
                               <>
                                 <ShoppingCart size={18} />
-                                {isAr ? 'أضف إلى السلة' : 'Add to Cart'}
+                                {isParent ? t.unlockCourse : (isAr ? 'أضف إلى السلة' : 'Add to Cart')}
                               </>
                             )}
                           </button>
@@ -251,7 +277,7 @@ export default function LearningPage() {
                       
                       {/* Active Overlay when selected (STUDENT ONLY) */}
                       <AnimatePresence>
-                        {!isGuest && isSelected && (
+                        {!isGuest && !isEnrolled && isSelected && (
                           <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -270,7 +296,7 @@ export default function LearningPage() {
 
       </main>
 
-      {/* Floating Checkout Bar (STUDENT ONLY) */}
+      {/* Floating Checkout Bar (STUDENT & PARENT BOTH CAN USE THIS FLOW) */}
       <AnimatePresence>
         {!isGuest && mounted && itemCount > 0 && (
           <motion.div 
@@ -278,9 +304,9 @@ export default function LearningPage() {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', bounce: 0.4, duration: 0.6 }}
-            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50"
+            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-bounce-subtle"
           >
-            <div className="backdrop-blur-md bg-slate-900/90 rounded-2xl shadow-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="backdrop-blur-md bg-slate-900/90 rounded-2xl shadow-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 border border-white/10">
               <div className="flex items-center gap-4">
                 {/* Bouncing Badge */}
                 <motion.div 
@@ -292,7 +318,7 @@ export default function LearningPage() {
                 >
                   {itemCount}
                 </motion.div>
-                <div>
+                <div className="text-start">
                   <h4 className="text-white font-bold text-lg flex items-center gap-2">
                     <ShoppingCart size={18} className="text-primary" />
                     {isAr ? 'في السلة' : 'In Cart'}

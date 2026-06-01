@@ -54,6 +54,7 @@ export const config = {
     "/settings/:path*",
     "/support/:path*",
     "/parent-dashboard/:path*",
+    "/parent/:path*",
     "/onboarding"
   ]
 };

@@ -2,7 +2,7 @@
 
 import Sidebar from '@/components/layout/Sidebar';
 import { motion } from 'framer-motion';
-import { Hash, Users, Send, Paperclip, Smile, MoreVertical, Search, Globe, UserCircle, BookOpen, Lock } from 'lucide-react';
+import { Hash, Users, Send, Paperclip, Smile, MoreVertical, Search, Globe, UserCircle, BookOpen, Lock, Sparkles } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import { useState } from 'react';
@@ -26,10 +26,45 @@ const AGE_GROUP_LABELS: Record<string, { en: string; ar: string }> = {
 
 export default function CommunityPage() {
   const { data: session } = useSession();
-  const { isGuest } = useUserRole();
+  const { isGuest, role } = useUserRole();
+  const isParent = role === 'PARENT';
   const locale = useLocale();
   const isAr = locale === 'ar';
   const t = DICTIONARY[locale as 'en' | 'ar']?.community || DICTIONARY.en.community;
+
+  // Parent block
+  if (isParent) {
+    const tParent = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+    return (
+      <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-y-auto hide-scrollbar">
+          <div className="glass-panel p-8 md:p-12 text-center max-w-2xl w-full border border-primary/20 bg-slate-900/85 backdrop-blur-md rounded-3xl relative overflow-hidden shadow-2xl">
+            {/* Glow orb */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl" />
+            
+            <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/30 shadow-[0_0_20px_rgba(var(--tw-colors-primary),0.2)]">
+              <Users className="w-10 h-10 text-primary dark:text-emerald-400" />
+            </div>
+            
+            <h2 className="text-3xl font-extrabold text-white mb-4 tracking-tight">
+              {tParent.communityTitle}
+            </h2>
+            
+            <p className="text-slate-300 text-base leading-relaxed mb-8 max-w-md mx-auto">
+              {tParent.communityComingSoon}
+            </p>
+            
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-400 text-sm font-semibold">
+              <Sparkles size={16} className="text-amber-400 animate-pulse" />
+              {isAr ? 'مساحة حصرية لأولياء الأمور' : 'Exclusive Parent Space'}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const { data: roomsData, error: roomsError } = useSWR('/community/', fetcher);
   const rooms = roomsData?.results || roomsData || [];

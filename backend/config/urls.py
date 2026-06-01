@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from accounts.views import UserViewSet, RegisterView, GoogleLoginView, ForgotPasswordView, ResetPasswordView, ParentVerifyView, ParentCreateView, ParentDashboardView
+from accounts.views import UserViewSet, RegisterView, GoogleLoginView, ForgotPasswordView, ResetPasswordView, ParentVerifyView, ParentCreateView, ParentDashboardView, ParentCourseAnalyticsView
 from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet
 from quizzes.views import QuizViewSet, StudentResultViewSet
 from live.views import LiveSessionViewSet, AttendanceViewSet
@@ -56,6 +56,7 @@ urlpatterns = [
     path('api/auth/parent-verify/', ParentVerifyView.as_view(), name='auth_parent_verify'),
     path('api/auth/parent-create/', ParentCreateView.as_view(), name='auth_parent_create'),
     path('api/parents/dashboard/', ParentDashboardView.as_view(), name='parent_dashboard'),
+    path('api/parents/courses/<int:course_id>/analytics/', ParentCourseAnalyticsView.as_view(), name='parent_course_analytics'),
 
     
     # Core API Routers

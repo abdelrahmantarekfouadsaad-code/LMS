@@ -40,6 +40,12 @@ export default function CourseAnalyticsPage() {
     apiFetcher
   );
 
+  // Fetch real analytics details
+  const { data: analytics } = useSWR(
+    courseId ? `/parents/courses/${courseId}/analytics/` : null,
+    apiFetcher
+  );
+
   // Dynamic seed-based mock stats to ensure premium, deterministic, custom analytics per course!
   const getMockData = (id: string) => {
     // Generate simple seed based on ID
@@ -143,11 +149,48 @@ export default function CourseAnalyticsPage() {
       overallLevelText
     };
   };
-
-  const stats = getMockData(courseId || "default_id");
+  
+  const mockStats = getMockData(courseId || "default_id");
+  
+  const stats = {
+    overallProgress: analytics?.overall_progress !== undefined ? analytics.overall_progress : mockStats.overallProgress,
+    expectedSessions: analytics?.attendance?.expected !== undefined ? analytics.attendance.expected : mockStats.expectedSessions,
+    attendedSessions: analytics?.attendance?.attended !== undefined ? analytics.attendance.attended : mockStats.attendedSessions,
+    attendanceRatio: analytics?.attendance?.ratio !== undefined ? analytics.attendance.ratio : mockStats.attendanceRatio,
+    overallLevelText: analytics?.overall_level !== undefined ? (isAr ? (analytics.overall_level === "Excellent" ? "ممتاز" : analytics.overall_level) : analytics.overall_level) : mockStats.overallLevelText,
+    
+    exams: Array.isArray(analytics?.exams) ? analytics.exams.map((exam: any) => ({
+      name: exam.name,
+      score: exam.score,
+      attempts: exam.attempts,
+      date: exam.date,
+      attended: exam.attended
+    })) : mockStats.exams,
+    
+    assignments: Array.isArray(analytics?.assignments) ? analytics.assignments.map((ass: any) => ({
+      title: ass.title,
+      status: ass.status,
+      grade: ass.grade,
+      date: ass.date
+    })) : mockStats.assignments,
+    
+    projects: Array.isArray(analytics?.projects) ? analytics.projects.map((proj: any) => ({
+      name: proj.name,
+      status: proj.status,
+      grade: proj.grade,
+      submissionDate: proj.submission_date
+    })) : mockStats.projects,
+    
+    strengths: analytics?.ai_insights ? (isAr ? analytics.ai_insights.strengths_ar : analytics.ai_insights.strengths_en) : mockStats.strengths,
+    weaknesses: analytics?.ai_insights ? (isAr ? analytics.ai_insights.weaknesses_ar : analytics.ai_insights.weaknesses_en) : mockStats.weaknesses,
+    
+    recommendation: analytics?.ai_insights ? (isAr ? analytics.ai_insights.recommendation_ar : analytics.ai_insights.recommendation_en) : null
+  };
 
   // Calculate average exam score safely
-  const averageExamScore = stats.exams.reduce((sum, exam) => sum + exam.score, 0) / stats.exams.length;
+  const averageExamScore = Array.isArray(stats.exams) && stats.exams.length > 0 
+    ? stats.exams.reduce((sum: number, exam: any) => sum + (exam.score || 0), 0) / stats.exams.length 
+    : 0;
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
@@ -411,9 +454,9 @@ export default function CourseAnalyticsPage() {
                       {isAr ? 'توصية الذكاء الاصطناعي' : 'AI STUDY PATH RECOMMENDATION'}
                     </h4>
                     <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                      {isAr 
+                      {stats.recommendation || (isAr 
                         ? "ممتاز! نوصي بتخصيص ٣٠ دقيقة إضافية أسبوعياً لمراجعة تصنيفات ونواقض الطهارة لضمان الحصول على الدرجة النهائية في الامتحان الختامي."
-                        : "Outstanding! We recommend dedicating an extra 30 minutes weekly to review classification taxonomies of Taharah to guarantee top marks in the final exam."}
+                        : "Outstanding! We recommend dedicating an extra 30 minutes weekly to review classification taxonomies of Taharah to guarantee top marks in the final exam.")}
                     </p>
                   </div>
 

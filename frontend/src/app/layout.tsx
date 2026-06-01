@@ -40,7 +40,7 @@ export default function RootLayout({
     <html lang={locale || 'en'} dir={direction} suppressHydrationWarning>
       <body className={`${mainFont} font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors duration-300`}>
         {/* ThemeProvider (next-themes) for dark/light switching */}
-        <ThemeProvider attribute="class" defaultTheme="dark">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <AuthProvider>
             {/* The main glass header would go here or in a layout wrapper */}
             <main className="flex-grow">

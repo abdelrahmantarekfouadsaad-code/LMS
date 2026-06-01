@@ -41,8 +41,8 @@ export default function CourseAnalyticsPage() {
   );
 
   // Fetch real analytics details
-  const { data: analytics } = useSWR(
-    courseId ? `/parents/courses/${courseId}/analytics/` : null,
+  const { data: analytics, error: analyticsError, isLoading: isLoadingAnalytics } = useSWR(
+    courseId ? `/parents/courses/${courseId}/analytics/?lang=${locale}` : null,
     apiFetcher
   );
 
@@ -184,7 +184,8 @@ export default function CourseAnalyticsPage() {
     strengths: analytics?.ai_insights ? (isAr ? analytics.ai_insights.strengths_ar : analytics.ai_insights.strengths_en) : mockStats.strengths,
     weaknesses: analytics?.ai_insights ? (isAr ? analytics.ai_insights.weaknesses_ar : analytics.ai_insights.weaknesses_en) : mockStats.weaknesses,
     
-    recommendation: analytics?.ai_insights ? (isAr ? analytics.ai_insights.recommendation_ar : analytics.ai_insights.recommendation_en) : null
+    recommendation: analytics?.ai_insights ? (isAr ? analytics.ai_insights.recommendation_ar : analytics.ai_insights.recommendation_en) : null,
+    aiReport: analytics?.ai_report || null
   };
 
   // Calculate average exam score safely
@@ -417,49 +418,38 @@ export default function CourseAnalyticsPage() {
 
                 {/* AI Performance Evaluation Body */}
                 <div className="space-y-6">
-                  
-                  {/* Strengths */}
-                  <div>
-                    <span className="text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                      <CheckCircle2 size={14} />
-                      {t.strengths}
-                    </span>
-                    <ul className="space-y-2 text-slate-300 text-sm pl-4 list-disc marker:text-emerald-400">
-                      {Array.isArray(stats.strengths) && stats.strengths.map((str, idx) => (
-                        <li key={idx} className="leading-relaxed">
-                          {str}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Weaknesses / Improvements */}
-                  <div>
-                    <span className="text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                      <AlertCircle size={14} />
-                      {t.weaknesses}
-                    </span>
-                    <ul className="space-y-2 text-slate-300 text-sm pl-4 list-disc marker:text-amber-400">
-                      {Array.isArray(stats.weaknesses) && stats.weaknesses.map((weak, idx) => (
-                        <li key={idx} className="leading-relaxed">
-                          {weak}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Recommendation Card inside AI summary */}
-                  <div className="mt-8 p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
-                    <h4 className="text-xs font-black text-purple-400 uppercase tracking-widest mb-1.5">
-                      {isAr ? 'توصية الذكاء الاصطناعي' : 'AI STUDY PATH RECOMMENDATION'}
-                    </h4>
-                    <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                      {stats.recommendation || (isAr 
-                        ? "ممتاز! نوصي بتخصيص ٣٠ دقيقة إضافية أسبوعياً لمراجعة تصنيفات ونواقض الطهارة لضمان الحصول على الدرجة النهائية في الامتحان الختامي."
-                        : "Outstanding! We recommend dedicating an extra 30 minutes weekly to review classification taxonomies of Taharah to guarantee top marks in the final exam.")}
-                    </p>
-                  </div>
-
+                  {isLoadingAnalytics ? (
+                    // Graceful shimmering skeleton loading states
+                    <div className="space-y-4 animate-pulse">
+                      <div className="h-4 bg-white/10 rounded w-3/4"></div>
+                      <div className="h-4 bg-white/10 rounded w-5/6"></div>
+                      <div className="h-4 bg-white/10 rounded w-2/3"></div>
+                      <div className="h-20 bg-white/5 border border-white/10 rounded-2xl mt-6"></div>
+                    </div>
+                  ) : (
+                    // Secure JSX rendering of the returned ai_report
+                    <div className="space-y-4">
+                      <div className="p-5 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl backdrop-blur-md transition-all duration-300">
+                        <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line text-justify font-medium">
+                          {stats.aiReport || (isAr
+                            ? "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
+                            : "The AI report is being prepared, please refresh in a moment.")}
+                        </p>
+                      </div>
+                      
+                      {/* Sub-card with Sparkles or standard action note */}
+                      <div className="p-4 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-2xl backdrop-blur-md">
+                        <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">
+                          {isAr ? 'تحديث التقرير' : 'Report Lifespan'}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                          {isAr 
+                            ? "يتم تحديث هذا التقرير تلقائياً كل ٢٤ ساعة بناءً على درجات ومستوى حضور الطالب." 
+                            : "This report is generated dynamically by Google Gemini and cached for 24 hours."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
               </div>

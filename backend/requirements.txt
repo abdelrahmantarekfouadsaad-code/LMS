@@ -14,3 +14,6 @@ PyJWT==2.12.1
 requests==2.33.1
 gunicorn==23.0.0
 whitenoise==6.9.0
+google-generativeai==0.8.3
+python-dotenv==1.0.1
+

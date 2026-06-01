@@ -1,12 +1,16 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-master-architect-key-change-in-prod')
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
 
 
 INSTALLED_APPS = [

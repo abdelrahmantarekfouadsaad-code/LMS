@@ -564,7 +564,9 @@ class ParentCourseAnalyticsView(APIView):
             }
         ]
         
-        # 8. AI Performance Insights
+        overall_level = "Excellent" if overall_progress >= 90 else ("Very Good" if overall_progress >= 75 else "Good")
+
+        # 8. AI Performance Insights (Static Fallbacks for UI backwards compatibility)
         ai_insights = {
             "strengths_en": [
                 "Demonstrates high critical reasoning in jurisprudence application.",
@@ -588,8 +590,95 @@ class ParentCourseAnalyticsView(APIView):
             "recommendation_ar": "ممتاز! نوصي بتخصيص ٣٠ دقيقة إضافية أسبوعياً لمراجعة تصنيفات ونواقض الطهارة لضمان الحصول على الدرجة النهائية في الامتحان الختامي."
         }
         
-        overall_level = "Excellent" if overall_progress >= 90 else ("Very Good" if overall_progress >= 75 else "Good")
+        # 9. Dynamic AI Insights Caching Engine (Bilingual, Vercel-Safe, and Budget-Preserved)
+        from datetime import timedelta
+        from django.utils import timezone
+        from django.conf import settings
+        import google.generativeai as genai
+        from learning.models import StudentAIInsight
         
+        lang = request.query_params.get('lang', 'en').lower().strip()
+        if lang not in ['ar', 'en']:
+            lang = 'en'
+            
+        insight = StudentAIInsight.objects.filter(student=student_user, course=course).first()
+        now = timezone.now()
+        ai_report = None
+        use_cached = False
+        
+        if insight:
+            if lang == 'ar':
+                if insight.report_ar and insight.last_updated_ar and (now - insight.last_updated_ar) < timedelta(hours=24):
+                    ai_report = insight.report_ar
+                    use_cached = True
+            else:
+                if insight.report_en and insight.last_updated_en and (now - insight.last_updated_en) < timedelta(hours=24):
+                    ai_report = insight.report_en
+                    use_cached = True
+                    
+        if not use_cached:
+            attendance_summary = f"{attended_count} sessions attended out of {expected_count} expected ({attendance_ratio}%)"
+            exams_summary = ", ".join([f"{e['name']}: {e['score']}%" for e in exams_list]) if exams_list else "None"
+            assignments_summary = ", ".join([f"{a['title']}: Grade {a['grade']} ({a['status']})" for a in assignments_list]) if assignments_list else "None"
+            projects_summary = ", ".join([f"{p['name']}: Grade {p['grade']} ({p['status']})" for p in projects_list]) if projects_list else "None"
+            
+            prompt = (
+                f"You are an academic advisor writing a concise performance evaluation report for the parent of a student taking the course '{course.title}'.\n"
+                f"Student performance metrics:\n"
+                f"- Course Title: {course.title}\n"
+                f"- Overall Course Progress: {overall_progress}%\n"
+                f"- Academic Level: {overall_level}\n"
+                f"- Attendance: {attendance_summary}\n"
+                f"- Quizzes/Exams: {exams_summary}\n"
+                f"- Assignments: {assignments_summary}\n"
+                f"- Projects: {projects_summary}\n\n"
+                f"Instructions:\n"
+                f"Write exactly a 3-line academic performance summary. The text MUST be in the {'Arabic' if lang == 'ar' else 'English'} language.\n"
+                f"Line 1: Highlight the student's key academic strengths or achievements based on the data above.\n"
+                f"Line 2: Point out specific areas for improvement, such as incomplete assignments or specific grade improvements.\n"
+                f"Line 3: Provide a highly actionable, helpful study recommendation for the parent to support their child.\n"
+                f"Strict Constraint: Return ONLY these 3 lines of plain text, no introductory or concluding sentences, no markdown formatting (like asterisks or bullet points), and no prefix/label like 'Line 1:'."
+            )
+            
+            try:
+                api_key = getattr(settings, 'GEMINI_API_KEY', '')
+                if not api_key:
+                    raise ValueError("GEMINI_API_KEY is not configured in Django settings.")
+                
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                response = model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=350,
+                        temperature=0.6,
+                    )
+                )
+                if response and response.text:
+                    ai_report = response.text.strip()
+                else:
+                    raise Exception("Received empty response from Gemini API.")
+            except Exception as e:
+                # Vercel Serverless Guardrail: Instant Catch & Save Fallback
+                print(f"--- GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
+                if lang == 'ar':
+                    ai_report = "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
+                else:
+                    ai_report = "The AI report is being prepared, please refresh in a moment."
+            
+            # Save or update cache in database
+            if not insight:
+                insight = StudentAIInsight(student=student_user, course=course)
+            
+            if lang == 'ar':
+                insight.report_ar = ai_report
+                insight.last_updated_ar = now
+            else:
+                insight.report_en = ai_report
+                insight.last_updated_en = now
+            insight.save()
+
         data = {
             "course_title": course.title,
             "overall_progress": overall_progress,
@@ -602,8 +691,10 @@ class ParentCourseAnalyticsView(APIView):
             "exams": exams_list,
             "assignments": assignments_list,
             "projects": projects_list,
-            "ai_insights": ai_insights
+            "ai_insights": ai_insights,
+            "ai_report": ai_report
         }
         
         return Response(data, status=status.HTTP_200_OK)
+
 

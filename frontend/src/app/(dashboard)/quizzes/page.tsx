@@ -61,8 +61,8 @@ export default function QuizzesPage() {
   const { data: resultsData, error: resultsError } = useSWR('/results/', fetcher);
 
   const isLoading = (!quizzesData && !quizzesError) || (!resultsData && !resultsError);
-  const quizzes = quizzesData?.results || quizzesData || [];
-  const results = resultsData?.results || resultsData || [];
+  const quizzes = Array.isArray(quizzesData?.results) ? quizzesData.results : (Array.isArray(quizzesData) ? quizzesData : []);
+  const results = Array.isArray(resultsData?.results) ? resultsData.results : (Array.isArray(resultsData) ? resultsData : []);
 
   // Compute summary stats from live API data
   const avgScore = useMemo(() => {
@@ -173,7 +173,7 @@ export default function QuizzesPage() {
                     <div className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl w-full"></div>
                   </div>
                 ) : quizzes.length > 0 ? (
-                  quizzes.map((quiz: any, idx: number) => {
+                  (quizzes || []).map((quiz: any, idx: number) => {
                     // Phase 3: Calculate attempt count from results
                     const quizResults = Array.isArray(results) ? results.filter((r: any) => r.quiz === quiz.id || r.quiz_id === quiz.id) : [];
                     const attemptCount = quizResults.length;
@@ -246,7 +246,7 @@ export default function QuizzesPage() {
                         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-md w-1/2"></div>
                       </div>
                     ) : results.length > 0 ? (
-                      results.map((result: any, idx: number) => (
+                      (results || []).map((result: any, idx: number) => (
                         <div key={idx} className="p-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
                             <h4 className="font-bold text-slate-800 dark:text-slate-200">{result.quiz?.title || `Quiz ${result.quiz_id}`}</h4>

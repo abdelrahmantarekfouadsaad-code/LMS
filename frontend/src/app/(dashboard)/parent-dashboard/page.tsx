@@ -148,7 +148,7 @@ export default function ParentDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(!enrolled_courses || enrolled_courses.length === 0) ? (
+            {(!enrolled_courses || !Array.isArray(enrolled_courses) || enrolled_courses.length === 0) ? (
               <div className="col-span-full">
                 <EmptyState
                   title="No Active Enrollments"
@@ -157,7 +157,7 @@ export default function ParentDashboard() {
                 />
               </div>
             ) : (
-              enrolled_courses.map((course: any) => (
+              (enrolled_courses || []).map((course: any) => (
                 <div key={course.id} className="group flex flex-col justify-between backdrop-blur-md bg-slate-900/60 p-6 rounded-2xl border border-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/10 h-full relative overflow-hidden">
                   {/* Decorative top border based on course color */}
                   <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${course.color || 'from-emerald-500 to-indigo-500'}`}></div>

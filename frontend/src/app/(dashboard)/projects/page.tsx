@@ -10,9 +10,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import { useLocale } from '@/hooks/useLocale';
 import { DJANGO_API } from '@/lib/api-config';
 
-const fetcher = (url: string, token: string) => fetch(url, {
-  headers: { Authorization: `Bearer ${token}` }
-}).then(res => res.json());
+import api from '@/lib/axios';
 
 export default function ProjectsPage() {
   const { data: session } = useSession();
@@ -22,8 +20,8 @@ export default function ProjectsPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   
   const { data: projects, error, isLoading } = useSWR(
-    session?.accessToken ? [`${DJANGO_API}/projects/`, session.accessToken] : null,
-    ([url, token]) => fetcher(url, token)
+    session?.accessToken ? '/projects/' : null,
+    (url) => api.get(url).then(res => res.data)
   );
 
   const handleSubmitProject = async (e: React.FormEvent) => {
@@ -32,31 +30,20 @@ export default function ProjectsPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${DJANGO_API}/project-submissions/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.accessToken}`
-        },
-        body: JSON.stringify({
-          project: selectedProject.id,
-          drive_link: driveLink
-        })
+      await api.post('/project-submissions/', {
+        project: selectedProject.id,
+        drive_link: driveLink
       });
 
-      if (res.ok) {
-        setSubmitSuccess(true);
-        setTimeout(() => {
-          setSelectedProject(null);
-          setSubmitSuccess(false);
-          setDriveLink('');
-        }, 2000);
-      } else {
-        alert('Failed to submit project.');
-      }
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        setSelectedProject(null);
+        setSubmitSuccess(false);
+        setDriveLink('');
+      }, 2000);
     } catch (err) {
       console.error(err);
-      alert('An error occurred.');
+      alert('Failed to submit project.');
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +67,7 @@ export default function ProjectsPage() {
     );
   }
 
-  const hasProjects = projects && projects.length > 0;
+  const hasProjects = Array.isArray(projects) && projects.length > 0;
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">

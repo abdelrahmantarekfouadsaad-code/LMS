@@ -39,31 +39,39 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // If 401 Unauthorized and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const session = await getSession();
+    // If 401 Unauthorized
+    if (error.response?.status === 401) {
+      if (!originalRequest._retry) {
+        originalRequest._retry = true;
+        const session = await getSession();
 
-      if (session?.refreshToken) {
-        try {
-          // Attempt to refresh the token directly via Django
-          const response = await axios.post(`${DJANGO_API}/auth/token/refresh/`, {
-            refresh: session.refreshToken
-          });
-          
-          if (response.data.access) {
-            // In a complete implementation, you'd need to force NextAuth to update its JWT session here
-            // NextAuth token rotation is complex client-side; usually handled in the `jwt` callback instead.
-            // For now, we update the axios header and retry.
-            originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
-            return api(originalRequest);
+        if (session?.refreshToken) {
+          try {
+            // Attempt to refresh the token directly via Django
+            const response = await axios.post(`${DJANGO_API}/auth/token/refresh/`, {
+              refresh: session.refreshToken
+            });
+            
+            if (response.data.access) {
+              // Retry the original request with the new access token
+              originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
+              return api(originalRequest);
+            }
+          } catch (refreshError) {
+            console.error("Token refresh failed. Forcing logout.");
+            clearSessionAndRedirect();
+            return Promise.reject(error);
           }
-        } catch (refreshError) {
-          console.error("Token refresh failed. Forcing logout.");
+        } else {
+          console.warn("No refresh token found. Forcing logout.");
           clearSessionAndRedirect();
+          return Promise.reject(error);
         }
       } else {
+        // We already retried and still got a 401. Session is permanently invalid.
+        console.error("Permanent 401 unauthorized encountered after retry. Forcing logout.");
         clearSessionAndRedirect();
+        return Promise.reject(error);
       }
     }
     return Promise.reject(error);

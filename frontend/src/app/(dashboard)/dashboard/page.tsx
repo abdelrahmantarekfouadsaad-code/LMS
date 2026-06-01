@@ -75,31 +75,28 @@ export default function DashboardHome() {
   return <StudentDashboard />;
 }
 
+import api from '@/lib/axios';
+
 // Student Dashboard (Phase 1 Execution)
 function StudentDashboard() {
   const { data: session } = useSession();
   const locale = useLocale();
   const t = DICTIONARY[locale as 'en' | 'ar']?.dashboard || DICTIONARY.en.dashboard;
 
-  // Fetch courses from API
-  const fetcher = (url: string) => fetch(url, {
-    headers: { Authorization: `Bearer ${session?.accessToken}` }
-  }).then(res => res.json());
-
   const { data: courses, isLoading } = useSWR(
-    session?.accessToken ? `${DJANGO_API}/courses/` : null,
-    fetcher
+    session?.accessToken ? '/courses/' : null,
+    (url) => api.get(url).then(res => res.data)
   );
 
   const { data: progressData } = useSWR(
-    session?.accessToken ? `${DJANGO_API}/progress/` : null,
-    fetcher
+    session?.accessToken ? '/progress/' : null,
+    (url) => api.get(url).then(res => res.data)
   );
 
-  const enrolledCourses = courses || [];
-  const progressItems = progressData || [];
-  const completedLessons = Array.isArray(progressItems) ? progressItems.filter((p: any) => p.is_completed).length : 0;
-  const totalLessons = Array.isArray(progressItems) ? progressItems.length : 0;
+  const enrolledCourses = Array.isArray(courses) ? courses : [];
+  const progressItems = Array.isArray(progressData) ? progressData : [];
+  const completedLessons = progressItems.filter((p: any) => p.is_completed).length;
+  const totalLessons = progressItems.length;
   const overallCompletion = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   return (

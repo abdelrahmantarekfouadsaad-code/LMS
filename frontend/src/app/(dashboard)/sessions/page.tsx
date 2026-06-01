@@ -54,7 +54,7 @@ export default function SessionsPage() {
   const t = DICTIONARY[locale as 'en' | 'ar']?.sessions || DICTIONARY.en.sessions;
 
   const { data: sessionsData, error, isLoading } = useSWR('/sessions/', fetcher);
-  const sessions = sessionsData?.results || sessionsData || [];
+  const sessions = Array.isArray(sessionsData?.results) ? sessionsData.results : (Array.isArray(sessionsData) ? sessionsData : []);
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
@@ -69,7 +69,7 @@ export default function SessionsPage() {
           <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>
         ) : sessions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sessions.map((session: any, idx: number) => {
+            {(sessions || []).map((session: any, idx: number) => {
               const status = getSessionStatus(session.scheduled_time);
               const config = STATUS_CONFIG[status];
               const canJoin = status === 'live' || status === 'starting';

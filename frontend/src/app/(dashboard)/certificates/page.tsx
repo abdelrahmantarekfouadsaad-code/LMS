@@ -10,9 +10,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import { useLocale } from '@/hooks/useLocale';
 import { DJANGO_API } from '@/lib/api-config';
 
-const fetcher = (url: string, token: string) => fetch(url, {
-  headers: { Authorization: `Bearer ${token}` }
-}).then(res => res.json());
+import api from '@/lib/axios';
 
 export default function CertificatesPage() {
   const { data: session } = useSession();
@@ -20,8 +18,8 @@ export default function CertificatesPage() {
   const isAr = locale === 'ar';
   
   const { data: certificates, error, isLoading } = useSWR(
-    session?.accessToken ? [`${DJANGO_API}/certificates/`, session.accessToken] : null,
-    ([url, token]) => fetcher(url, token)
+    session?.accessToken ? '/certificates/' : null,
+    (url) => api.get(url).then(res => res.data)
   );
 
   if (isLoading) {
@@ -42,7 +40,7 @@ export default function CertificatesPage() {
     );
   }
 
-  const hasCertificates = certificates && certificates.length > 0;
+  const hasCertificates = Array.isArray(certificates) && certificates.length > 0;
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
@@ -78,7 +76,7 @@ export default function CertificatesPage() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {certificates.map((cert: any, idx: number) => (
+            {(certificates || []).map((cert: any, idx: number) => (
               <motion.div 
                 key={cert.id}
                 initial={{ opacity: 0, y: 20 }}

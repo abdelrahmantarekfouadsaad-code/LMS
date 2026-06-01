@@ -74,6 +74,8 @@ function ComingSoonModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => 
   );
 }
 
+import api from '@/lib/axios';
+
 export default function PaymentPortal() {
   const locale = useLocale();
   const isAr = locale === 'ar';
@@ -83,15 +85,11 @@ export default function PaymentPortal() {
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
 
-  const fetcher = (url: string) => fetch(url, {
-    headers: { Authorization: `Bearer ${session?.accessToken}` }
-  }).then(res => res.json());
-
   const { data: methodsData } = useSWR(
-    session?.accessToken ? `${DJANGO_API}/payments/methods/` : null,
-    fetcher
+    session?.accessToken ? '/payments/methods/' : null,
+    (url) => api.get(url).then(res => res.data)
   );
-  const paymentMethods = methodsData?.results || methodsData || [];
+  const paymentMethods = Array.isArray(methodsData?.results) ? methodsData.results : (Array.isArray(methodsData) ? methodsData : []);
   
   useEffect(() => {
     setMounted(true);

@@ -1,3 +1,4 @@
+import os
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -679,15 +680,15 @@ class ParentCourseAnalyticsView(APIView):
                 else:
                     raise Exception("Received empty response from Gemini API.")
             except Exception as e:
-                # Vercel Serverless Guardrail: Instant Catch, Trace & Return Debug Ephemeral Fallback
+                # Vercel Serverless Guardrail: Instant Catch, Trace & Return Ephemeral Fallback
                 import traceback
                 print(f"--- GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
                 print(traceback.format_exc())
                 gemini_failed = True
                 if lang == 'ar':
-                    ai_report = f"جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل. (Debug: {str(e)})"
+                    ai_report = "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
                 else:
-                    ai_report = f"The AI report is being prepared, please refresh in a moment. (Debug: {str(e)})"
+                    ai_report = "The AI report is being prepared, please refresh in a moment."
             
             # Save or update cache in database ONLY if Gemini succeeded (Fix the Fallback Cache Bug)
             if not gemini_failed:

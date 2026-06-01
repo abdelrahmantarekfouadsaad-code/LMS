@@ -1,5 +1,55 @@
+import uuid
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from .models import User, StudentProfile, TeacherProfile, StudyGroup
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['session_version'] = str(user.session_version)
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        self.user.session_version = uuid.uuid4()
+        self.user.save(update_fields=['session_version'])
+        
+        refresh = self.get_token(self.user)
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+        
+        return data
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from rest_framework.exceptions import AuthenticationFailed
+        
+        try:
+            refresh_token = RefreshToken(attrs['refresh'])
+            session_version = refresh_token.get('session_version')
+            user_id = refresh_token.get('user_id')
+        except Exception:
+            raise AuthenticationFailed('Invalid refresh token.')
+            
+        if not session_version or not user_id:
+            raise AuthenticationFailed('Invalid token claims.')
+            
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise AuthenticationFailed('User not found.')
+            
+        if str(user.session_version) != str(session_version):
+            raise AuthenticationFailed('Session expired. Logged in from another device.')
+            
+        data = super().validate(attrs)
+        return data
+
 
 
 class UserSerializer(serializers.ModelSerializer):

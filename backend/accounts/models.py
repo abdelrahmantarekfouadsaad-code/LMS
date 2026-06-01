@@ -65,6 +65,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    session_version = models.UUIDField(default=uuid.uuid4)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['full_name']

@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 import json
+import uuid
 import urllib.request
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -151,8 +152,13 @@ class GoogleLoginView(APIView):
                     }
                 )
 
-                # Generate simplejwt tokens
+                # Update session version to invalidate older logins
+                user.session_version = uuid.uuid4()
+                user.save(update_fields=['session_version'])
+
+                # Generate simplejwt tokens with session version claim
                 refresh = RefreshToken.for_user(user)
+                refresh['session_version'] = str(user.session_version)
 
                 return Response({
                     'access': str(refresh.access_token),

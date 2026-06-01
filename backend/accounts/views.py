@@ -596,7 +596,7 @@ class ParentCourseAnalyticsView(APIView):
         from datetime import timedelta
         from django.utils import timezone
         from django.conf import settings
-        import google.generativeai as genai
+        import requests
         from learning.models import StudentAIInsight
         
         lang = request.query_params.get('lang', 'en').lower().strip()
@@ -616,6 +616,7 @@ class ParentCourseAnalyticsView(APIView):
         now = timezone.now()
         ai_report = None
         use_cached = False
+        debug_error = None
         
         if insight:
             # First check if the signature matches. If it matches, we ALWAYS bypass 24h constraint!
@@ -665,26 +666,35 @@ class ParentCourseAnalyticsView(APIView):
                 if not api_key:
                     raise ValueError("GEMINI_API_KEY is not set in environment (os.environ) or settings.")
                 
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Direct REST API POST call bypassing complex gRPC SDK
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                headers = {"Content-Type": "application/json"}
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "maxOutputTokens": 350,
+                        "temperature": 0.6
+                    }
+                }
                 
-                response = model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=350,
-                        temperature=0.6,
-                    )
-                )
-                if response and response.text:
-                    ai_report = response.text.strip()
-                else:
-                    raise Exception("Received empty response from Gemini API.")
+                # CRITICAL: timeout=8 to resolve before Vercel 10s serverless limit
+                response = requests.post(url, json=payload, headers=headers, timeout=8)
+                response.raise_for_status()
+                res_data = response.json()
+                
+                # Extract text securely from candidates
+                try:
+                    ai_report = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                except (KeyError, IndexError, TypeError) as parse_err:
+                    raise Exception(f"Failed to parse REST response structure: {str(parse_err)}. Raw: {response.text[:200]}")
+                
             except Exception as e:
                 # Vercel Serverless Guardrail: Instant Catch, Trace & Return Ephemeral Fallback
                 import traceback
-                print(f"--- GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
+                print(f"--- REST GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
                 print(traceback.format_exc())
                 gemini_failed = True
+                debug_error = str(e)
                 if lang == 'ar':
                     ai_report = "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
                 else:
@@ -717,7 +727,8 @@ class ParentCourseAnalyticsView(APIView):
             "assignments": assignments_list,
             "projects": projects_list,
             "ai_insights": ai_insights,
-            "ai_report": ai_report
+            "ai_report": ai_report,
+            "debug_error": debug_error
         }
         
         return Response(data, status=status.HTTP_200_OK)

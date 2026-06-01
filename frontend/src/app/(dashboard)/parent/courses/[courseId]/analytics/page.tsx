@@ -185,8 +185,16 @@ export default function CourseAnalyticsPage() {
     weaknesses: analytics?.ai_insights ? (isAr ? analytics.ai_insights.weaknesses_ar : analytics.ai_insights.weaknesses_en) : mockStats.weaknesses,
     
     recommendation: analytics?.ai_insights ? (isAr ? analytics.ai_insights.recommendation_ar : analytics.ai_insights.recommendation_en) : null,
-    aiReport: analytics?.ai_report || null
+    aiReport: analytics?.ai_report || null,
+    debugError: analytics?.debug_error || null
   };
+
+  // Silent Developer Debugging log in browser console
+  useEffect(() => {
+    if (stats?.debugError) {
+      console.error("AI Generation Error:", stats.debugError);
+    }
+  }, [stats?.debugError]);
 
   // Calculate average exam score safely
   const averageExamScore = Array.isArray(stats.exams) && stats.exams.length > 0 

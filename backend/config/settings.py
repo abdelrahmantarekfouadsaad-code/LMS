@@ -146,7 +146,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Production settings under Vercel Reverse Proxy
-if not DEBUG:
+if os.environ.get('VERCEL'):
     FORCE_SCRIPT_NAME = '/_/backend'
     STATIC_URL = '/_/backend/static/'
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

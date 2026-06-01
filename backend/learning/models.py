@@ -150,10 +150,12 @@ class StudentAIInsight(models.Model):
     report_en = models.TextField(blank=True, null=True)
     last_updated_ar = models.DateTimeField(blank=True, null=True)
     last_updated_en = models.DateTimeField(blank=True, null=True)
+    data_signature = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         unique_together = ('student', 'course')
 
     def __str__(self):
         return f"AI Insight for {self.student.full_name} - {self.course.title}"
+
 

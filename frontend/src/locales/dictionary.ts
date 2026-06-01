@@ -474,7 +474,7 @@ export const DICTIONARY = {
       notSubmitted: "لم يتم التقديم",
       projects: "مشاريع الدورة",
       projectGrade: "درجة المشروع",
-      aiSummary: "AI Performance Summary",
+      aiSummary: "ملخص أداء الذكاء الاصطناعي",
       aiArabicTitle: "ملخص الذكاء الاصطناعي",
       strengths: "نقاط القوة",
       weaknesses: "نقاط التطوير",

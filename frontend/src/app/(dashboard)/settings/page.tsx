@@ -37,8 +37,13 @@ export default function SettingsPage() {
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
-    // Initialize locale from document if it was previously set
-    setLocale(document.documentElement.lang === 'ar' ? 'ar' : 'en');
+    // Initialize locale from NEXT_LOCALE cookie first
+    const cookieLocale = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('NEXT_LOCALE='))
+      ?.split('=')[1];
+    const initialLocale = cookieLocale || (document.documentElement.lang === 'ar' ? 'ar' : 'en');
+    setLocale(initialLocale);
   }, []);
 
   useEffect(() => {
@@ -178,6 +183,12 @@ export default function SettingsPage() {
     } finally {
       setIsSavingPassword(false);
     }
+  };
+
+  const handleLocaleChange = (newLocale: string) => {
+    setLocale(newLocale);
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+    router.refresh();
   };
 
   return (
@@ -376,7 +387,7 @@ export default function SettingsPage() {
                   <div className="relative">
                     <select
                       value={locale}
-                      onChange={(e) => setLocale(e.target.value)}
+                      onChange={(e) => handleLocaleChange(e.target.value)}
                       className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 text-slate-900 dark:text-white text-sm appearance-none focus:outline-none focus:border-primary transition-colors cursor-pointer min-w-[120px]"
                     >
                       <option value="en">English</option>

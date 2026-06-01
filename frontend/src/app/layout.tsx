@@ -3,8 +3,7 @@ import type { Metadata } from 'next'
 import { Cairo, Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import AuthProvider from '@/providers/AuthProvider'
-// Assuming next-intl setup will wrap this layout or inner components
-// import { NextIntlClientProvider } from 'next-intl';
+import { cookies } from 'next/headers'
 
 const cairo = Cairo({ 
   subsets: ['arabic', 'latin'], 
@@ -30,17 +29,19 @@ export default function RootLayout({
   children: React.ReactNode,
   params: { locale: string }
 }) {
-  // Dynamic RTL logic. In a real next-intl app, locale comes from params.
-  // Defaulting to 'en' LTR if not specified dynamically yet.
-  const isArabic = locale === 'ar';
+  // Read persistent cookie from server side to prevent page flicker on refresh
+  const cookieStore = cookies();
+  const activeLocale = cookieStore.get('NEXT_LOCALE')?.value || locale || 'en';
+  const isArabic = activeLocale === 'ar';
   const direction = isArabic ? 'rtl' : 'ltr';
   const mainFont = isArabic ? cairo.variable : inter.variable;
 
   return (
-    <html lang={locale || 'en'} dir={direction} suppressHydrationWarning>
+    <html lang={activeLocale} dir={direction} suppressHydrationWarning>
       <body className={`${mainFont} font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors duration-300`}>
         {/* ThemeProvider (next-themes) for dark/light switching */}
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+
           <AuthProvider>
             {/* The main glass header would go here or in a layout wrapper */}
             <main className="flex-grow">

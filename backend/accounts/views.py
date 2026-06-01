@@ -591,6 +591,7 @@ class ParentCourseAnalyticsView(APIView):
         }
         
         # 9. Dynamic AI Insights Caching Engine (Bilingual, Vercel-Safe, and Budget-Preserved)
+        import hashlib
         from datetime import timedelta
         from django.utils import timezone
         from django.conf import settings
@@ -601,27 +602,43 @@ class ParentCourseAnalyticsView(APIView):
         if lang not in ['ar', 'en']:
             lang = 'en'
             
+        # Compile student stats string for MD5 hash check (Smart Data Signature)
+        attendance_summary = f"{attended_count} sessions attended out of {expected_count} expected ({attendance_ratio}%)"
+        exams_summary = ", ".join([f"{e['name']}: {e['score']}%" for e in exams_list]) if exams_list else "None"
+        assignments_summary = ", ".join([f"{a['title']}: Grade {a['grade']} ({a['status']})" for a in assignments_list]) if assignments_list else "None"
+        projects_summary = ", ".join([f"{p['name']}: Grade {p['grade']} ({p['status']})" for p in projects_list]) if projects_list else "None"
+        
+        metrics_string = f"Progress: {overall_progress}, Attendance: {attendance_summary}, Exams: {exams_summary}, Assignments: {assignments_summary}, Projects: {projects_summary}"
+        current_hash = hashlib.md5(metrics_string.encode('utf-8')).hexdigest()
+        
         insight = StudentAIInsight.objects.filter(student=student_user, course=course).first()
         now = timezone.now()
         ai_report = None
         use_cached = False
         
         if insight:
-            if lang == 'ar':
-                if insight.report_ar and insight.last_updated_ar and (now - insight.last_updated_ar) < timedelta(hours=24):
+            # First check if the signature matches. If it matches, we ALWAYS bypass 24h constraint!
+            if insight.data_signature == current_hash:
+                if lang == 'ar' and insight.report_ar:
                     ai_report = insight.report_ar
                     use_cached = True
-            else:
-                if insight.report_en and insight.last_updated_en and (now - insight.last_updated_en) < timedelta(hours=24):
+                elif lang == 'en' and insight.report_en:
                     ai_report = insight.report_en
                     use_cached = True
-                    
-        if not use_cached:
-            attendance_summary = f"{attended_count} sessions attended out of {expected_count} expected ({attendance_ratio}%)"
-            exams_summary = ", ".join([f"{e['name']}: {e['score']}%" for e in exams_list]) if exams_list else "None"
-            assignments_summary = ", ".join([f"{a['title']}: Grade {a['grade']} ({a['status']})" for a in assignments_list]) if assignments_list else "None"
-            projects_summary = ", ".join([f"{p['name']}: Grade {p['grade']} ({p['status']})" for p in projects_list]) if projects_list else "None"
             
+            # If signature differs or the language-specific cached report doesn't exist yet,
+            # we only use the cache if 24 hours have NOT passed since the last update (to prevent spam).
+            if not use_cached:
+                if lang == 'ar' and insight.report_ar:
+                    if insight.last_updated_ar and (now - insight.last_updated_ar) < timedelta(hours=24):
+                        ai_report = insight.report_ar
+                        use_cached = True
+                elif lang == 'en' and insight.report_en:
+                    if insight.last_updated_en and (now - insight.last_updated_en) < timedelta(hours=24):
+                        ai_report = insight.report_en
+                        use_cached = True
+                        
+        if not use_cached:
             prompt = (
                 f"You are an academic advisor writing a concise performance evaluation report for the parent of a student taking the course '{course.title}'.\n"
                 f"Student performance metrics:\n"
@@ -640,6 +657,7 @@ class ParentCourseAnalyticsView(APIView):
                 f"Strict Constraint: Return ONLY these 3 lines of plain text, no introductory or concluding sentences, no markdown formatting (like asterisks or bullet points), and no prefix/label like 'Line 1:'."
             )
             
+            gemini_failed = False
             try:
                 api_key = getattr(settings, 'GEMINI_API_KEY', '')
                 if not api_key:
@@ -660,24 +678,27 @@ class ParentCourseAnalyticsView(APIView):
                 else:
                     raise Exception("Received empty response from Gemini API.")
             except Exception as e:
-                # Vercel Serverless Guardrail: Instant Catch & Save Fallback
+                # Vercel Serverless Guardrail: Instant Catch & Return Ephemeral Fallback
                 print(f"--- GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
+                gemini_failed = True
                 if lang == 'ar':
                     ai_report = "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
                 else:
                     ai_report = "The AI report is being prepared, please refresh in a moment."
             
-            # Save or update cache in database
-            if not insight:
-                insight = StudentAIInsight(student=student_user, course=course)
-            
-            if lang == 'ar':
-                insight.report_ar = ai_report
-                insight.last_updated_ar = now
-            else:
-                insight.report_en = ai_report
-                insight.last_updated_en = now
-            insight.save()
+            # Save or update cache in database ONLY if Gemini succeeded (Fix the Fallback Cache Bug)
+            if not gemini_failed:
+                if not insight:
+                    insight = StudentAIInsight(student=student_user, course=course)
+                
+                insight.data_signature = current_hash
+                if lang == 'ar':
+                    insight.report_ar = ai_report
+                    insight.last_updated_ar = now
+                else:
+                    insight.report_en = ai_report
+                    insight.last_updated_en = now
+                insight.save()
 
         data = {
             "course_title": course.title,

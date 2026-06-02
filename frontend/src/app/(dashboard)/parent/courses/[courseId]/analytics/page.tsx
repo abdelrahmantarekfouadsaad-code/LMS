@@ -45,10 +45,10 @@ export default function CourseAnalyticsPage() {
     courseId ? `/parents/courses/${courseId}/analytics/?lang=${locale}` : null,
     apiFetcher,
     {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      dedupingInterval: 0,
-      errorRetryCount: 2,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 10000,
+      errorRetryCount: 1,
       keepPreviousData: false,
     }
   );
@@ -223,12 +223,13 @@ export default function CourseAnalyticsPage() {
     typeof parsedReport === 'object' &&
     parsedReport.recommendation, [parsedReport]);
 
-  // Silent Developer Debugging log in browser console
+  // Silent Developer Debugging log in browser console (fires once on mount only)
   useEffect(() => {
     if (stats?.debugError) {
-      console.error("AI Generation Error:", stats.debugError);
+      console.warn("AI Generation Notice:", stats.debugError);
     }
-  }, [stats?.debugError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Calculate average exam score safely
   const averageExamScore = Array.isArray(stats.exams) && stats.exams.length > 0 

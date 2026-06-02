@@ -708,38 +708,57 @@ class ParentCourseAnalyticsView(APIView):
                     raise Exception(f"Failed to parse REST response structure: {str(parse_err)}. Raw: {response.text[:200]}")
                 
             except Exception as e:
-                # Vercel Serverless Guardrail: Instant Catch, Trace & Return Ephemeral Fallback
-                import traceback
-                print(f"--- REST GEMINI API EXCEPTION CAUGHT: {str(e)} ---")
-                print(traceback.format_exc())
+                # CIRCUIT BREAKER: Log once, don't spam full traceback
+                print(f"--- GEMINI CIRCUIT BREAKER TRIPPED: {type(e).__name__}: {str(e)[:150]} ---")
                 gemini_failed = True
                 debug_error = str(e)
-                fallback_json = '{"strengths": ["جاري تحليل الأداء الأكاديمي التفصيلي."], "weaknesses": ["جاري مراجعة نقاط التحسين."], "recommendation": "التقرير قيد التجهيز، يرجى تحديث الصفحة بعد قليل."}'
-                ai_report = fallback_json
+                # Build a language-appropriate fallback with all required keys
+                if lang == 'ar':
+                    fallback_obj = {
+                        "strengths": ["جاري تحليل الأداء الأكاديمي التفصيلي."],
+                        "weaknesses": ["جاري مراجعة نقاط التحسين."],
+                        "recommendation": "التقرير قيد التجهيز، يرجى تحديث الصفحة بعد عشر دقائق."
+                    }
+                else:
+                    fallback_obj = {
+                        "strengths": ["Academic performance analysis is being prepared."],
+                        "weaknesses": ["Areas for improvement are being reviewed."],
+                        "recommendation": "The report is being generated. Please refresh the page in 10 minutes."
+                    }
+                ai_report = json.dumps(fallback_obj, ensure_ascii=False)
             
-            # Save or update cache in database ONLY if Gemini succeeded (Fix the Fallback Cache Bug)
+            # LAYER 2 — WRITE GUARD + CIRCUIT BREAKER (unified save block)
+            # On SUCCESS: validate Gemini response, save with current timestamp (24h TTL)
+            # On FAILURE: save fallback with near-expired timestamp (10-min cooldown)
+            save_to_db = False
+            save_timestamp = now  # Default: current time (24h cache for success)
+            
             if not gemini_failed:
-                # LAYER 2 — WRITE GUARD: Validate Gemini response is well-formed JSON before caching
                 try:
                     validated_report = json.loads(ai_report)
                     if not isinstance(validated_report, dict) or 'strengths' not in validated_report or 'recommendation' not in validated_report:
                         raise ValueError("Gemini response missing required keys")
+                    save_to_db = True
                 except (json.JSONDecodeError, ValueError, TypeError) as e:
-                    print(f"--- WRITE GUARD: Refusing to cache malformed Gemini response: {str(e)}. Raw: {str(ai_report)[:200]} ---")
-                    ai_report = None  # Will trigger frontend fallback gracefully
+                    print(f"--- WRITE GUARD: Refusing to cache malformed Gemini response: {str(e)} ---")
+                    ai_report = None
+            else:
+                # Gemini failed — cache fallback with 10-minute cooldown (timestamp trick)
+                save_to_db = True
+                save_timestamp = now - timedelta(hours=23, minutes=50)
+            
+            if save_to_db and ai_report:
+                if not insight:
+                    insight = StudentAIInsight(student=student_user, course=course)
+                
+                insight.data_signature = current_hash
+                if lang == 'ar':
+                    insight.report_ar = ai_report
+                    insight.last_updated_ar = save_timestamp
                 else:
-                    # Only save to DB if validation passed
-                    if not insight:
-                        insight = StudentAIInsight(student=student_user, course=course)
-                    
-                    insight.data_signature = current_hash
-                    if lang == 'ar':
-                        insight.report_ar = ai_report
-                        insight.last_updated_ar = now
-                    else:
-                        insight.report_en = ai_report
-                        insight.last_updated_en = now
-                    insight.save()
+                    insight.report_en = ai_report
+                    insight.last_updated_en = save_timestamp
+                insight.save()
 
         data = {
             "course_title": course.title,

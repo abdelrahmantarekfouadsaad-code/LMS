@@ -190,21 +190,18 @@ export default function CourseAnalyticsPage() {
   };
 
   // Safely parse the JSON aiReport
-  let parsedReport: { strengths: string[]; weaknesses: string[]; recommendation: string } | null = null;
-  let parseFailed = false;
-
-  if (stats.aiReport) {
-    try {
-      const parsed = JSON.parse(stats.aiReport);
-      if (parsed && Array.isArray(parsed.strengths) && Array.isArray(parsed.weaknesses) && typeof parsed.recommendation === 'string') {
-        parsedReport = parsed;
-      }
-    } catch (e) {
-      parseFailed = true;
-    }
+  let parsedReport = null;
+  try {
+    parsedReport = typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
+  } catch(e) {
+    console.error("JSON Parse Error", e);
   }
 
-  const isValidReport = parsedReport !== null;
+  const isValidReport = parsedReport &&
+    typeof parsedReport === 'object' &&
+    Array.isArray(parsedReport.strengths) &&
+    Array.isArray(parsedReport.weaknesses) &&
+    parsedReport.recommendation;
 
   // Silent Developer Debugging log in browser console
   useEffect(() => {
@@ -460,9 +457,9 @@ export default function CourseAnalyticsPage() {
                           {t.strengths}
                         </span>
                         <ul className="space-y-2 text-slate-300 text-sm">
-                          {parsedReport.strengths.map((str, idx) => (
+                          {parsedReport.strengths.map((str: string, idx: number) => (
                             <li key={idx} className="flex items-start gap-2 leading-relaxed">
-                              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                              <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-2" />
                               <span>{str}</span>
                             </li>
                           ))}
@@ -476,9 +473,9 @@ export default function CourseAnalyticsPage() {
                           {t.weaknesses}
                         </span>
                         <ul className="space-y-2 text-slate-300 text-sm">
-                          {parsedReport.weaknesses.map((weak, idx) => (
+                          {parsedReport.weaknesses.map((weak: string, idx: number) => (
                             <li key={idx} className="flex items-start gap-2 leading-relaxed">
-                              <AlertCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                              <AlertCircle className="w-5 h-5 text-yellow-500 mr-2" />
                               <span>{weak}</span>
                             </li>
                           ))}

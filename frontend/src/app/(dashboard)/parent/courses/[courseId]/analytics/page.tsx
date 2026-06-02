@@ -43,7 +43,14 @@ export default function CourseAnalyticsPage() {
   // Fetch real analytics details
   const { data: analytics, error: analyticsError, isLoading: isLoadingAnalytics } = useSWR(
     courseId ? `/parents/courses/${courseId}/analytics/?lang=${locale}` : null,
-    apiFetcher
+    apiFetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0,
+      errorRetryCount: 2,
+      keepPreviousData: false,
+    }
   );
 
   // Dynamic seed-based mock stats to ensure premium, deterministic, custom analytics per course!
@@ -195,6 +202,17 @@ export default function CourseAnalyticsPage() {
       return typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
     } catch {
       return null;
+    }
+  }, [stats.aiReport]);
+
+  // True when aiReport exists as a string but failed JSON parsing — corruption signal
+  const isCorruptedReport = useMemo(() => {
+    if (typeof stats.aiReport !== 'string' || !stats.aiReport) return false;
+    try {
+      JSON.parse(stats.aiReport);
+      return false;
+    } catch {
+      return true;
     }
   }, [stats.aiReport]);
 
@@ -508,14 +526,31 @@ export default function CourseAnalyticsPage() {
                       </div>
                     </div>
                   ) : (
-                    // Secure JSX rendering of the returned ai_report (fallback to standard text)
+                    // LAYER 3 — FRONTEND GUARD: NEVER render raw ai_report string
                     <div className="space-y-4">
                       <div className="p-5 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl backdrop-blur-md transition-all duration-300">
-                        <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line text-justify font-medium">
-                          {stats.aiReport || (isAr
-                            ? "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
-                            : "The AI report is being prepared, please refresh in a moment.")}
-                        </p>
+                        {isCorruptedReport ? (
+                          <div className="flex flex-col items-center text-center gap-3 py-4">
+                            <AlertCircle className="w-8 h-8 text-amber-400 animate-pulse" />
+                            <p className="text-sm text-amber-300 font-semibold">
+                              {isAr
+                                ? "حدث خطأ أثناء تحليل التقرير. جاري إعادة التوليد تلقائياً..."
+                                : "Report data was corrupted. Auto-regenerating..."}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {isAr ? "يرجى تحديث الصفحة بعد لحظات." : "Please refresh the page in a few moments."}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center text-center gap-3 py-4">
+                            <Sparkles className="w-8 h-8 text-purple-400 animate-pulse" />
+                            <p className="text-sm text-slate-300 font-medium">
+                              {isAr
+                                ? "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
+                                : "The AI report is being prepared, please refresh in a moment."}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Sub-card with Sparkles or standard action note */}

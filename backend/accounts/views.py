@@ -627,17 +627,35 @@ class ParentCourseAnalyticsView(APIView):
                 cached_report = insight.report_en
 
             if cached_report:
-                is_under_24h = last_updated and (now - last_updated) < timedelta(hours=24)
-                
-                # Caching Rules:
-                # a) Under 24h -> RETURN CACHE.
-                if is_under_24h:
-                    ai_report = cached_report
-                    use_cached = True
-                # b) Over 24h AND current_hash == cache.data_signature -> RETURN CACHE.
-                elif insight.data_signature == current_hash:
-                    ai_report = cached_report
-                    use_cached = True
+                # LAYER 1 — READ GUARD: Validate cached report is parseable JSON with required keys
+                try:
+                    parsed = json.loads(cached_report)
+                    if not isinstance(parsed, dict) or 'strengths' not in parsed or 'recommendation' not in parsed:
+                        raise ValueError("Cached report missing required keys")
+                except (json.JSONDecodeError, ValueError) as e:
+                    print(f"--- SELF-HEAL: Corrupted AI cache detected for student={student_user.id}, course={course.id}: {str(e)} ---")
+                    # Nuke the corrupted field, not the entire row (preserve the other language)
+                    if lang == 'ar':
+                        insight.report_ar = None
+                        insight.last_updated_ar = None
+                    else:
+                        insight.report_en = None
+                        insight.last_updated_en = None
+                    insight.save()
+                    cached_report = None  # Force fresh Gemini call below
+
+                if cached_report:
+                    is_under_24h = last_updated and (now - last_updated) < timedelta(hours=24)
+                    
+                    # Caching Rules:
+                    # a) Under 24h AND valid -> RETURN CACHE.
+                    if is_under_24h:
+                        ai_report = cached_report
+                        use_cached = True
+                    # b) Over 24h AND data unchanged -> RETURN CACHE.
+                    elif insight.data_signature == current_hash:
+                        ai_report = cached_report
+                        use_cached = True
                         
         if not use_cached:
             prompt = (
@@ -701,17 +719,27 @@ class ParentCourseAnalyticsView(APIView):
             
             # Save or update cache in database ONLY if Gemini succeeded (Fix the Fallback Cache Bug)
             if not gemini_failed:
-                if not insight:
-                    insight = StudentAIInsight(student=student_user, course=course)
-                
-                insight.data_signature = current_hash
-                if lang == 'ar':
-                    insight.report_ar = ai_report
-                    insight.last_updated_ar = now
+                # LAYER 2 — WRITE GUARD: Validate Gemini response is well-formed JSON before caching
+                try:
+                    validated_report = json.loads(ai_report)
+                    if not isinstance(validated_report, dict) or 'strengths' not in validated_report or 'recommendation' not in validated_report:
+                        raise ValueError("Gemini response missing required keys")
+                except (json.JSONDecodeError, ValueError, TypeError) as e:
+                    print(f"--- WRITE GUARD: Refusing to cache malformed Gemini response: {str(e)}. Raw: {str(ai_report)[:200]} ---")
+                    ai_report = None  # Will trigger frontend fallback gracefully
                 else:
-                    insight.report_en = ai_report
-                    insight.last_updated_en = now
-                insight.save()
+                    # Only save to DB if validation passed
+                    if not insight:
+                        insight = StudentAIInsight(student=student_user, course=course)
+                    
+                    insight.data_signature = current_hash
+                    if lang == 'ar':
+                        insight.report_ar = ai_report
+                        insight.last_updated_ar = now
+                    else:
+                        insight.report_en = ai_report
+                        insight.last_updated_en = now
+                    insight.save()
 
         data = {
             "course_title": course.title,

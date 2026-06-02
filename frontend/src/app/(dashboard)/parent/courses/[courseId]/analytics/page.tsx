@@ -190,17 +190,18 @@ export default function CourseAnalyticsPage() {
   };
 
   // Safely parse the JSON aiReport
-  let parsedReport = null;
+  let parsedReport: any = null;
   try {
     parsedReport = typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
   } catch(e) {
     console.error("JSON Parse Error", e);
   }
 
+  const strengths = Array.isArray(parsedReport?.strengths) ? parsedReport.strengths : [];
+  const weaknesses = Array.isArray(parsedReport?.weaknesses) ? parsedReport.weaknesses : [];
+
   const isValidReport = parsedReport &&
     typeof parsedReport === 'object' &&
-    Array.isArray(parsedReport.strengths) &&
-    Array.isArray(parsedReport.weaknesses) &&
     parsedReport.recommendation;
 
   // Silent Developer Debugging log in browser console
@@ -457,7 +458,7 @@ export default function CourseAnalyticsPage() {
                           {t.strengths}
                         </span>
                         <ul className="space-y-2 text-slate-300 text-sm">
-                          {parsedReport.strengths.map((str: string, idx: number) => (
+                          {strengths.map((str: string, idx: number) => (
                             <li key={idx} className="flex items-start gap-2 leading-relaxed">
                               <CheckCircle2 className="w-5 h-5 text-emerald-500 mr-2" />
                               <span>{str}</span>
@@ -473,7 +474,7 @@ export default function CourseAnalyticsPage() {
                           {t.weaknesses}
                         </span>
                         <ul className="space-y-2 text-slate-300 text-sm">
-                          {parsedReport.weaknesses.map((weak: string, idx: number) => (
+                          {weaknesses.map((weak: string, idx: number) => (
                             <li key={idx} className="flex items-start gap-2 leading-relaxed">
                               <AlertCircle className="w-5 h-5 text-yellow-500 mr-2" />
                               <span>{weak}</span>

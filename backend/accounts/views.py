@@ -678,8 +678,8 @@ class ParentCourseAnalyticsView(APIView):
                     }
                 }
                 
-                # CRITICAL: timeout=8 to resolve before Vercel 10s serverless limit
-                response = requests.post(url, json=payload, headers=headers, timeout=8)
+                # CRITICAL: timeout=9 to resolve before Vercel 10s serverless limit
+                response = requests.post(url, json=payload, headers=headers, timeout=9)
                 response.raise_for_status()
                 res_data = response.json()
                 
@@ -696,10 +696,8 @@ class ParentCourseAnalyticsView(APIView):
                 print(traceback.format_exc())
                 gemini_failed = True
                 debug_error = str(e)
-                if lang == 'ar':
-                    ai_report = "جاري تجهيز تقرير الذكاء الاصطناعي، يرجى التحديث بعد قليل."
-                else:
-                    ai_report = "The AI report is being prepared, please refresh in a moment."
+                fallback_json = '{"strengths": ["جاري تحليل الأداء الأكاديمي التفصيلي."], "weaknesses": ["جاري مراجعة نقاط التحسين."], "recommendation": "التقرير قيد التجهيز، يرجى تحديث الصفحة بعد قليل."}'
+                ai_report = fallback_json
             
             # Save or update cache in database ONLY if Gemini succeeded (Fix the Fallback Cache Bug)
             if not gemini_failed:

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import { 
@@ -190,19 +190,20 @@ export default function CourseAnalyticsPage() {
   };
 
   // Safely parse the JSON aiReport
-  let parsedReport: any = null;
-  try {
-    parsedReport = typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
-  } catch(e) {
-    console.error("JSON Parse Error", e);
-  }
+  const parsedReport = useMemo(() => {
+    try {
+      return typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
+    } catch {
+      return null;
+    }
+  }, [stats.aiReport]);
 
-  const strengths = Array.isArray(parsedReport?.strengths) ? parsedReport.strengths : [];
-  const weaknesses = Array.isArray(parsedReport?.weaknesses) ? parsedReport.weaknesses : [];
+  const strengths = useMemo(() => Array.isArray(parsedReport?.strengths) ? parsedReport.strengths : [], [parsedReport]);
+  const weaknesses = useMemo(() => Array.isArray(parsedReport?.weaknesses) ? parsedReport.weaknesses : [], [parsedReport]);
 
-  const isValidReport = parsedReport &&
+  const isValidReport = useMemo(() => parsedReport &&
     typeof parsedReport === 'object' &&
-    parsedReport.recommendation;
+    parsedReport.recommendation, [parsedReport]);
 
   // Silent Developer Debugging log in browser console
   useEffect(() => {

@@ -444,13 +444,6 @@ class ParentCourseAnalyticsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, course_id):
-        from learning.models import StudentAIInsight
-        try:
-            purged_count = StudentAIInsight.objects.all().delete()
-            print(f"--- SURGICAL PURGE OF STUDENTAIINSIGHT: {purged_count} ---")
-        except Exception as purge_err:
-            print(f"--- SURGICAL PURGE ERROR: {str(purge_err)} ---")
-
         if request.user.role != 'PARENT':
             return Response(
                 {'error': 'Only users with the PARENT role can access this page.'}, 

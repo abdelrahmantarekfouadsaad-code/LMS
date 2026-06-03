@@ -618,6 +618,10 @@ class ParentCourseAnalyticsView(APIView):
         use_cached = False
         debug_error = None
         
+        if request.query_params.get('force_refresh') == 'true' and insight:
+            insight.delete()
+            insight = None
+        
         if insight:
             if lang == 'ar':
                 last_updated = insight.last_updated_ar
@@ -712,10 +716,11 @@ class ParentCourseAnalyticsView(APIView):
             except requests.exceptions.HTTPError as e:
                 # Log the actual response body from Google if an HTTPError occurs
                 print(f"--- GEMINI CIRCUIT BREAKER TRIPPED: HTTPError: {str(e)} ---")
-                if e.response is not None:
-                    print(f"Response text: {e.response.text}")
                 gemini_failed = True
                 debug_error = str(e)
+                if e.response is not None:
+                    print(f"Response text: {e.response.text}")
+                    debug_error += f" | Raw Response: {e.response.text}"
                 # Build a language-appropriate fallback with all required keys
                 if lang == 'ar':
                     fallback_obj = {

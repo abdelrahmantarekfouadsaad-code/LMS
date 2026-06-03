@@ -40,17 +40,19 @@ export default function CourseAnalyticsPage() {
     apiFetcher
   );
 
+  const swrConfig = useMemo(() => ({
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 10000,
+    errorRetryCount: 1,
+    keepPreviousData: true,
+  }), []);
+
   // Fetch real analytics details
   const { data: analytics, error: analyticsError, isLoading: isLoadingAnalytics } = useSWR(
     courseId ? `/parents/courses/${courseId}/analytics/?lang=${locale}` : null,
     apiFetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 10000,
-      errorRetryCount: 1,
-      keepPreviousData: false,
-    }
+    swrConfig
   );
 
   // Dynamic seed-based mock stats to ensure premium, deterministic, custom analytics per course!

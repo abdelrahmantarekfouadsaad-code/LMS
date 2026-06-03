@@ -23,6 +23,7 @@ import { fetcher as apiFetcher } from '@/lib/api';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import { motion } from 'framer-motion';
+import AIAnalysisHelper from '@/components/learning/AIAnalysisHelper';
 
 export default function CourseAnalyticsPage() {
   const params = useParams();
@@ -364,6 +365,14 @@ export default function CourseAnalyticsPage() {
             ))}
           </div>
 
+          <AIAnalysisHelper 
+            courseTitle={course?.title || (isAr ? 'دورة غير معروفة' : 'Unknown Course')} 
+            stats={{
+              overallProgress: stats.overallProgress,
+              attendanceRatio: stats.attendanceRatio
+            }}
+            exams={stats.exams}
+          />
         </div>
 
       </main>

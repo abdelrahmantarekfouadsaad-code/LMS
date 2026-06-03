@@ -235,7 +235,17 @@ export const DICTIONARY = {
       selfLearningTitle: "Self-Learning",
       selfLearningSubtitle: "Unlock courses for your child or monitor active ones.",
       unlockCourse: "Unlock Course",
-      enrolledBadge: "Enrolled & Active"
+      enrolledBadge: "Enrolled & Active",
+      aiHelperTitle: "AI Analysis Delegation",
+      aiHelperSubtitle: "Get AI-powered insights for your child's performance.",
+      aiHelperButton: "Generate AI Prompt",
+      aiModalTitle: "AI Prompt Generator",
+      aiModalStep1: "1. Copy the prompt below.",
+      aiModalStep2: "2. Click to open Google Gemini.",
+      aiModalStep3: "3. Paste the prompt to get insights.",
+      copyPrompt: "Copy Prompt",
+      copied: "Copied!",
+      openGemini: "Open Gemini"
     }
   },
   ar: {
@@ -474,7 +484,17 @@ export const DICTIONARY = {
       selfLearningTitle: "التعلم الذاتي",
       selfLearningSubtitle: "اشترك في دورات جديدة لطفلك أو تابع الدورات النشطة.",
       unlockCourse: "تفعيل الدورة للطالب",
-      enrolledBadge: "نشط ومشترك"
+      enrolledBadge: "نشط ومشترك",
+      aiHelperTitle: "تفويض تحليل الذكاء الاصطناعي",
+      aiHelperSubtitle: "احصل على رؤى مدعومة بالذكاء الاصطناعي لأداء طفلك.",
+      aiHelperButton: "إنشاء طلب الذكاء",
+      aiModalTitle: "مولد طلب الذكاء الاصطناعي",
+      aiModalStep1: "١. انسخ الطلب أدناه.",
+      aiModalStep2: "٢. انقر لفتح جوجل جيميناي.",
+      aiModalStep3: "٣. الصق الطلب للحصول على رؤى.",
+      copyPrompt: "نسخ الطلب",
+      copied: "تم النسخ!",
+      openGemini: "فتح جيميناي"
     }
   }
 };

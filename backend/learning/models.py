@@ -142,20 +142,3 @@ class ProjectSubmission(models.Model):
     def __str__(self):
         return f"{self.student.full_name} - {self.project.title}"
 
-
-class StudentAIInsight(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_insights', limit_choices_to={'role': 'STUDENT'})
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='ai_insights')
-    report_ar = models.TextField(blank=True, null=True)
-    report_en = models.TextField(blank=True, null=True)
-    last_updated_ar = models.DateTimeField(blank=True, null=True)
-    last_updated_en = models.DateTimeField(blank=True, null=True)
-    data_signature = models.CharField(max_length=255, blank=True, null=True)
-
-    class Meta:
-        unique_together = ('student', 'course')
-
-    def __str__(self):
-        return f"AI Insight for {self.student.full_name} - {self.course.title}"
-
-

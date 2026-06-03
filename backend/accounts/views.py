@@ -1,4 +1,3 @@
-import os
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -439,7 +438,7 @@ class ParentDashboardView(APIView):
 class ParentCourseAnalyticsView(APIView):
     """
     API endpoint for Parent Course Analytics.
-    Returns linked student's performance, attendance, exams, projects, and AI insights.
+    Returns linked student's performance, attendance, exams, and projects.
     """
     permission_classes = [IsAuthenticated]
 
@@ -567,232 +566,6 @@ class ParentCourseAnalyticsView(APIView):
         
         overall_level = "Excellent" if overall_progress >= 90 else ("Very Good" if overall_progress >= 75 else "Good")
 
-        # 8. AI Performance Insights (Static Fallbacks for UI backwards compatibility)
-        ai_insights = {
-            "strengths_en": [
-                "Demonstrates high critical reasoning in jurisprudence application.",
-                "Excellent attendance track record and active voice in virtual discussions.",
-                "Swift retrieval of conceptual definitions during timed assessments."
-            ],
-            "strengths_ar": [
-                "يظهر قدرة عالية على الاستدلال النقدي في تطبيق الأحكام الفقهية.",
-                "سجل حضور ممتاز ومشاركة صوتية وتفاعلية نشطة في الجلسات الافتراضية.",
-                "سرعة استرجاع متميزة للمفاهيم والمصطلحات خلال الاختبارات المحددة بوقت."
-            ],
-            "weaknesses_en": [
-                "Exhibits minor delays in long-form comparative essay submissions.",
-                "Needs occasional alignment on taxonomy classification details."
-            ],
-            "weaknesses_ar": [
-                "يظهر تأخيراً طفيفاً في تسليم المقالات المقارنة الطويلة.",
-                "يحتاج إلى مراجعة وتدقيق أحياني في تفاصيل التصنيفات والتقسيمات الفقهية."
-            ],
-            "recommendation_en": "Outstanding! We recommend dedicating an extra 30 minutes weekly to review classification taxonomies of Taharah to guarantee top marks in the final exam.",
-            "recommendation_ar": "ممتاز! نوصي بتخصيص ٣٠ دقيقة إضافية أسبوعياً لمراجعة تصنيفات ونواقض الطهارة لضمان الحصول على الدرجة النهائية في الامتحان الختامي."
-        }
-        
-        # 9. Dynamic AI Insights Caching Engine (Bilingual, Vercel-Safe, and Budget-Preserved)
-        import hashlib
-        from datetime import timedelta
-        from django.utils import timezone
-        from django.conf import settings
-        import requests
-        from learning.models import StudentAIInsight
-        
-        lang = request.query_params.get('lang', 'en').lower().strip()
-        if lang not in ['ar', 'en']:
-            lang = 'en'
-            
-        # Compile student stats string for MD5 hash check (Smart Data Signature)
-        attendance_summary = f"{attended_count} sessions attended out of {expected_count} expected ({attendance_ratio}%)"
-        exams_summary = ", ".join([f"{e['name']}: {e['score']}%" for e in exams_list]) if exams_list else "None"
-        assignments_summary = ", ".join([f"{a['title']}: Grade {a['grade']} ({a['status']})" for a in assignments_list]) if assignments_list else "None"
-        projects_summary = ", ".join([f"{p['name']}: Grade {p['grade']} ({p['status']})" for p in projects_list]) if projects_list else "None"
-        
-        metrics_string = f"Progress: {overall_progress}, Attendance: {attendance_summary}, Exams: {exams_summary}, Assignments: {assignments_summary}, Projects: {projects_summary}"
-        current_hash = hashlib.md5(metrics_string.encode('utf-8')).hexdigest()
-        
-        insight = StudentAIInsight.objects.filter(student=student_user, course=course).first()
-        now = timezone.now()
-        ai_report = None
-        use_cached = False
-        debug_error = None
-        
-        if request.query_params.get('force_refresh') == 'true' and insight:
-            insight.delete()
-            insight = None
-        
-        if insight:
-            if lang == 'ar':
-                last_updated = insight.last_updated_ar
-                cached_report = insight.report_ar
-            else:
-                last_updated = insight.last_updated_en
-                cached_report = insight.report_en
-
-            if cached_report:
-                # LAYER 1 — READ GUARD: Validate cached report is parseable JSON with required keys
-                try:
-                    parsed = json.loads(cached_report)
-                    if not isinstance(parsed, dict) or 'strengths' not in parsed or 'recommendation' not in parsed:
-                        raise ValueError("Cached report missing required keys")
-                except (json.JSONDecodeError, ValueError) as e:
-                    print(f"--- SELF-HEAL: Corrupted AI cache detected for student={student_user.id}, course={course.id}: {str(e)} ---")
-                    # Nuke the corrupted field, not the entire row (preserve the other language)
-                    if lang == 'ar':
-                        insight.report_ar = None
-                        insight.last_updated_ar = None
-                    else:
-                        insight.report_en = None
-                        insight.last_updated_en = None
-                    insight.save()
-                    cached_report = None  # Force fresh Gemini call below
-
-                if cached_report:
-                    is_under_24h = last_updated and (now - last_updated) < timedelta(hours=24)
-                    
-                    # Caching Rules:
-                    # a) Under 24h AND valid -> RETURN CACHE.
-                    if is_under_24h:
-                        ai_report = cached_report
-                        use_cached = True
-                    # b) Over 24h AND data unchanged -> RETURN CACHE.
-                    elif insight.data_signature == current_hash:
-                        ai_report = cached_report
-                        use_cached = True
-                        
-        if not use_cached:
-            prompt = (
-                "You are an expert academic advisor. Analyze the student's grades and attendance. Return EXACTLY a JSON object with this structure:\n"
-                "{\n"
-                '  "strengths": ["2 professional academic sentences detailing specific strengths."],\n'
-                '  "weaknesses": ["1 or 2 constructive sentences highlighting areas for improvement."],\n'
-                '  "recommendation": "A detailed, actionable study path paragraph."\n'
-                "}\n"
-                "Respond entirely in the language requested by the user. Do not return markdown blocks, only raw JSON.\n\n"
-                f"Student performance metrics to analyze:\n"
-                f"- Course Title: {course.title}\n"
-                f"- Overall Course Progress: {overall_progress}%\n"
-                f"- Academic Level: {overall_level}\n"
-                f"- Attendance: {attendance_summary}\n"
-                f"- Quizzes/Exams: {exams_summary}\n"
-                f"- Assignments: {assignments_summary}\n"
-                f"- Projects: {projects_summary}\n\n"
-                f"Requested Language: {'Arabic' if lang == 'ar' else 'English'}"
-            )
-            
-            gemini_failed = False
-            try:
-                # Explicitly read from environment first to guarantee compatibility in production/Vercel
-                api_key = os.environ.get('GEMINI_API_KEY') or getattr(settings, 'GEMINI_API_KEY', '')
-                if not api_key:
-                    raise ValueError("GEMINI_API_KEY is not set in environment (os.environ) or settings.")
-                
-                print("Attempting Gemini API call")
-                # Direct REST API POST call bypassing complex gRPC SDK
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-                headers = {"Content-Type": "application/json"}
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "responseMimeType": "application/json",
-                        "maxOutputTokens": 1000,
-                        "temperature": 0.6
-                    }
-                }
-                
-                # CRITICAL: timeout=9 to resolve before Vercel 10s serverless limit
-                response = requests.post(url, json=payload, headers=headers, timeout=9)
-                response.raise_for_status()
-                res_data = response.json()
-                print("Received Gemini Response")
-                
-                # Extract text securely from candidates
-                try:
-                    ai_report = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                except (KeyError, IndexError, TypeError) as parse_err:
-                    raise Exception(f"Failed to parse REST response structure: {str(parse_err)}. Raw: {response.text[:200]}")
-                
-            except requests.exceptions.HTTPError as e:
-                # Log the actual response body from Google if an HTTPError occurs
-                print(f"--- GEMINI CIRCUIT BREAKER TRIPPED: HTTPError: {str(e)} ---")
-                gemini_failed = True
-                debug_error = str(e)
-                if e.response is not None:
-                    print(f"Response text: {e.response.text}")
-                    debug_error += f" | Raw Response: {e.response.text}"
-                # Build a language-appropriate fallback with all required keys
-                if lang == 'ar':
-                    fallback_obj = {
-                        "strengths": ["جاري تحليل الأداء الأكاديمي التفصيلي."],
-                        "weaknesses": ["جاري مراجعة نقاط التحسين."],
-                        "recommendation": "التقرير قيد التجهيز، يرجى تحديث الصفحة بعد عشر دقائق."
-                    }
-                else:
-                    fallback_obj = {
-                        "strengths": ["Academic performance analysis is being prepared."],
-                        "weaknesses": ["Areas for improvement are being reviewed."],
-                        "recommendation": "The report is being generated. Please refresh the page in 10 minutes."
-                    }
-                ai_report = json.dumps(fallback_obj, ensure_ascii=False)
-            except Exception as e:
-                # CIRCUIT BREAKER: Log once, don't spam full traceback
-                print(f"--- GEMINI CIRCUIT BREAKER TRIPPED: {type(e).__name__}: {str(e)[:150]} ---")
-                gemini_failed = True
-                debug_error = str(e)
-                # Build a language-appropriate fallback with all required keys
-                if lang == 'ar':
-                    fallback_obj = {
-                        "strengths": ["جاري تحليل الأداء الأكاديمي التفصيلي."],
-                        "weaknesses": ["جاري مراجعة نقاط التحسين."],
-                        "recommendation": "التقرير قيد التجهيز، يرجى تحديث الصفحة بعد عشر دقائق."
-                    }
-                else:
-                    fallback_obj = {
-                        "strengths": ["Academic performance analysis is being prepared."],
-                        "weaknesses": ["Areas for improvement are being reviewed."],
-                        "recommendation": "The report is being generated. Please refresh the page in 10 minutes."
-                    }
-                ai_report = json.dumps(fallback_obj, ensure_ascii=False)
-            
-            # LAYER 2 — WRITE GUARD + CIRCUIT BREAKER (unified save block)
-            # On SUCCESS: validate Gemini response, save with current timestamp (24h TTL)
-            # On FAILURE: save fallback with near-expired timestamp (10-min cooldown)
-            save_to_db = False
-            save_timestamp = now  # Default: current time (24h cache for success)
-            
-            if not gemini_failed:
-                try:
-                    validated_report = json.loads(ai_report)
-                    if not isinstance(validated_report, dict) or 'strengths' not in validated_report or 'recommendation' not in validated_report:
-                        raise ValueError("Gemini response missing required keys")
-                    save_to_db = True
-                except (json.JSONDecodeError, ValueError, TypeError) as e:
-                    print(f"--- WRITE GUARD: Refusing to cache malformed Gemini response: {str(e)} ---")
-                    ai_report = None
-            else:
-                # Gemini failed — cache fallback with 10-minute cooldown (timestamp trick)
-                save_to_db = True
-                save_timestamp = now - timedelta(hours=23, minutes=50)
-            
-            if save_to_db and ai_report:
-                print("Saving to Database")
-                if not insight:
-                    insight = StudentAIInsight(student=student_user, course=course)
-                
-                if gemini_failed:
-                    insight.data_signature = "fallback_state"
-                else:
-                    insight.data_signature = current_hash
-                    
-                if lang == 'ar':
-                    insight.report_ar = ai_report
-                    insight.last_updated_ar = save_timestamp
-                else:
-                    insight.report_en = ai_report
-                    insight.last_updated_en = save_timestamp
-                insight.save()
-
         data = {
             "course_title": course.title,
             "overall_progress": overall_progress,
@@ -805,9 +578,6 @@ class ParentCourseAnalyticsView(APIView):
             "exams": exams_list,
             "assignments": assignments_list,
             "projects": projects_list,
-            "ai_insights": ai_insights,
-            "ai_report": ai_report,
-            "debug_error": debug_error
         }
         
         return Response(data, status=status.HTTP_200_OK)

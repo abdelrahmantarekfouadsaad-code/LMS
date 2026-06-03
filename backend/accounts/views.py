@@ -684,8 +684,9 @@ class ParentCourseAnalyticsView(APIView):
                 if not api_key:
                     raise ValueError("GEMINI_API_KEY is not set in environment (os.environ) or settings.")
                 
+                print("Attempting Gemini API call")
                 # Direct REST API POST call bypassing complex gRPC SDK
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],
@@ -700,6 +701,7 @@ class ParentCourseAnalyticsView(APIView):
                 response = requests.post(url, json=payload, headers=headers, timeout=9)
                 response.raise_for_status()
                 res_data = response.json()
+                print("Received Gemini Response")
                 
                 # Extract text securely from candidates
                 try:
@@ -707,6 +709,27 @@ class ParentCourseAnalyticsView(APIView):
                 except (KeyError, IndexError, TypeError) as parse_err:
                     raise Exception(f"Failed to parse REST response structure: {str(parse_err)}. Raw: {response.text[:200]}")
                 
+            except requests.exceptions.HTTPError as e:
+                # Log the actual response body from Google if an HTTPError occurs
+                print(f"--- GEMINI CIRCUIT BREAKER TRIPPED: HTTPError: {str(e)} ---")
+                if e.response is not None:
+                    print(f"Response text: {e.response.text}")
+                gemini_failed = True
+                debug_error = str(e)
+                # Build a language-appropriate fallback with all required keys
+                if lang == 'ar':
+                    fallback_obj = {
+                        "strengths": ["جاري تحليل الأداء الأكاديمي التفصيلي."],
+                        "weaknesses": ["جاري مراجعة نقاط التحسين."],
+                        "recommendation": "التقرير قيد التجهيز، يرجى تحديث الصفحة بعد عشر دقائق."
+                    }
+                else:
+                    fallback_obj = {
+                        "strengths": ["Academic performance analysis is being prepared."],
+                        "weaknesses": ["Areas for improvement are being reviewed."],
+                        "recommendation": "The report is being generated. Please refresh the page in 10 minutes."
+                    }
+                ai_report = json.dumps(fallback_obj, ensure_ascii=False)
             except Exception as e:
                 # CIRCUIT BREAKER: Log once, don't spam full traceback
                 print(f"--- GEMINI CIRCUIT BREAKER TRIPPED: {type(e).__name__}: {str(e)[:150]} ---")
@@ -748,6 +771,7 @@ class ParentCourseAnalyticsView(APIView):
                 save_timestamp = now - timedelta(hours=23, minutes=50)
             
             if save_to_db and ai_report:
+                print("Saving to Database")
                 if not insight:
                     insight = StudentAIInsight(student=student_user, course=course)
                 

@@ -198,17 +198,37 @@ export default function CourseAnalyticsPage() {
     debugError: analytics?.debug_error || null
   };
 
-  // Safely parse the JSON aiReport
-  const parsedReport = useMemo(() => {
+  // Prioritize direct ai_insights from backend, fallback to parsing aiReport string
+  const finalInsights = useMemo(() => {
+    // 1. Prioritize ai_insights (ensure it has real data, not just mock)
+    if (stats.recommendation && Array.isArray(stats.strengths) && stats.strengths.length > 0) {
+      return {
+        strengths: stats.strengths,
+        weaknesses: stats.weaknesses,
+        recommendation: stats.recommendation
+      };
+    }
+    
+    // 2. Fallback to parsing aiReport string
     try {
-      return typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
+      const parsed = typeof stats.aiReport === 'string' ? JSON.parse(stats.aiReport) : stats.aiReport;
+      if (parsed && typeof parsed === 'object') {
+        return {
+          strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+          weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
+          recommendation: parsed.recommendation || null
+        };
+      }
     } catch {
       return null;
     }
-  }, [stats.aiReport]);
+    return null;
+  }, [stats.strengths, stats.weaknesses, stats.recommendation, stats.aiReport]);
 
-  // True when aiReport exists as a string but failed JSON parsing — corruption signal
+  // True when aiReport exists as a string but failed JSON parsing AND we don't have direct insights
   const isCorruptedReport = useMemo(() => {
+    if (stats.recommendation) return false;
+    
     if (typeof stats.aiReport !== 'string' || !stats.aiReport) return false;
     try {
       JSON.parse(stats.aiReport);
@@ -216,14 +236,12 @@ export default function CourseAnalyticsPage() {
     } catch {
       return true;
     }
-  }, [stats.aiReport]);
+  }, [stats.aiReport, stats.recommendation]);
 
-  const strengths = useMemo(() => Array.isArray(parsedReport?.strengths) ? parsedReport.strengths : [], [parsedReport]);
-  const weaknesses = useMemo(() => Array.isArray(parsedReport?.weaknesses) ? parsedReport.weaknesses : [], [parsedReport]);
+  const strengths = finalInsights?.strengths || [];
+  const weaknesses = finalInsights?.weaknesses || [];
 
-  const isValidReport = useMemo(() => parsedReport &&
-    typeof parsedReport === 'object' &&
-    parsedReport.recommendation, [parsedReport]);
+  const isValidReport = !!(finalInsights && finalInsights.recommendation);
 
   // Silent Developer Debugging log in browser console (fires once on mount only)
   useEffect(() => {
@@ -471,7 +489,7 @@ export default function CourseAnalyticsPage() {
                       <div className="h-4 bg-white/10 rounded w-2/3"></div>
                       <div className="h-20 bg-white/5 border border-white/10 rounded-2xl mt-6"></div>
                     </div>
-                  ) : isValidReport && parsedReport ? (
+                  ) : isValidReport && finalInsights ? (
                     <div className="space-y-6">
                       {/* Strengths */}
                       <div>
@@ -512,7 +530,7 @@ export default function CourseAnalyticsPage() {
                           {isAr ? 'توصية مسار الدراسة بالذكاء الاصطناعي' : 'AI STUDY PATH RECOMMENDATION'}
                         </h4>
                         <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                          {parsedReport.recommendation}
+                          {finalInsights.recommendation}
                         </p>
                       </div>
 

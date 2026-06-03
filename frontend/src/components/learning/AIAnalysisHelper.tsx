@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bot, Copy, ExternalLink, CheckCircle2, X } from 'lucide-react';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
@@ -18,9 +18,17 @@ interface AIAnalysisHelperProps {
 export default function AIAnalysisHelper({ courseTitle, stats, exams }: AIAnalysisHelperProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const locale = useLocale();
   const isAr = locale === 'ar';
   const t = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+
+  if (!mounted) return null;
 
   const getPrompt = () => {
     const examsSummary = exams && exams.length > 0 
@@ -30,10 +38,17 @@ export default function AIAnalysisHelper({ courseTitle, stats, exams }: AIAnalys
     if (isAr) {
       return `أنت مرشد أكاديمي في منصة "نور النبوة" الإسلامية. يرجى تحليل مقاييس الطالب التالية وتقديم نقاط القوة، ومجالات التحسين، وخطة عمل أسبوعية تدمج بين الأكاديميات والقيم الإسلامية.
       
-الدورة: ${courseTitle}
-نسبة التقدم العام: ${stats.overallProgress}%
-نسبة الحضور: ${stats.attendanceRatio}%
-نتائج الاختبارات: ${examsSummary}
+الدورة:
+${courseTitle}
+
+نسبة التقدم العام:
+${stats.overallProgress}%
+
+نسبة الحضور:
+${stats.attendanceRatio}%
+
+نتائج الاختبارات:
+${examsSummary}
 
 بناءً على هذه البيانات، قدم تحليلك الأكاديمي والتربوي.`;
     }
@@ -80,7 +95,7 @@ Based on this data, please provide your academic and moral analysis.`;
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

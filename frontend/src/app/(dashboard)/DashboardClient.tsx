@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, BookOpen, GraduationCap, Target, PlayCircle, ChevronRight } from 'lucide-react';
+import { Trophy, BookOpen, GraduationCap, Target, PlayCircle, ChevronRight, Loader2 } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -12,6 +12,8 @@ import { useUserRole } from '@/hooks/useUserRole';
 import GuestDashboard from '@/components/guest/GuestDashboard';
 import NewsCarousel from '@/components/guest/NewsCarousel';
 import RestrictionModal from '@/components/shared/RestrictionModal';
+import useSWR from 'swr';
+import api from '@/lib/axios';
 
 // SVG Circular Progress Component
 const CircularProgress = ({ percentage, color, label }: { percentage: number, color: string, label: string }) => {
@@ -80,46 +82,39 @@ function StudentDashboard() {
         setIsModalOpen(true);
     };
 
-    // Mock Data for General Evaluation
-    const mockStats = {
-        overallCompletion: 68,
-        totalTopics: 24,
-        activeCourses: 3,
-    };
+    const { data: courses, error: errorCourses, isLoading: isLoadingCourses } = useSWR(
+        session?.accessToken ? '/courses/' : null,
+        (url) => api.get(url).then(res => res.data)
+    );
 
-    // Mock Data for Enrolled Courses
-    const mockCourses = [
-        {
-            id: 'c1',
-            title: 'Foundations of Fiqh',
-            titleAr: 'أساسيات الفقه',
-            instructor: 'Sheikh Yousef Al-Qaradawi',
-            instructorAr: 'الشيخ يوسف القرضاوي',
-            progress: 45,
-            color: 'from-blue-500/20 to-indigo-600/20',
-            iconColor: 'text-indigo-400'
-        },
-        {
-            id: 'c2',
-            title: 'Quran Memorization',
-            titleAr: 'حفظ القرآن',
-            instructor: 'Sheikh Mishary Al-Afasy',
-            instructorAr: 'الشيخ مشاري العفاسي',
-            progress: 80,
-            color: 'from-emerald-500/20 to-teal-600/20',
-            iconColor: 'text-emerald-400'
-        },
-        {
-            id: 'c3',
-            title: 'Islamic History',
-            titleAr: 'التاريخ الإسلامي',
-            instructor: 'Dr. Tariq Al-Suwaidan',
-            instructorAr: 'د. طارق السويدان',
-            progress: 15,
-            color: 'from-amber-500/20 to-orange-600/20',
-            iconColor: 'text-amber-400'
-        }
-    ];
+    const { data: progressData, error: errorProgress, isLoading: isLoadingProgress } = useSWR(
+        session?.accessToken ? '/progress/' : null,
+        (url) => api.get(url).then(res => res.data)
+    );
+
+    if (errorCourses || errorProgress) {
+        return null; // Return null so NextAuth/Axios middleware handles 401
+    }
+
+    if (isLoadingCourses || isLoadingProgress || !courses || !progressData) {
+        return (
+            <div className="flex h-screen bg-background-light dark:bg-background-dark items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const enrolledCourses = Array.isArray(courses) ? courses : [];
+    const progressItems = Array.isArray(progressData) ? progressData : [];
+    const completedLessons = progressItems.filter((p: any) => p.is_completed).length;
+    const totalLessons = progressItems.length;
+    const overallCompletion = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+    const stats = {
+        overallCompletion: overallCompletion,
+        totalTopics: completedLessons,
+        activeCourses: enrolledCourses.length,
+    };
 
     return (
         <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
@@ -169,7 +164,7 @@ function StudentDashboard() {
                             {/* Circular Progress (Overall Completion) */}
                             <div className="flex justify-center p-6 bg-white/5 dark:bg-slate-800/50 rounded-2xl border border-white/10 backdrop-blur-md">
                                 <CircularProgress
-                                    percentage={mockStats.overallCompletion}
+                                    percentage={stats.overallCompletion}
                                     color="#10B981"
                                     label={locale === 'ar' ? 'نسبة الإنجاز الكلية' : 'Overall Completion'}
                                 />
@@ -179,7 +174,7 @@ function StudentDashboard() {
                             <div className="flex flex-col justify-center p-6 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl border border-white/10 backdrop-blur-md h-full relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
                                 <BookOpen className="w-8 h-8 text-indigo-400 mb-3" />
-                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{mockStats.totalTopics}</span>
+                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{stats.totalTopics}</span>
                                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     {locale === 'ar' ? 'الموضوعات المكتملة' : 'Completed Topics'}
                                 </span>
@@ -189,7 +184,7 @@ function StudentDashboard() {
                             <div className="flex flex-col justify-center p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl border border-white/10 backdrop-blur-md h-full relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-amber-500/20 rounded-full blur-xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
                                 <GraduationCap className="w-8 h-8 text-amber-400 mb-3" />
-                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{mockStats.activeCourses}</span>
+                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{stats.activeCourses}</span>
                                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     {locale === 'ar' ? 'الدورات النشطة' : 'Active Courses'}
                                 </span>
@@ -221,45 +216,57 @@ function StudentDashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {mockCourses.map((course) => (
-                            <button 
-                                key={course.id} 
-                                onClick={(e) => handleCourseClick(e, locale === 'ar' ? course.titleAr : course.title)} 
-                                className="group block h-full text-left w-full cursor-pointer focus:outline-none"
-                            >
-                                <div className={`glass-panel p-6 h-full flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 bg-gradient-to-br ${course.color} border border-white/5`}>
+                        {enrolledCourses.length === 0 ? (
+                            <div className="col-span-full py-10 text-center text-slate-500">
+                                {locale === 'ar' ? 'لا توجد دورات مسجلة حالياً.' : 'No enrolled courses found.'}
+                            </div>
+                        ) : (
+                            enrolledCourses.map((course: any) => {
+                                const courseColor = course.color || 'from-blue-500/20 to-indigo-600/20';
+                                const iconColor = 'text-indigo-400';
+                                const courseProgress = 0; // Replace with actual course progress calculation if available
 
-                                    <div>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className={`p-3 rounded-xl bg-slate-900/40 backdrop-blur-md ${course.iconColor}`}>
-                                                <PlayCircle className="w-6 h-6" />
+                                return (
+                                    <button 
+                                        key={course.id} 
+                                        onClick={(e) => handleCourseClick(e, locale === 'ar' ? (course.title_ar || course.title) : course.title)} 
+                                        className="group block h-full text-left w-full cursor-pointer focus:outline-none"
+                                    >
+                                        <div className={`glass-panel p-6 h-full flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 bg-gradient-to-br ${courseColor} border border-white/5`}>
+
+                                            <div>
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className={`p-3 rounded-xl bg-slate-900/40 backdrop-blur-md ${iconColor}`}>
+                                                        <PlayCircle className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-black/20 text-white/80">
+                                                        {courseProgress}%
+                                                    </span>
+                                                </div>
+
+                                                <h3 className="text-lg font-bold text-white mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                                                    {locale === 'ar' ? (course.title_ar || course.title) : course.title}
+                                                </h3>
+                                                <p className="text-sm text-slate-400 mb-6">
+                                                    {course.instructor || 'Academy Instructor'}
+                                                </p>
                                             </div>
-                                            <span className="text-xs font-bold px-2 py-1 rounded-full bg-black/20 text-white/80">
-                                                {course.progress}%
-                                            </span>
+
+                                            {/* Mini Progress Bar */}
+                                            <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    className={`h-full bg-gradient-to-r ${courseColor.replace('/20', '').replace('/20', '')}`}
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${courseProgress}%` }}
+                                                    transition={{ duration: 1, delay: 0.5 }}
+                                                />
+                                            </div>
+
                                         </div>
-
-                                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                                            {locale === 'ar' ? course.titleAr : course.title}
-                                        </h3>
-                                        <p className="text-sm text-slate-400 mb-6">
-                                            {locale === 'ar' ? course.instructorAr : course.instructor}
-                                        </p>
-                                    </div>
-
-                                    {/* Mini Progress Bar */}
-                                    <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
-                                        <motion.div
-                                            className={`h-full bg-gradient-to-r ${course.color.replace('/20', '').replace('/20', '')}`}
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${course.progress}%` }}
-                                            transition={{ duration: 1, delay: 0.5 }}
-                                        />
-                                    </div>
-
-                                </div>
-                            </button>
-                        ))}
+                                    </button>
+                                );
+                            })
+                        )}
                     </div>
                 </motion.div>
 

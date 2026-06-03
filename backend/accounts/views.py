@@ -751,7 +751,11 @@ class ParentCourseAnalyticsView(APIView):
                 if not insight:
                     insight = StudentAIInsight(student=student_user, course=course)
                 
-                insight.data_signature = current_hash
+                if gemini_failed:
+                    insight.data_signature = "fallback_state"
+                else:
+                    insight.data_signature = current_hash
+                    
                 if lang == 'ar':
                     insight.report_ar = ai_report
                     insight.last_updated_ar = save_timestamp

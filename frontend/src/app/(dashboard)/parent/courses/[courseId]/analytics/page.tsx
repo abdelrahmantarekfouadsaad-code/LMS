@@ -54,94 +54,12 @@ export default function CourseAnalyticsPage() {
     swrConfig
   );
 
-  // Dynamic seed-based mock stats to ensure premium, deterministic, custom analytics per course!
-  const getMockData = (id: string) => {
-    // Generate simple seed based on ID
-    const seed = Array.from(id || "").reduce((acc, char) => acc + char.charCodeAt(0), 0) || 12;
-    
-    const overallProgress = 60 + (seed % 35); // 60% - 95%
-    const expectedSessions = 12 + (seed % 8); // 12 - 20
-    const attendedSessions = Math.min(expectedSessions, expectedSessions - (seed % 3)); // 0-2 missed
-    const attendanceRatio = Math.round((attendedSessions / expectedSessions) * 100);
-
-    const exams = [
-      { 
-        name: isAr ? "الاختبار الأول: المبادئ الأساسية" : "Quiz 1: Fundamental Concepts", 
-        score: 80 + (seed % 19), 
-        attempts: "1/2", 
-        date: isAr ? "١٢ مايو ٢٠٢٦" : "May 12, 2026",
-        attended: true 
-      },
-      { 
-        name: isAr ? "الاختبار الثاني: التطبيقات العملية" : "Quiz 2: Practical Applications", 
-        score: 75 + (seed % 23), 
-        attempts: "1/2", 
-        date: isAr ? "٢٥ مايو ٢٠٢٦" : "May 25, 2026",
-        attended: true 
-      },
-      { 
-        name: isAr ? "الامتحان النصفي: التقييم العام" : "Midterm Exam: Comprehensive Check", 
-        score: 85 + (seed % 14), 
-        attempts: "2/2", 
-        date: isAr ? "٠١ يونيو ٢٠٢٦" : "June 01, 2026",
-        attended: true 
-      }
-    ];
-
-    const assignments = [
-      { 
-        title: isAr ? "الواجب ١: ورقة استقصائية" : "Assignment 1: Investigative Paper", 
-        status: "submitted", 
-        grade: "A-", 
-        date: isAr ? "١٠ مايو ٢٠٢٦" : "May 10, 2026" 
-      },
-      { 
-        title: isAr ? "الواجب ٢: تلخيص محاضرة الشيوخ" : "Assignment 2: Lecture Outline Summary", 
-        status: "submitted", 
-        grade: "A", 
-        date: isAr ? "٢٢ مايو ٢٠٢٦" : "May 22, 2026" 
-      },
-      { 
-        title: isAr ? "الواجب ٣: المقال النقدي للمصادر" : "Assignment 3: Sources Review Essay", 
-        status: "pending", 
-        grade: "-", 
-        date: isAr ? "٣١ مايو ٢٠٢٦" : "May 31, 2026" 
-      }
-    ];
-
-    const projects = [
-      { 
-        name: isAr ? "مشروع التخرج للمستوى الأول" : "Level 1 Capstone Project Research", 
-        status: "submitted", 
-        grade: "A+", 
-        submissionDate: isAr ? "٢٨ مايو ٢٠٢٦" : "May 28, 2026" 
-      }
-    ];
-
-    const overallLevelText = overallProgress >= 90 
-      ? (isAr ? "ممتاز (Excellent)" : "Excellent")
-      : (overallProgress >= 75 ? (isAr ? "جيد جداً (Very Good)" : "Very Good") : (isAr ? "مقبول (Good)" : "Good"));
-
-    return {
-      overallProgress,
-      expectedSessions,
-      attendedSessions,
-      attendanceRatio,
-      exams,
-      assignments,
-      projects,
-      overallLevelText
-    };
-  };
-  
-  const mockStats = getMockData(courseId || "default_id");
-  
   const stats = {
-    overallProgress: analytics?.overall_progress !== undefined ? analytics.overall_progress : mockStats.overallProgress,
-    expectedSessions: analytics?.attendance?.expected !== undefined ? analytics.attendance.expected : mockStats.expectedSessions,
-    attendedSessions: analytics?.attendance?.attended !== undefined ? analytics.attendance.attended : mockStats.attendedSessions,
-    attendanceRatio: analytics?.attendance?.ratio !== undefined ? analytics.attendance.ratio : mockStats.attendanceRatio,
-    overallLevelText: analytics?.overall_level !== undefined ? (isAr ? (analytics.overall_level === "Excellent" ? "ممتاز" : analytics.overall_level) : analytics.overall_level) : mockStats.overallLevelText,
+    overallProgress: analytics?.overall_progress || 0,
+    expectedSessions: analytics?.attendance?.expected || 0,
+    attendedSessions: analytics?.attendance?.attended || 0,
+    attendanceRatio: analytics?.attendance?.ratio || 0,
+    overallLevelText: analytics?.overall_level ? (isAr ? (analytics.overall_level === "Excellent" ? "ممتاز" : analytics.overall_level) : analytics.overall_level) : "-",
     
     exams: Array.isArray(analytics?.exams) ? analytics.exams.map((exam: any) => ({
       name: exam.name,
@@ -149,21 +67,21 @@ export default function CourseAnalyticsPage() {
       attempts: exam.attempts,
       date: exam.date,
       attended: exam.attended
-    })) : mockStats.exams,
+    })) : [],
     
     assignments: Array.isArray(analytics?.assignments) ? analytics.assignments.map((ass: any) => ({
       title: ass.title,
       status: ass.status,
       grade: ass.grade,
       date: ass.date
-    })) : mockStats.assignments,
+    })) : [],
     
     projects: Array.isArray(analytics?.projects) ? analytics.projects.map((proj: any) => ({
       name: proj.name,
       status: proj.status,
       grade: proj.grade,
       submissionDate: proj.submission_date
-    })) : mockStats.projects,
+    })) : [],
   };
 
   // Calculate average exam score safely

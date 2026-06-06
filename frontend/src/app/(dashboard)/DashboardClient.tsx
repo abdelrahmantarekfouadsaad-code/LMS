@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Trophy, BookOpen, GraduationCap, Target, PlayCircle, ChevronRight, Loader2 } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
@@ -61,7 +62,23 @@ const CircularProgress = ({ percentage, color, label }: { percentage: number, co
 
 // Thin router
 export default function DashboardHome() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const { isGuest } = useUserRole();
+
+    useEffect(() => {
+        if (session?.user?.role === 'SUPER_ADMIN') {
+            router.push('/super-admin/users');
+        }
+    }, [session, router]);
+
+    if (status === 'loading' || session?.user?.role === 'SUPER_ADMIN') {
+        return (
+            <div className="flex h-screen bg-background-light dark:bg-background-dark items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     if (isGuest) return <GuestDashboard />;
 

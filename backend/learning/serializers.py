@@ -1,22 +1,40 @@
 from rest_framework import serializers
-from .models import Course, Week, Lesson, Resource, StudentProgress, StudentMilestone, Certificate, Project, ProjectSubmission
+from .models import Course, CourseGroup, ZoomSession, Unit, Lesson, Resource, StudentProgress, StudentMilestone, Certificate, Project, ProjectSubmission
+
+class ZoomSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ZoomSession
+        fields = ['id', 'title', 'scheduled_time', 'meeting_link']
+
+class CourseGroupSerializer(serializers.ModelSerializer):
+    zoom_sessions = ZoomSessionSerializer(many=True, read_only=True)
+    class Meta:
+        model = CourseGroup
+        fields = ['id', 'name', 'zoom_sessions']
 
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = ['id', 'lesson_number', 'title', 'video_url', 'estimated_minutes']
+        fields = ['id', 'lesson_number', 'title', 'video_url', 'pdf_attachment', 'is_quiz', 'estimated_minutes']
 
-class WeekSerializer(serializers.ModelSerializer):
+class UnitSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
     class Meta:
-        model = Week
-        fields = ['id', 'week_number', 'title', 'lessons']
+        model = Unit
+        fields = ['id', 'title', 'order', 'lessons']
 
 class CourseSerializer(serializers.ModelSerializer):
-    weeks = WeekSerializer(many=True, read_only=True)
+    groups = CourseGroupSerializer(many=True, read_only=True)
+    units = UnitSerializer(many=True, read_only=True)
+    flat_lessons = LessonSerializer(many=True, read_only=True)
     class Meta:
         model = Course
-        fields = ['id', 'title', 'title_ar', 'description', 'price', 'instructor', 'duration', 'color', 'is_active', 'weeks', 'created_at']
+        fields = [
+            'id', 'title', 'title_ar', 'description', 'target_age', 'course_format', 
+            'course_structure', 'price', 'thumbnail', 'is_upload_completed', 
+            'instructor', 'duration', 'color', 'is_active', 'groups', 'units', 
+            'flat_lessons', 'created_at'
+        ]
 
 class ResourceSerializer(serializers.ModelSerializer):
     class Meta:

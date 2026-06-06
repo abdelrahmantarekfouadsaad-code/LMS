@@ -3,11 +3,31 @@ from accounts.models import User
 
 # --- LEARNING MODULES (STRICT RBAC: Super Admins & Supervisors ONLY) ---
 class Course(models.Model):
+    class TargetAge(models.TextChoices):
+        CHILDREN = 'CHILDREN', 'Children'
+        TWEENS = 'TWEENS', 'Tweens'
+        TEENS = 'TEENS', 'Teens'
+        ALL = 'ALL', 'All Ages'
+
+    class CourseFormat(models.TextChoices):
+        ZOOM_ONLY = 'ZOOM_ONLY', 'Zoom Only'
+        VIDEO_ONLY = 'VIDEO_ONLY', 'Video Only'
+        HYBRID = 'HYBRID', 'Hybrid'
+
+    class CourseStructure(models.TextChoices):
+        SHORT_FLAT = 'SHORT_FLAT', 'Short (Flat)'
+        LONG_NESTED = 'LONG_NESTED', 'Long (Nested)'
+
     # Note: django-modeltranslation will gracefully handle translation for 'title' & 'description'
     title = models.CharField(max_length=255)
     title_ar = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
+    target_age = models.CharField(max_length=20, choices=TargetAge.choices, default=TargetAge.ALL)
+    course_format = models.CharField(max_length=20, choices=CourseFormat.choices, default=CourseFormat.VIDEO_ONLY)
+    course_structure = models.CharField(max_length=20, choices=CourseStructure.choices, default=CourseStructure.SHORT_FLAT)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    thumbnail = models.URLField(blank=True, null=True)
+    is_upload_completed = models.BooleanField(default=False)
     instructor = models.CharField(max_length=255, blank=True, null=True)
     duration = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=100, default='from-blue-500/20 to-indigo-600/20')
@@ -17,31 +37,48 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
-class Week(models.Model):
-    course = models.ForeignKey(Course, related_name='weeks', on_delete=models.CASCADE)
-    week_number = models.PositiveIntegerField()
-    title = models.CharField(max_length=255)
+class CourseGroup(models.Model):
+    course = models.ForeignKey(Course, related_name='groups', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    
+    def __str__(self):
+        return f"{self.course.title} - {self.name}"
 
-    class Meta:
-        ordering = ['week_number']
-        unique_together = ('course', 'week_number')
+class ZoomSession(models.Model):
+    course_group = models.ForeignKey(CourseGroup, related_name='zoom_sessions', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    scheduled_time = models.DateTimeField(null=True, blank=True)
+    meeting_link = models.URLField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.course.title} - Week {self.week_number}: {self.title}"
+        return f"{self.course_group.name} - {self.title}"
+
+class Unit(models.Model):
+    course = models.ForeignKey(Course, related_name='units', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.course.title} - Unit {self.order}: {self.title}"
 
 class Lesson(models.Model):
-    week = models.ForeignKey(Week, related_name='lessons', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='flat_lessons', on_delete=models.CASCADE, null=True, blank=True)
+    unit = models.ForeignKey(Unit, related_name='lessons', on_delete=models.CASCADE, null=True, blank=True)
     lesson_number = models.PositiveIntegerField()
     title = models.CharField(max_length=255)
-    video_url = models.URLField()
-    estimated_minutes = models.PositiveIntegerField()
+    video_url = models.URLField(blank=True, null=True)
+    pdf_attachment = models.URLField(blank=True, null=True)
+    is_quiz = models.BooleanField(default=False)
+    estimated_minutes = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['lesson_number']
-        unique_together = ('week', 'lesson_number')
 
     def __str__(self):
-        return f"{self.week.title} - Lesson {self.lesson_number}: {self.title}"
+        return f"Lesson {self.lesson_number}: {self.title}"
 
 class StudentProgress(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'STUDENT'})

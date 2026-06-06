@@ -2,7 +2,8 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from .models import Course, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission
+from django.db import transaction
+from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission
 from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer
 from accounts.permissions import IsSuperAdmin, IsSupervisor
 
@@ -17,9 +18,76 @@ class CourseViewSet(viewsets.ModelViewSet):
     Course management. Only SuperAdmin/Supervisor can create/update.
     Students/Teachers can read.
     """
-    queryset = Course.objects.prefetch_related('weeks__lessons').filter(is_active=True)
+    queryset = Course.objects.prefetch_related('groups__zoom_sessions', 'units__lessons', 'flat_lessons').filter(is_active=True)
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrSupervisorOrReadOnly]
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        
+        with transaction.atomic():
+            # Create Course
+            course = Course.objects.create(
+                title=data.get('title'),
+                title_ar=data.get('title_ar'),
+                description=data.get('description'),
+                target_age=data.get('target_age', 'ALL'),
+                course_format=data.get('course_format', 'VIDEO_ONLY'),
+                course_structure=data.get('course_structure', 'SHORT_FLAT'),
+                price=data.get('price', 0),
+                thumbnail=data.get('thumbnail'),
+                instructor=data.get('instructor'),
+                duration=data.get('duration'),
+                color=data.get('color', 'from-blue-500/20 to-indigo-600/20')
+            )
+
+            # Create Groups & Zoom Sessions if any
+            groups_data = data.get('groups', [])
+            for group_data in groups_data:
+                group = CourseGroup.objects.create(course=course, name=group_data.get('name'))
+                for session_data in group_data.get('zoom_sessions', []):
+                    ZoomSession.objects.create(
+                        course_group=group,
+                        title=session_data.get('title'),
+                        scheduled_time=session_data.get('scheduled_time'),
+                        meeting_link=session_data.get('meeting_link')
+                    )
+
+            # Create Units & Lessons based on structure
+            if course.course_structure == 'LONG_NESTED':
+                units_data = data.get('units', [])
+                for idx, unit_data in enumerate(units_data):
+                    unit = Unit.objects.create(
+                        course=course, 
+                        title=unit_data.get('title'), 
+                        order=idx + 1
+                    )
+                    for lesson_idx, lesson_data in enumerate(unit_data.get('lessons', [])):
+                        Lesson.objects.create(
+                            unit=unit,
+                            lesson_number=lesson_idx + 1,
+                            title=lesson_data.get('title'),
+                            video_url=lesson_data.get('video_url'),
+                            pdf_attachment=lesson_data.get('pdf_attachment'),
+                            is_quiz=lesson_data.get('is_quiz', False),
+                            estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                        )
+            else: # SHORT_FLAT
+                flat_lessons_data = data.get('flat_lessons', [])
+                for lesson_idx, lesson_data in enumerate(flat_lessons_data):
+                    Lesson.objects.create(
+                        course=course,
+                        lesson_number=lesson_idx + 1,
+                        title=lesson_data.get('title'),
+                        video_url=lesson_data.get('video_url'),
+                        pdf_attachment=lesson_data.get('pdf_attachment'),
+                        is_quiz=lesson_data.get('is_quiz', False),
+                        estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                    )
+
+        serializer = self.get_serializer(course)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class ResourceViewSet(viewsets.ModelViewSet):
     """

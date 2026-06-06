@@ -1,11 +1,12 @@
 from django.db import models
 from accounts.models import User
-from learning.models import Lesson, Week
+from learning.models import Lesson, Course, Unit
 
 class Quiz(models.Model):
     title = models.CharField(max_length=255)
     lesson = models.ForeignKey(Lesson, related_name='quizzes', on_delete=models.CASCADE, null=True, blank=True)
-    week = models.ForeignKey(Week, related_name='weekly_quizzes', on_delete=models.CASCADE, null=True, blank=True)
+    unit = models.ForeignKey(Unit, related_name='unit_quizzes', on_delete=models.CASCADE, null=True, blank=True)
+    course = models.ForeignKey(Course, related_name='course_quizzes', on_delete=models.CASCADE, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, limit_choices_to={'role': 'TEACHER'})
     created_at = models.DateTimeField(auto_now_add=True)
 

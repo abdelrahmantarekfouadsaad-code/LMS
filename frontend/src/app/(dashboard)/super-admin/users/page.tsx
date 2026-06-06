@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import api from '@/lib/axios';
-import { Search, ChevronDown, MoreVertical, Shield, User, GraduationCap, X, Check, Eye } from 'lucide-react';
+import { Search, ChevronDown, MoreVertical, Shield, User, GraduationCap, X, Check, Eye, BookOpen } from 'lucide-react';
 
 const FILTER_ROLES = [
   'All', 'Student', 'Teacher', 'Super Admin', 'Guest', 'Organizer', 'Technical Support', 'Parent'

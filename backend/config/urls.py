@@ -60,5 +60,6 @@ urlpatterns = [
 
     
     # Core API Routers
+    path('api/', include('accounts.urls')),
     path('api/', include(router.urls)),
 ]

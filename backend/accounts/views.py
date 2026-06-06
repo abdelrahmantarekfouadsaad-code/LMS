@@ -583,3 +583,134 @@ class ParentCourseAnalyticsView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class SuperAdminUserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'SUPER_ADMIN':
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        role_filter = request.query_params.get('role', 'All')
+        users = User.objects.all().order_by('-created_at')
+        if role_filter and role_filter != 'All':
+            users = users.filter(role=role_filter)
+            
+        data = []
+        for user in users:
+            data.append({
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'exact_age': user.exact_age,
+                'age_group': user.age_group,
+            })
+        return Response(data, status=status.HTTP_200_OK)
+
+class SuperAdminRoleUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != 'SUPER_ADMIN':
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from django.db import transaction
+        from .models import StudentProfile
+        
+        user_id = request.data.get('user_id')
+        new_role = request.data.get('new_role')
+        
+        if not user_id or not new_role:
+            return Response({'error': 'user_id and new_role are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        if new_role == 'PARENT':
+            student_email = request.data.get('student_email')
+            new_password = request.data.get('new_password')
+            
+            if not student_email or not new_password:
+                return Response({'error': 'student_email and new_password are required for PARENT role'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            try:
+                student_user = User.objects.get(email=student_email)
+                student_profile = student_user.student_profile
+            except (User.DoesNotExist, StudentProfile.DoesNotExist):
+                return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
+                
+            if student_profile.parent_email != target_user.email:
+                return Response({'error': 'Student has not authorized this parent email'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            with transaction.atomic():
+                target_user.role = 'PARENT'
+                target_user.set_password(new_password)
+                target_user.save()
+                student_profile.parents.add(target_user)
+                
+        else:
+            target_user.role = new_role
+            target_user.save()
+            
+        return Response({'message': 'Role updated successfully'}, status=status.HTTP_200_OK)
+
+class SuperAdminStudentStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        if request.user.role != 'SUPER_ADMIN':
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from .models import StudentProfile
+        from learning.models import StudentProgress, Lesson, ProjectSubmission
+        from quizzes.models import StudentResult
+        from live.models import Attendance, LiveSession
+        
+        try:
+            target_user = User.objects.get(id=student_id, role='STUDENT')
+            student_profile = target_user.student_profile
+        except (User.DoesNotExist, StudentProfile.DoesNotExist):
+            return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        # 1. Attendance Ratio
+        study_groups = student_profile.study_groups.all()
+        sessions = LiveSession.objects.filter(study_group__in=study_groups)
+        expected_count = sessions.count()
+        attended_count = Attendance.objects.filter(session__in=sessions, student=target_user).count()
+        attendance_ratio = round((attended_count / expected_count) * 100) if expected_count > 0 else 0
+        
+        # 2. Exam Scores
+        quiz_results = StudentResult.objects.filter(student=target_user)
+        total_score = sum(result.score for result in quiz_results)
+        exam_scores_avg = round(float(total_score) / quiz_results.count(), 2) if quiz_results.exists() else 0
+        
+        # 3. Overall Progress
+        total_lessons = Lesson.objects.filter(week__course__study_groups__in=study_groups).distinct().count()
+        completed_lessons = StudentProgress.objects.filter(student=target_user, is_completed=True).count()
+        overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
+        
+        # 4. Submitted Projects count
+        submitted_projects_count = ProjectSubmission.objects.filter(student=target_user).count()
+        
+        # 5. Enrolled Courses list
+        enrolled_courses = []
+        for sg in study_groups:
+            if sg.course not in [c.get('course') for c in enrolled_courses]:
+                enrolled_courses.append({
+                    'id': sg.course.id,
+                    'title': sg.course.title,
+                    'color': sg.course.color
+                })
+                
+        data = {
+            'attendance_ratio': attendance_ratio,
+            'exam_scores_avg': exam_scores_avg,
+            'overall_progress': overall_progress,
+            'submitted_projects_count': submitted_projects_count,
+            'enrolled_courses': enrolled_courses
+        }
+        
+        return Response(data, status=status.HTTP_200_OK)
+

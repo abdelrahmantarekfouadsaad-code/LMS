@@ -35,6 +35,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isActive
                     ? 'bg-white/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]'

@@ -168,6 +168,12 @@ export default function CoursePlayerPage() {
     { key: 'timeline' as const, label: isAr ? 'الغصون (التقييم)' : 'Timeline (الغصون)', icon: GitBranch },
   ];
 
+  const playerConfig: any = {
+    youtube: {
+      playerVars: { modestbranding: 1, rel: 0 }
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
       <Sidebar />
@@ -224,7 +230,6 @@ export default function CoursePlayerPage() {
                     {isLoading ? (
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
-                      // @ts-ignore
                       <ReactPlayer
                         url={videoUrl}
                         width="100%"
@@ -234,11 +239,7 @@ export default function CoursePlayerPage() {
                         onEnded={handleVideoEnded}
                         onDuration={handleDuration}
                         style={{ backgroundColor: '#0f172a', borderRadius: '0.75rem', overflow: 'hidden' }}
-                        config={{
-                          youtube: {
-                            playerVars: { modestbranding: 1, rel: 0 }
-                          }
-                        }}
+                        config={playerConfig}
                       />
                     ) : (
                       <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">

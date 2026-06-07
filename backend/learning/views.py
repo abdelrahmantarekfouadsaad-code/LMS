@@ -119,6 +119,83 @@ class CourseViewSet(viewsets.ModelViewSet):
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    def update(self, request, *args, **kwargs):
+        course = self.get_object()
+        data = request.data
+        
+        try:
+            with transaction.atomic():
+                price_val = data.get('price', course.price)
+                if price_val in [None, '', '0']:
+                    price_val = 0
+
+                thumbnail_val = data.get('thumbnail', course.thumbnail)
+                if not thumbnail_val:
+                    thumbnail_val = None
+
+                course.title = data.get('title', course.title)
+                course.title_ar = data.get('title_ar', course.title_ar)
+                course.description = data.get('description', course.description)
+                course.target_age = data.get('target_age', course.target_age)
+                course.course_format = data.get('course_format', course.course_format)
+                course.course_structure = data.get('course_structure', course.course_structure)
+                course.price = price_val
+                course.thumbnail = thumbnail_val
+                course.instructor = data.get('instructor', course.instructor)
+                course.duration = data.get('duration', course.duration)
+                course.color = data.get('color', course.color)
+                course.save()
+
+                course.groups.all().delete()
+                groups_data = data.get('groups', [])
+                for group_data in groups_data:
+                    group = CourseGroup.objects.create(course=course, name=group_data.get('name'))
+                    for session_data in group_data.get('zoom_sessions', []):
+                        ZoomSession.objects.create(
+                            course_group=group,
+                            title=session_data.get('title'),
+                            scheduled_time=session_data.get('scheduled_time'),
+                            meeting_link=session_data.get('meeting_link')
+                        )
+
+                course.units.all().delete()
+                course.flat_lessons.all().delete()
+                
+                if course.course_structure == 'LONG_NESTED':
+                    units_data = data.get('units', [])
+                    for idx, unit_data in enumerate(units_data):
+                        unit = Unit.objects.create(
+                            course=course, 
+                            title=unit_data.get('title'), 
+                            order=idx + 1
+                        )
+                        for lesson_idx, lesson_data in enumerate(unit_data.get('lessons', [])):
+                            Lesson.objects.create(
+                                unit=unit,
+                                lesson_number=lesson_idx + 1,
+                                title=lesson_data.get('title'),
+                                video_url=lesson_data.get('video_url'),
+                                pdf_attachment=lesson_data.get('pdf_attachment'),
+                                is_quiz=lesson_data.get('is_quiz', False),
+                                estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                            )
+                else:
+                    flat_lessons_data = data.get('flat_lessons', [])
+                    for lesson_idx, lesson_data in enumerate(flat_lessons_data):
+                        Lesson.objects.create(
+                            course=course,
+                            lesson_number=lesson_idx + 1,
+                            title=lesson_data.get('title'),
+                            video_url=lesson_data.get('video_url'),
+                            pdf_attachment=lesson_data.get('pdf_attachment'),
+                            is_quiz=lesson_data.get('is_quiz', False),
+                            estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                        )
+
+            serializer = self.get_serializer(course)
+            return Response(serializer.data)
+            
+
 class ResourceViewSet(viewsets.ModelViewSet):
     """
     Resources management. Only SuperAdmin/Supervisor can upload.

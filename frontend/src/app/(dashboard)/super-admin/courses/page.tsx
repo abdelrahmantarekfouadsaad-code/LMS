@@ -236,7 +236,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">رابط الصورة المصغرة (Thumbnail URL)</label>
-                    <input type="url" {...register('thumbnail')} placeholder="https://..." className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" dir="ltr" />
+                    <input type="text" {...register('thumbnail')} placeholder="https://..." className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" dir="ltr" />
                   </div>
                 </div>
 
@@ -412,7 +412,7 @@ function ZoomSessionsList({ control, register, gIndex }: any) {
         <div key={field.id} className="flex gap-3 items-center">
           <input {...register(`groups.${gIndex}.zoom_sessions.${index}.title`, { required: true })} placeholder="عنوان اللقاء" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" />
           <input type="datetime-local" {...register(`groups.${gIndex}.zoom_sessions.${index}.scheduled_time`)} className="p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg [&::-webkit-calendar-picker-indicator]:filter-[invert(1)]" />
-          <input type="url" {...register(`groups.${gIndex}.zoom_sessions.${index}.meeting_link`)} placeholder="رابط الزووم" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
+          <input type="text" {...register(`groups.${gIndex}.zoom_sessions.${index}.meeting_link`)} placeholder="رابط الزووم" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
           <button type="button" onClick={() => remove(index)} className="text-red-400 hover:bg-red-500/20 p-2 rounded-lg transition-colors">✕</button>
         </div>
       ))}
@@ -431,8 +431,8 @@ function UnitLessonsList({ control, register, uIndex }: any) {
           <div className="flex-1 space-y-2">
             <input {...register(`units.${uIndex}.lessons.${index}.title`, { required: true })} placeholder="عنوان الدرس" className="w-full p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" />
             <div className="flex gap-2">
-              <input type="url" {...register(`units.${uIndex}.lessons.${index}.video_url`)} placeholder="رابط الفيديو" className="flex-1 p-2 text-xs glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
-              <input type="url" {...register(`units.${uIndex}.lessons.${index}.pdf_attachment`)} placeholder="رابط PDF" className="flex-1 p-2 text-xs glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
+              <input type="text" {...register(`units.${uIndex}.lessons.${index}.video_url`)} placeholder="رابط الفيديو" className="flex-1 p-2 text-xs glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
+              <input type="text" {...register(`units.${uIndex}.lessons.${index}.pdf_attachment`)} placeholder="رابط PDF" className="flex-1 p-2 text-xs glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
               <label className="flex items-center text-xs gap-1 glass-panel px-2 border-none rounded-lg text-white">
                 <input type="checkbox" {...register(`units.${uIndex}.lessons.${index}.is_quiz`)} />
                 اختبار؟
@@ -446,3 +446,4 @@ function UnitLessonsList({ control, register, uIndex }: any) {
     </div>
   );
 }
+

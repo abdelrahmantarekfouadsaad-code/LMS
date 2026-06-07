@@ -111,7 +111,7 @@ export default function CoursePlayerPage() {
 
   const { data: course, error, isLoading } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
   const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
-  const { data: progressData, mutate: mutateProgress } = useSWR('/student-progress/', fetcher);
+  const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
   
   const completedLessonIds = new Set(progressData?.results?.filter((p: any) => p.is_completed).map((p: any) => p.lesson) || []);
 

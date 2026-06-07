@@ -52,7 +52,7 @@ export default function CoursesPage() {
 
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredCourses.map(course => (
+        {filteredCourses.map((course: any) => (
           <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
             <div className="h-48 bg-gray-200 relative">
               {course.thumbnail ? (

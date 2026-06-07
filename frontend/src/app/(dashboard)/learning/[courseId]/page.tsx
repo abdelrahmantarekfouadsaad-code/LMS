@@ -9,8 +9,7 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import dynamic from 'next/dynamic';
-import { ReactPlayerProps } from 'react-player';
-const ReactPlayer = dynamic<ReactPlayerProps>(() => import('react-player'), { ssr: false });
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -234,11 +233,6 @@ export default function CoursePlayerPage() {
                         onEnded={handleVideoEnded}
                         onDuration={handleDuration}
                         style={{ backgroundColor: '#0f172a', borderRadius: '0.75rem', overflow: 'hidden' }}
-                        config={{
-                          youtube: {
-                            playerVars: { modestbranding: 1, rel: 0 }
-                          }
-                        }}
                       />
                     ) : (
                       <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">

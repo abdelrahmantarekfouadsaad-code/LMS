@@ -1,48 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
+import useSWR from 'swr';
+import axios from '@/lib/axios';
 
-// --- API Service Stub (Assume SWR/fetch) ---
-// For the purpose of this Epic, we will use standard fetch to POST to our new Django ViewSet
-const createCourseApi = async (data: any) => {
-  const token = localStorage.getItem('token') || '';
-  const response = await fetch('/api/courses/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(data)
-  });
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({ message: 'Network error' }));
-    throw { response: { data: errData }, message: 'Failed to create course' };
-  }
-  return response.json();
-};
-
-const fetchCoursesApi = async () => {
-  const token = localStorage.getItem('token') || '';
-  const response = await fetch('/api/courses/', {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
-  if (!response.ok) throw new Error('Failed to fetch courses');
-  return response.json();
-};
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 // --- Components ---
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<any[]>([]);
   const [filter, setFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    fetchCoursesApi().then(data => setCourses(data)).catch(console.error);
-  }, []);
+  const { data: courses = [], mutate } = useSWR('/courses/', fetcher);
 
   const filteredCourses = courses.filter(c => filter === 'ALL' || c.target_age === filter);
 
@@ -118,7 +89,7 @@ export default function CoursesPage() {
           onClose={() => setIsModalOpen(false)}
           onSuccess={() => {
             setIsModalOpen(false);
-            fetchCoursesApi().then(setCourses).catch(console.error);
+            mutate();
           }}
         />
       )}
@@ -175,7 +146,7 @@ function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: (
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await createCourseApi(data);
+      await axios.post('/courses/', data);
       onSuccess();
     } catch (err: any) {
       console.error(err);

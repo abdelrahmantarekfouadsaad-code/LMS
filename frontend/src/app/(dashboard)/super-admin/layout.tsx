@@ -1,8 +1,22 @@
+"use client";
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import { LayoutDashboard, Users, DollarSign, BookOpen, MessageSquare, Newspaper } from 'lucide-react';
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: '/super-admin', label: 'لوحة القيادة', icon: LayoutDashboard },
+    { href: '/super-admin/users', label: 'المستخدمين', icon: Users },
+    { href: '/super-admin/finance', label: 'المالية', icon: DollarSign },
+    { href: '/super-admin/courses', label: 'الدورات', icon: BookOpen },
+    { href: '/super-admin/chats', label: 'المحادثات', icon: MessageSquare },
+    { href: '/super-admin/news', label: 'الأخبار', icon: Newspaper },
+  ];
+
   return (
     <div className="flex h-screen bg-[#0A0A0A] text-white font-cairo" dir="rtl">
       {/* Glassmorphism Sidebar */}
@@ -14,30 +28,24 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
           <p className="text-xs text-gray-400 mt-1">Super Admin Panel</p>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <Link href="/super-admin" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all text-gray-300 hover:text-white">
-            <LayoutDashboard className="w-5 h-5" />
-            <span>لوحة القيادة</span>
-          </Link>
-          <Link href="/super-admin/users" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 text-white transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <Users className="w-5 h-5 text-indigo-400" />
-            <span>المستخدمين</span>
-          </Link>
-          <Link href="/super-admin/finance" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all text-gray-300 hover:text-white">
-            <DollarSign className="w-5 h-5" />
-            <span>المالية</span>
-          </Link>
-          <Link href="/super-admin/courses" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all text-gray-300 hover:text-white">
-            <BookOpen className="w-5 h-5" />
-            <span>الدورات</span>
-          </Link>
-          <Link href="/super-admin/chats" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all text-gray-300 hover:text-white">
-            <MessageSquare className="w-5 h-5" />
-            <span>المحادثات</span>
-          </Link>
-          <Link href="/super-admin/news" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all text-gray-300 hover:text-white">
-            <Newspaper className="w-5 h-5" />
-            <span>الأخبار</span>
-          </Link>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== '/super-admin' && pathname.startsWith(item.href));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  isActive
+                    ? 'bg-white/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]'
+                    : 'hover:bg-white/10 text-gray-300 hover:text-white'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-400' : ''}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       </aside>
       

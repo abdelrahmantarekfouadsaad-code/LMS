@@ -15,7 +15,10 @@ const createCourseApi = async (data: any) => {
     },
     body: JSON.stringify(data)
   });
-  if (!response.ok) throw new Error('Failed to create course');
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ message: 'Network error' }));
+    throw { response: { data: errData }, message: 'Failed to create course' };
+  }
   return response.json();
 };
 
@@ -174,18 +177,20 @@ function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: (
     try {
       await createCourseApi(data);
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحفظ');
+      const errorMsg = err.response?.data || err.message;
+      console.log('Detailed Backend Error:', errorMsg);
+      alert('حدث خطأ أثناء الحفظ: \n' + JSON.stringify(errorMsg, null, 2));
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden my-8 flex flex-col max-h-[90vh]">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h2 className="text-2xl font-bold text-gray-800">إضافة دورة جديدة</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
+      <div className="bg-[#111]/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden my-8 flex flex-col max-h-[90vh] text-white">
+        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+          <h2 className="text-2xl font-bold bg-gradient-to-l from-indigo-400 to-purple-400 bg-clip-text text-transparent">إضافة دورة جديدة</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-red-400 transition-colors">
             ✕
           </button>
         </div>
@@ -196,15 +201,15 @@ function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: (
             {/* Step 1: Base Info */}
             {step === 1 && (
               <div className="space-y-6 animate-fade-in">
-                <h3 className="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">البيانات الأساسية</h3>
+                <h3 className="text-xl font-semibold mb-4 text-gray-200 border-b border-white/10 pb-2">البيانات الأساسية</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">عنوان الدورة</label>
-                    <input {...register('title', { required: true })} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none" />
+                    <label className="block text-sm font-medium text-gray-400 mb-1">عنوان الدورة</label>
+                    <input {...register('title', { required: true })} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-white transition-all" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">الفئة العمرية المستهدفة</label>
-                    <select {...register('target_age')} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">الفئة العمرية المستهدفة</label>
+                    <select {...register('target_age')} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all [&>option]:bg-[#111]">
                       <option value="ALL">الكل</option>
                       <option value="CHILDREN">أطفال</option>
                       <option value="TWEENS">يافعين</option>
@@ -212,30 +217,30 @@ function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: (
                     </select>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">الوصف</label>
-                    <textarea {...register('description', { required: true })} rows={3} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none"></textarea>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">الوصف</label>
+                    <textarea {...register('description', { required: true })} rows={3} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all"></textarea>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">السعر (د.ك)</label>
-                    <input type="number" step="0.01" {...register('price')} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none" />
+                    <label className="block text-sm font-medium text-gray-400 mb-1">السعر (د.ك)</label>
+                    <input type="number" step="0.01" {...register('price')} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">رابط الصورة المصغرة (Thumbnail URL)</label>
-                    <input type="url" {...register('thumbnail')} placeholder="https://..." className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none" dir="ltr" />
+                    <label className="block text-sm font-medium text-gray-400 mb-1">رابط الصورة المصغرة (Thumbnail URL)</label>
+                    <input type="url" {...register('thumbnail')} placeholder="https://..." className="w-full p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all" dir="ltr" />
                   </div>
                 </div>
 
                 <div className="mt-8">
-                  <h4 className="text-lg font-medium text-gray-700 mb-4">المجموعات (Cohorts)</h4>
+                  <h4 className="text-lg font-medium text-gray-200 mb-4">المجموعات (Cohorts)</h4>
                   {groupFields.map((field, index) => (
                     <div key={field.id} className="flex items-center space-x-4 space-x-reverse mb-3">
-                      <input {...register(`groups.${index}.name`)} placeholder="اسم المجموعة (مثال: الدفعة الأولى)" className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-black outline-none" />
+                      <input {...register(`groups.${index}.name`)} placeholder="اسم المجموعة (مثال: الدفعة الأولى)" className="flex-1 p-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all" />
                       {index > 0 && (
-                        <button type="button" onClick={() => removeGroup(index)} className="text-red-500 hover:bg-red-50 p-3 rounded-lg">حذف</button>
+                        <button type="button" onClick={() => removeGroup(index)} className="text-red-400 hover:bg-red-500/20 px-4 py-3 rounded-xl transition-colors">حذف</button>
                       )}
                     </div>
                   ))}
-                  <button type="button" onClick={() => appendGroup({ name: '', zoom_sessions: [] })} className="text-sm text-blue-600 hover:text-blue-800 font-medium">+ إضافة مجموعة أخرى</button>
+                  <button type="button" onClick={() => appendGroup({ name: '', zoom_sessions: [] })} className="text-sm text-indigo-400 hover:text-indigo-300 font-medium transition-colors">+ إضافة مجموعة أخرى</button>
                 </div>
               </div>
             )}

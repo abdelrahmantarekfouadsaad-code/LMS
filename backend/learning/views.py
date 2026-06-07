@@ -25,21 +25,31 @@ class CourseViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
         
-        with transaction.atomic():
-            # Create Course
-            course = Course.objects.create(
-                title=data.get('title'),
-                title_ar=data.get('title_ar'),
-                description=data.get('description'),
-                target_age=data.get('target_age', 'ALL'),
-                course_format=data.get('course_format', 'VIDEO_ONLY'),
-                course_structure=data.get('course_structure', 'SHORT_FLAT'),
-                price=data.get('price', 0),
-                thumbnail=data.get('thumbnail'),
-                instructor=data.get('instructor'),
-                duration=data.get('duration'),
-                color=data.get('color', 'from-blue-500/20 to-indigo-600/20')
-            )
+        try:
+            with transaction.atomic():
+                # Handle potential empty strings from frontend
+                price_val = data.get('price')
+                if price_val in [None, '', '0']:
+                    price_val = 0
+
+                thumbnail_val = data.get('thumbnail')
+                if not thumbnail_val:
+                    thumbnail_val = None
+
+                # Create Course
+                course = Course.objects.create(
+                    title=data.get('title'),
+                    title_ar=data.get('title_ar'),
+                    description=data.get('description'),
+                    target_age=data.get('target_age', 'ALL'),
+                    course_format=data.get('course_format', 'VIDEO_ONLY'),
+                    course_structure=data.get('course_structure', 'SHORT_FLAT'),
+                    price=price_val,
+                    thumbnail=thumbnail_val,
+                    instructor=data.get('instructor'),
+                    duration=data.get('duration'),
+                    color=data.get('color', 'from-blue-500/20 to-indigo-600/20')
+                )
 
             # Create Groups & Zoom Sessions if any
             groups_data = data.get('groups', [])
@@ -85,9 +95,14 @@ class CourseViewSet(viewsets.ModelViewSet):
                         estimated_minutes=lesson_data.get('estimated_minutes', 0)
                     )
 
-        serializer = self.get_serializer(course)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            serializer = self.get_serializer(course)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResourceViewSet(viewsets.ModelViewSet):
     """

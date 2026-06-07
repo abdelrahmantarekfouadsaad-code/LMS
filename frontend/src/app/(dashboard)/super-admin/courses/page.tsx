@@ -391,10 +391,11 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
             )}
           </div>
           
-          {step < 3 ? (
-            <button type="button" disabled={isSubmitting} onClick={() => setStep(step + 1)} className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-medium transition-colors shadow-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>التالي</button>
-          ) : (
-            <button type="submit" disabled={isSubmitting} form="course-form" className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(79,70,229,0.5)] ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>{isSubmitting ? 'جاري الحفظ...' : 'حفظ الدورة'}</button>
+          {step < 3 && (
+            <button key="next-btn" type="button" disabled={isSubmitting} onClick={(e) => { e.preventDefault(); setStep(step + 1); }} className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-medium transition-colors shadow-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>التالي</button>
+          )}
+          {step === 3 && (
+            <button key="submit-btn" type="submit" disabled={isSubmitting} form="course-form" onClick={(e) => e.stopPropagation()} className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(79,70,229,0.5)] ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>{isSubmitting ? 'جاري الحفظ...' : 'حفظ الدورة'}</button>
           )}
         </div>
       </div>

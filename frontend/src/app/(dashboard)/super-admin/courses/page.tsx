@@ -11,8 +11,21 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function CoursesPage() {
   const [filter, setFilter] = useState('ALL');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [isModalOpen, _setIsModalOpen] = useState(false);
+  const setIsModalOpen = (value: boolean) => {
+      if (value === false) {
+          console.trace("🚨 MODAL CLOSED! Trace log:");
+      }
+      _setIsModalOpen(value);
+  };
+
+  const [editingCourse, _setEditingCourse] = useState<any>(null);
+  const setEditingCourse = (val: any) => {
+      if (val === null) {
+          console.trace("🚨 EDITING COURSE CLEARED! Trace log:");
+      }
+      _setEditingCourse(val);
+  };
 
   const { data: courses = [], mutate } = useSWR('/courses/', fetcher, {
     revalidateOnFocus: false,
@@ -175,6 +188,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
   const courseStructure = watch('course_structure');
 
   const onSubmit = async (data: FormValues) => {
+    console.log("🚨 Form Submitted!", data);
     try {
       if (initialData?.id) {
         await axios.put(`/courses/${initialData.id}/`, data);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import useSWR from 'swr';
 import axios from '@/lib/axios';
@@ -126,7 +126,7 @@ type FormValues = {
 function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => void, initialData?: any }) {
   const [step, setStep] = useState(1);
 
-  const { register, control, handleSubmit, watch, setValue } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, setValue, reset } = useForm<FormValues>({
     defaultValues: initialData || {
       target_age: 'ALL',
       course_format: 'VIDEO_ONLY',
@@ -136,6 +136,21 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
       flat_lessons: []
     }
   });
+
+  useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    } else {
+      reset({
+        target_age: 'ALL',
+        course_format: 'VIDEO_ONLY',
+        course_structure: 'SHORT_FLAT',
+        groups: [{ name: 'المجموعة 1', zoom_sessions: [] }],
+        units: [],
+        flat_lessons: []
+      });
+    }
+  }, [initialData, reset]);
 
   const { fields: groupFields, append: appendGroup, remove: removeGroup } = useFieldArray({
     control,
@@ -337,9 +352,31 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
         </div>
 
         <div className="p-6 border-t border-white/10 glass-panel flex justify-between bg-black/40 rounded-none border-x-0 border-b-0">
-          {step > 1 ? (
-            <button type="button" onClick={() => setStep(step - 1)} className="px-6 py-2 rounded-xl font-medium text-gray-300 hover:bg-white/10 transition-colors">السابق</button>
-          ) : <div></div>}
+          <div className="flex gap-4">
+            {step > 1 ? (
+              <button type="button" onClick={() => setStep(step - 1)} className="px-6 py-2 rounded-xl font-medium text-gray-300 hover:bg-white/10 transition-colors">السابق</button>
+            ) : <div></div>}
+            
+            {initialData && (
+              <button 
+                type="button" 
+                onClick={async () => {
+                  if (window.confirm('هل أنت متأكد من حذف هذه الدورة نهائياً؟')) {
+                    try {
+                      await axios.delete(`/courses/${initialData.id}/`);
+                      onSuccess();
+                    } catch (err) {
+                      console.error(err);
+                      alert('حدث خطأ أثناء الحذف');
+                    }
+                  }
+                }} 
+                className="px-6 py-2 rounded-xl font-bold text-red-500 hover:bg-red-500/20 transition-colors"
+              >
+                حذف الدورة
+              </button>
+            )}
+          </div>
           
           {step < 3 ? (
             <button type="button" onClick={() => setStep(step + 1)} className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-sm">التالي</button>

@@ -113,18 +113,43 @@ export default function CoursePlayerPage() {
   const milestones = (milestonesData?.results || milestonesData || []);
   const displayMilestones = milestones;
 
+  const allLessons = React.useMemo(() => {
+    if (course?.course_structure === 'LONG_NESTED') {
+        return course?.units?.flatMap((u: any) => u.lessons || []) || [];
+    } else {
+        return course?.flat_lessons || [];
+    }
+  }, [course]);
+
   const currentLesson = activeLesson
-    ? course?.weeks?.flatMap((w: any) => w.lessons || [])?.find((l: any) => l.id === activeLesson)
-    : course?.weeks?.[0]?.lessons?.[0];
+    ? allLessons.find((l: any) => l.id === activeLesson)
+    : allLessons[0];
 
   useEffect(() => {
-    if (!activeLesson && course?.weeks?.[0]?.lessons?.[0]) {
-      setActiveLesson(course.weeks[0].lessons[0].id);
+    if (!activeLesson && allLessons[0]) {
+      setActiveLesson(allLessons[0].id);
     }
-  }, [course, activeLesson]);
+  }, [activeLesson, allLessons]);
 
   const videoUrl = currentLesson?.video_url;
-  const isValidVideoUrl = videoUrl && !videoUrl.includes('youtube.com') && !videoUrl.includes('youtu.be');
+  
+  let finalVideoUrl = videoUrl;
+  let isYoutube = false;
+  if (videoUrl) {
+    if (videoUrl.includes('youtube.com/watch?v=')) {
+      const videoId = new URL(videoUrl).searchParams.get('v');
+      finalVideoUrl = `https://www.youtube.com/embed/${videoId}`;
+      isYoutube = true;
+    } else if (videoUrl.includes('youtu.be/')) {
+      const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
+      finalVideoUrl = `https://www.youtube.com/embed/${videoId}`;
+      isYoutube = true;
+    } else if (videoUrl.includes('youtube.com/embed/')) {
+      isYoutube = true;
+    }
+  }
+
+  const isValidVideoUrl = !!finalVideoUrl;
 
   const tabs = [
     { key: 'content' as const, label: isAr ? 'محتوى الدورة' : 'Course Content', icon: BookOpen },
@@ -187,7 +212,17 @@ export default function CoursePlayerPage() {
                     {isLoading ? (
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
-                      <video controls className="w-full h-full aspect-video rounded-xl bg-slate-900 object-cover" src={videoUrl} />
+                      isYoutube ? (
+                        <iframe 
+                          src={finalVideoUrl} 
+                          title={currentLesson?.title || 'YouTube video player'} 
+                          className="w-full h-full aspect-video rounded-xl bg-slate-900 object-cover" 
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                          allowFullScreen 
+                        />
+                      ) : (
+                        <video controls className="w-full h-full aspect-video rounded-xl bg-slate-900 object-cover" src={finalVideoUrl} />
+                      )
                     ) : (
                       <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/20 to-slate-900/60 z-0" />
@@ -217,7 +252,7 @@ export default function CoursePlayerPage() {
                     <div className="p-5 border-b border-white/10 dark:border-slate-700/50 flex justify-between items-center bg-white/40 dark:bg-slate-800/40">
                       <h3 className="font-bold text-lg text-slate-900 dark:text-white">{t.courseContent || "Curriculum"}</h3>
                       <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
-                        {course?.weeks?.reduce((acc: number, w: any) => acc + (w.lessons?.length || 0), 0) || 0} {isAr ? 'درس' : 'Lessons'}
+                        {allLessons.length} {isAr ? 'درس' : 'Lessons'}
                       </span>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-4 hide-scrollbar">
@@ -225,14 +260,14 @@ export default function CoursePlayerPage() {
                         <div className="animate-pulse space-y-4 p-2">
                           {[1,2,3].map(i => <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded-xl" />)}
                         </div>
-                      ) : course?.weeks?.length > 0 ? (
-                        course.weeks.map((week: any, idx: number) => (
+                      ) : course?.course_structure === 'LONG_NESTED' && course?.units?.length > 0 ? (
+                        course.units.map((unit: any, idx: number) => (
                           <div key={idx} className="mb-4">
                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-3 mt-2">
-                              {week.title || (isAr ? `الأسبوع ${idx + 1}` : `Week ${idx + 1}`)}
+                              {unit.title || (isAr ? `الوحدة ${idx + 1}` : `Unit ${idx + 1}`)}
                             </h4>
                             <div className="space-y-1">
-                              {week.lessons?.map((lesson: any) => {
+                              {unit.lessons?.map((lesson: any) => {
                                 const isActive = activeLesson === lesson.id;
                                 return (
                                   <div
@@ -255,6 +290,29 @@ export default function CoursePlayerPage() {
                             </div>
                           </div>
                         ))
+                      ) : course?.course_structure !== 'LONG_NESTED' && course?.flat_lessons?.length > 0 ? (
+                        <div className="space-y-1 mt-2">
+                          {course.flat_lessons.map((lesson: any) => {
+                            const isActive = activeLesson === lesson.id;
+                            return (
+                              <div
+                                key={lesson.id}
+                                onClick={() => setActiveLesson(lesson.id)}
+                                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 ${isActive ? 'bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 border border-transparent'}`}
+                              >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="shrink-0">
+                                    {isActive ? <Play size={18} className="text-primary" fill="currentColor" /> : <Circle size={18} className="text-slate-400" />}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className={`text-sm font-medium truncate ${isActive ? 'text-primary dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>{lesson.title}</span>
+                                    <span className="text-xs text-slate-500">{lesson.estimated_minutes ? `${lesson.estimated_minutes} ${isAr ? 'دقيقة' : 'Mins'}` : '00:00'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       ) : (
                         <div className="text-center text-slate-500 text-sm py-8">{isAr ? 'لا يوجد محتوى متاح' : 'No lessons available.'}</div>
                       )}

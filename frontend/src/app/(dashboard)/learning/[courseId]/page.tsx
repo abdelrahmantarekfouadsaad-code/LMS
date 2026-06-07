@@ -236,7 +236,7 @@ export default function CoursePlayerPage() {
                           youtube: {
                             playerVars: { modestbranding: 1, rel: 0 }
                           }
-                        }}
+                        } as any}
                       />
                     ) : (
                       <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">

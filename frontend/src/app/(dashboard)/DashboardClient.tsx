@@ -100,7 +100,7 @@ function StudentDashboard() {
     };
 
     const { data: courses, error: errorCourses, isLoading: isLoadingCourses } = useSWR(
-        session?.accessToken ? '/courses/' : null,
+        session?.accessToken ? '/courses/enrolled/' : null,
         (url) => api.get(url).then(res => res.data)
     );
 
@@ -123,15 +123,20 @@ function StudentDashboard() {
 
     const enrolledCourses = Array.isArray(courses?.results || courses) ? (courses?.results || courses) : [];
     const progressItems = Array.isArray(progressData?.results || progressData) ? (progressData?.results || progressData) : [];
-    const completedLessons = progressItems.filter((p: any) => p.is_completed).length;
     
-    const getTotalLessons = (course: any) => {
+    const enrolledLessonIds = new Set();
+    enrolledCourses.forEach((course: any) => {
         if (course.course_structure === 'LONG_NESTED') {
-            return course.units?.reduce((acc: number, unit: any) => acc + (unit.lessons?.length || 0), 0) || 0;
+            course.units?.forEach((unit: any) => {
+                unit.lessons?.forEach((lesson: any) => enrolledLessonIds.add(lesson.id));
+            });
+        } else {
+            course.flat_lessons?.forEach((lesson: any) => enrolledLessonIds.add(lesson.id));
         }
-        return course.flat_lessons?.length || 0;
-    };
-    const totalLessons = enrolledCourses.reduce((acc: number, course: any) => acc + getTotalLessons(course), 0);
+    });
+
+    const completedLessons = progressItems.filter((p: any) => p.is_completed && enrolledLessonIds.has(p.lesson)).length;
+    const totalLessons = enrolledLessonIds.size;
     const overallCompletion = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
     const stats = {

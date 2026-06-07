@@ -426,7 +426,7 @@ export default function CoursePlayerPage() {
                 </div>
 
                 {/* Empty state if truly no milestones */}
-                {milestones.length === 0 && (
+                {displayMilestones.length === 0 && (
                   <div className="mt-8">
                     <EmptyState
                       title={isAr ? 'لا توجد مراحل بعد' : 'No milestones yet'}

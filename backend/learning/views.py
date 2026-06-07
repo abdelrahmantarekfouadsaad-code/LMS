@@ -37,6 +37,19 @@ class CourseViewSet(viewsets.ModelViewSet):
                 
         return qs
 
+    @action(detail=False, methods=['get'])
+    def enrolled(self, request):
+        from payment.models import Subscription
+        active_subs = Subscription.objects.filter(
+            user=request.user,
+            status='approved',
+            is_active=True
+        )
+        enrolled_course_ids = active_subs.values_list('course_id', flat=True)
+        courses = self.get_queryset().filter(id__in=enrolled_course_ids)
+        serializer = self.get_serializer(courses, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         data = request.data
         

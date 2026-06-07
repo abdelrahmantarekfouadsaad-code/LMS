@@ -127,7 +127,7 @@ export default function LearningPage() {
   }, [mounted, courses]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itemCount = cartItems.length;
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price, 0);
+  const totalPrice = cartItems.reduce((sum, item) => sum + parseFloat(item.price as any || 0), 0).toFixed(2);
 
   const handleCheckout = () => {
     if (itemCount > 0) {

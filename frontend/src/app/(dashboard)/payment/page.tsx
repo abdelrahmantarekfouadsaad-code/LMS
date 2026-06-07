@@ -99,7 +99,7 @@ export default function PaymentPortal() {
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
 
   const coursesCount = mounted ? cartItems.length : 0;
-  const totalPrice = mounted ? cartItems.reduce((sum, item) => sum + item.price, 0) : 0;
+  const totalPrice = mounted ? cartItems.reduce((sum, item) => sum + parseFloat(item.price as any || 0), 0).toFixed(2) : '0.00';
   
   useEffect(() => {
     if (coursesCount > 0) {

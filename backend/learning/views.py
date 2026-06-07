@@ -195,6 +195,10 @@ class CourseViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(course)
             return Response(serializer.data)
             
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResourceViewSet(viewsets.ModelViewSet):
     """

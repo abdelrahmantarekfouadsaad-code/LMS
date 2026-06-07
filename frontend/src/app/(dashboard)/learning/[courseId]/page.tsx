@@ -8,7 +8,8 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
-import ReactPlayer from 'react-player';
+import dynamic from 'next/dynamic';
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -223,6 +224,7 @@ export default function CoursePlayerPage() {
                     {isLoading ? (
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
+                      // @ts-ignore
                       <ReactPlayer
                         url={videoUrl}
                         width="100%"
@@ -236,7 +238,7 @@ export default function CoursePlayerPage() {
                           youtube: {
                             playerVars: { modestbranding: 1, rel: 0 }
                           }
-                        } as any}
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">

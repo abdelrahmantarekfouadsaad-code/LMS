@@ -146,7 +146,7 @@ export default function CoursePlayerPage() {
   const handleVideoEnded = async () => {
     if (activeLesson && !completedLessonIds.has(activeLesson)) {
       try {
-        await axios.post('/student-progress/mark_complete/', { lesson_id: activeLesson });
+        await axios.post('/progress/mark_complete/', { lesson_id: activeLesson });
         mutateProgress();
       } catch (err) {
         console.error("Failed to mark lesson complete", err);

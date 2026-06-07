@@ -154,8 +154,9 @@ export default function CoursePlayerPage() {
     }
   };
 
-  const handleDuration = (durationInSeconds: number) => {
-    if (activeLesson && !videoDurations[activeLesson]) {
+  const handleDuration = (e: any) => {
+    const durationInSeconds = e.target?.duration;
+    if (activeLesson && !videoDurations[activeLesson] && durationInSeconds) {
       const minutes = Math.floor(durationInSeconds / 60);
       const seconds = Math.floor(durationInSeconds % 60);
       const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -225,13 +226,13 @@ export default function CoursePlayerPage() {
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
                       <ReactPlayer
-                        url={videoUrl}
+                        src={videoUrl}
                         width="100%"
                         height="100%"
                         controls
                         playing
                         onEnded={handleVideoEnded}
-                        onDuration={handleDuration}
+                        onDurationChange={handleDuration}
                         style={{ backgroundColor: '#0f172a', borderRadius: '0.75rem', overflow: 'hidden' }}
                       />
                     ) : (

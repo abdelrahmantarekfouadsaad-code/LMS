@@ -7,6 +7,8 @@ import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, 
 import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
+import axios from '@/lib/axios';
+import ReactPlayer from 'react-player';
 import { useLocale } from '@/hooks/useLocale';
 import { DICTIONARY } from '@/locales/dictionary';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -104,8 +106,14 @@ export default function CoursePlayerPage() {
 
   const [activeLesson, setActiveLesson] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'content' | 'timeline'>('content');
+  const [videoDurations, setVideoDurations] = useState<Record<number, string>>({});
+
   const { data: course, error, isLoading } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
   const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
+  const { data: progressData, mutate: mutateProgress } = useSWR('/student-progress/', fetcher);
+  
+  const completedLessonIds = new Set(progressData?.results?.filter((p: any) => p.is_completed).map((p: any) => p.lesson) || []);
+
   const locale = useLocale();
   const isAr = locale === 'ar';
   const t = DICTIONARY[locale as 'en' | 'ar']?.learning || DICTIONARY.en.learning;
@@ -132,24 +140,27 @@ export default function CoursePlayerPage() {
   }, [activeLesson, allLessons]);
 
   const videoUrl = currentLesson?.video_url;
-  
-  let finalVideoUrl = videoUrl;
-  let isYoutube = false;
-  if (videoUrl) {
-    if (videoUrl.includes('youtube.com/watch?v=')) {
-      const videoId = new URL(videoUrl).searchParams.get('v');
-      finalVideoUrl = `https://www.youtube.com/embed/${videoId}`;
-      isYoutube = true;
-    } else if (videoUrl.includes('youtu.be/')) {
-      const videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-      finalVideoUrl = `https://www.youtube.com/embed/${videoId}`;
-      isYoutube = true;
-    } else if (videoUrl.includes('youtube.com/embed/')) {
-      isYoutube = true;
-    }
-  }
+  const isValidVideoUrl = !!videoUrl;
 
-  const isValidVideoUrl = !!finalVideoUrl;
+  const handleVideoEnded = async () => {
+    if (activeLesson && !completedLessonIds.has(activeLesson)) {
+      try {
+        await axios.post('/student-progress/mark_complete/', { lesson_id: activeLesson });
+        mutateProgress();
+      } catch (err) {
+        console.error("Failed to mark lesson complete", err);
+      }
+    }
+  };
+
+  const handleDuration = (durationInSeconds: number) => {
+    if (activeLesson && !videoDurations[activeLesson]) {
+      const minutes = Math.floor(durationInSeconds / 60);
+      const seconds = Math.floor(durationInSeconds % 60);
+      const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      setVideoDurations(prev => ({ ...prev, [activeLesson]: formatted }));
+    }
+  };
 
   const tabs = [
     { key: 'content' as const, label: isAr ? 'محتوى الدورة' : 'Course Content', icon: BookOpen },
@@ -212,17 +223,21 @@ export default function CoursePlayerPage() {
                     {isLoading ? (
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
-                      isYoutube ? (
-                        <iframe 
-                          src={finalVideoUrl} 
-                          title={currentLesson?.title || 'YouTube video player'} 
-                          className="w-full h-full aspect-video rounded-xl bg-slate-900 object-cover" 
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                          allowFullScreen 
-                        />
-                      ) : (
-                        <video controls className="w-full h-full aspect-video rounded-xl bg-slate-900 object-cover" src={finalVideoUrl} />
-                      )
+                      <ReactPlayer
+                        url={videoUrl}
+                        width="100%"
+                        height="100%"
+                        controls
+                        playing
+                        onEnded={handleVideoEnded}
+                        onDuration={handleDuration}
+                        style={{ backgroundColor: '#0f172a', borderRadius: '0.75rem', overflow: 'hidden' }}
+                        config={{
+                          youtube: {
+                            playerVars: { modestbranding: 1, rel: 0 }
+                          }
+                        }}
+                      />
                     ) : (
                       <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/20 to-slate-900/60 z-0" />
@@ -276,13 +291,19 @@ export default function CoursePlayerPage() {
                                     className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 ${isActive ? 'bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 border border-transparent'}`}
                                   >
                                     <div className="flex items-center gap-3 overflow-hidden">
-                                      <div className="shrink-0">
-                                        {isActive ? <Play size={18} className="text-primary" fill="currentColor" /> : <Circle size={18} className="text-slate-400" />}
-                                      </div>
-                                      <div className="flex flex-col min-w-0">
-                                        <span className={`text-sm font-medium truncate ${isActive ? 'text-primary dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>{lesson.title}</span>
-                                        <span className="text-xs text-slate-500">{lesson.estimated_minutes ? `${lesson.estimated_minutes} ${isAr ? 'دقيقة' : 'Mins'}` : '00:00'}</span>
-                                      </div>
+                                  <div className="shrink-0">
+                                    {completedLessonIds.has(lesson.id) ? (
+                                      <CheckCircle size={18} className="text-emerald-500" fill="currentColor" />
+                                    ) : isActive ? (
+                                      <Play size={18} className="text-primary" fill="currentColor" />
+                                    ) : (
+                                      <Circle size={18} className="text-slate-400" />
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className={`text-sm font-medium truncate ${isActive ? 'text-primary dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'} ${completedLessonIds.has(lesson.id) ? 'opacity-70' : ''}`}>{lesson.title}</span>
+                                    <span className="text-xs text-slate-500">{videoDurations[lesson.id] || (lesson.estimated_minutes ? `${lesson.estimated_minutes} ${isAr ? 'دقيقة' : 'Mins'}` : '00:00')}</span>
+                                  </div>
                                     </div>
                                   </div>
                                 );
@@ -302,11 +323,17 @@ export default function CoursePlayerPage() {
                               >
                                 <div className="flex items-center gap-3 overflow-hidden">
                                   <div className="shrink-0">
-                                    {isActive ? <Play size={18} className="text-primary" fill="currentColor" /> : <Circle size={18} className="text-slate-400" />}
+                                    {completedLessonIds.has(lesson.id) ? (
+                                      <CheckCircle size={18} className="text-emerald-500" fill="currentColor" />
+                                    ) : isActive ? (
+                                      <Play size={18} className="text-primary" fill="currentColor" />
+                                    ) : (
+                                      <Circle size={18} className="text-slate-400" />
+                                    )}
                                   </div>
                                   <div className="flex flex-col min-w-0">
-                                    <span className={`text-sm font-medium truncate ${isActive ? 'text-primary dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>{lesson.title}</span>
-                                    <span className="text-xs text-slate-500">{lesson.estimated_minutes ? `${lesson.estimated_minutes} ${isAr ? 'دقيقة' : 'Mins'}` : '00:00'}</span>
+                                    <span className={`text-sm font-medium truncate ${isActive ? 'text-primary dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'} ${completedLessonIds.has(lesson.id) ? 'opacity-70' : ''}`}>{lesson.title}</span>
+                                    <span className="text-xs text-slate-500">{videoDurations[lesson.id] || (lesson.estimated_minutes ? `${lesson.estimated_minutes} ${isAr ? 'دقيقة' : 'Mins'}` : '00:00')}</span>
                                   </div>
                                 </div>
                               </div>
@@ -325,7 +352,57 @@ export default function CoursePlayerPage() {
             <motion.div key="timeline" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
               {/* ========= VIEW B: EVALUATION TIMELINE (الغصون) ========= */}
               <div className="max-w-4xl mx-auto py-8 relative">
-                {/* Header */}
+                {/* Zoom Sessions (from course groups) */}
+                {course?.groups?.length > 0 && (
+                  <div className="mb-12">
+                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 mb-4">
+                        <Video size={16} className="text-blue-400" />
+                        <span className="text-sm font-semibold text-blue-400">{isAr ? 'جلسات البث المباشر (زووم)' : 'Live Sessions (Zoom)'}</span>
+                      </div>
+                      <h2 className="text-3xl font-extrabold text-white mb-2">{isAr ? 'الجلسات المباشرة' : 'Live Sessions'}</h2>
+                    </motion.div>
+                    
+                    <div className="space-y-6">
+                      {course.groups.map((group: any) => (
+                        <div key={group.id} className="glass-panel p-6 rounded-2xl border border-white/10">
+                          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                             <Circle size={12} className="text-blue-400 fill-current" />
+                             {group.name}
+                          </h3>
+                          {group.zoom_sessions?.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {group.zoom_sessions.map((session: any) => (
+                                <div key={session.id} className="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-colors">
+                                  <div>
+                                    <h4 className="text-base font-bold text-white mb-2">{session.title}</h4>
+                                    <p className="text-sm text-slate-400 mb-4">
+                                      {session.scheduled_time ? new Date(session.scheduled_time).toLocaleString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }) : (isAr ? 'غير مجدول' : 'Unscheduled')}
+                                    </p>
+                                  </div>
+                                  {session.meeting_link ? (
+                                    <a href={session.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm w-full">
+                                      <Video size={16} />
+                                      {isAr ? 'انضمام للزووم' : 'Join Zoom'}
+                                    </a>
+                                  ) : (
+                                    <div className="px-4 py-2 bg-slate-800 text-slate-500 rounded-lg text-center font-medium text-sm w-full cursor-not-allowed">
+                                      {isAr ? 'رابط الزووم غير متوفر بعد' : 'Zoom link not available yet'}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-slate-500 text-sm">{isAr ? 'لا توجد جلسات مجدولة' : 'No sessions scheduled'}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Evaluation Header */}
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
                     <GitBranch size={16} className="text-emerald-400" />

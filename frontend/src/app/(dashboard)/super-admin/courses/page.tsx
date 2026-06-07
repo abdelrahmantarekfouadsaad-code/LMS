@@ -206,7 +206,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
         </div>
 
         <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
-          <form id="course-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form id="course-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }} className="space-y-8">
             
             {/* Step 1: Base Info */}
             {step === 1 && (

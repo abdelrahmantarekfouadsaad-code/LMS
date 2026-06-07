@@ -22,6 +22,21 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrSupervisorOrReadOnly]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        
+        if user.role == 'STUDENT':
+            # Assuming the user model has an `age_group` field
+            age_group = getattr(user, 'age_group', None)
+            if age_group:
+                from django.db.models import Q
+                qs = qs.filter(Q(target_age=age_group) | Q(target_age='ALL'))
+            else:
+                qs = qs.filter(target_age='ALL')
+                
+        return qs
+
     def create(self, request, *args, **kwargs):
         data = request.data
         

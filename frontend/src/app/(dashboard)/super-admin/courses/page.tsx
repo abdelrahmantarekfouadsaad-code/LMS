@@ -12,6 +12,7 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data);
 export default function CoursesPage() {
   const [filter, setFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
 
   const { data: courses = [], mutate } = useSWR('/courses/', fetcher);
 
@@ -26,7 +27,11 @@ export default function CoursesPage() {
           <p className="text-gray-500 mt-2">قم بإنشاء وإدارة دورات النظام</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          type="button"
+          onClick={() => {
+            setEditingCourse(null);
+            setIsModalOpen(true);
+          }}
           className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-sm"
         >
           + إضافة دورة
@@ -37,6 +42,7 @@ export default function CoursesPage() {
       <div className="flex space-x-4 space-x-reverse mb-8 overflow-x-auto pb-2">
         {['ALL', 'CHILDREN', 'TWEENS', 'TEENS'].map(age => (
           <button
+            type="button"
             key={age}
             onClick={() => setFilter(age)}
             className={`px-6 py-2 rounded-full whitespace-nowrap transition-colors ${
@@ -53,7 +59,7 @@ export default function CoursesPage() {
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCourses.map((course: any) => (
-          <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+          <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setEditingCourse(course); setIsModalOpen(true); }}>
             <div className="h-48 bg-gray-200 relative">
               {course.thumbnail ? (
                 <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
@@ -86,9 +92,14 @@ export default function CoursesPage() {
       {/* Dynamic Modal */}
       {isModalOpen && (
         <CourseModal
-          onClose={() => setIsModalOpen(false)}
+          initialData={editingCourse}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingCourse(null);
+          }}
           onSuccess={() => {
             setIsModalOpen(false);
+            setEditingCourse(null);
             mutate();
           }}
         />
@@ -112,11 +123,11 @@ type FormValues = {
   flat_lessons: { title: string; video_url: string; pdf_attachment: string; is_quiz: boolean; estimated_minutes: number }[];
 };
 
-function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => void, initialData?: any }) {
   const [step, setStep] = useState(1);
 
   const { register, control, handleSubmit, watch, setValue } = useForm<FormValues>({
-    defaultValues: {
+    defaultValues: initialData || {
       target_age: 'ALL',
       course_format: 'VIDEO_ONLY',
       course_structure: 'SHORT_FLAT',
@@ -146,7 +157,11 @@ function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: (
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await axios.post('/courses/', data);
+      if (initialData?.id) {
+        await axios.put(`/courses/${initialData.id}/`, data);
+      } else {
+        await axios.post('/courses/', data);
+      }
       onSuccess();
     } catch (err: any) {
       console.error(err);
@@ -160,8 +175,8 @@ function CourseModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
       <div className="glass-panel w-full max-w-4xl overflow-hidden my-8 flex flex-col max-h-[90vh] text-white">
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-          <h2 className="text-2xl font-bold bg-gradient-to-l from-indigo-400 to-purple-400 bg-clip-text text-transparent">إضافة دورة جديدة</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-red-400 transition-colors">
+          <h2 className="text-2xl font-bold bg-gradient-to-l from-indigo-400 to-purple-400 bg-clip-text text-transparent">{initialData ? 'تعديل الدورة' : 'إضافة دورة جديدة'}</h2>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-red-400 transition-colors">
             ✕
           </button>
         </div>

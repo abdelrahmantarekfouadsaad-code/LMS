@@ -15,7 +15,7 @@ export default function CoursesPage() {
 
   const { data: courses = [], mutate } = useSWR('/courses/', fetcher);
 
-  const filteredCourses = courses.filter(c => filter === 'ALL' || c.target_age === filter);
+  const filteredCourses = courses.filter((c: any) => filter === 'ALL' || c.target_age === filter);
 
   return (
     <div className="p-8 font-cairo bg-gray-50 min-h-screen" dir="rtl">

@@ -11,21 +11,8 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function CoursesPage() {
   const [filter, setFilter] = useState('ALL');
-  const [isModalOpen, _setIsModalOpen] = useState(false);
-  const setIsModalOpen = (value: boolean) => {
-      if (value === false) {
-          console.trace("🚨 MODAL CLOSED! Trace log:");
-      }
-      _setIsModalOpen(value);
-  };
-
-  const [editingCourse, _setEditingCourse] = useState<any>(null);
-  const setEditingCourse = (val: any) => {
-      if (val === null) {
-          console.trace("🚨 EDITING COURSE CLEARED! Trace log:");
-      }
-      _setEditingCourse(val);
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
 
   const { data: courses = [], mutate } = useSWR('/courses/', fetcher, {
     revalidateOnFocus: false,
@@ -114,10 +101,11 @@ export default function CoursesPage() {
             setIsModalOpen(false);
             setEditingCourse(null);
           }}
-          onSuccess={() => {
+          onSuccess={async () => {
+            await mutate();
+            alert("تم الحفظ بنجاح");
             setIsModalOpen(false);
             setEditingCourse(null);
-            mutate();
           }}
         />
       )}
@@ -140,8 +128,9 @@ type FormValues = {
   flat_lessons: { title: string; video_url: string; pdf_attachment: string; is_quiz: boolean; estimated_minutes: number }[];
 };
 
-function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => void, initialData?: any }) {
+function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => Promise<void> | void, initialData?: any }) {
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue, reset } = useForm<FormValues>({
     defaultValues: initialData || {
@@ -188,19 +177,21 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
   const courseStructure = watch('course_structure');
 
   const onSubmit = async (data: FormValues) => {
-    console.log("🚨 Form Submitted!", data);
+    setIsSubmitting(true);
     try {
       if (initialData?.id) {
         await axios.put(`/courses/${initialData.id}/`, data);
       } else {
         await axios.post('/courses/', data);
       }
-      onSuccess();
+      await onSuccess();
     } catch (err: any) {
       console.error(err);
       const errorMsg = err.response?.data || err.message;
       console.log('Detailed Backend Error:', errorMsg);
       alert('حدث خطأ أثناء الحفظ: \n' + JSON.stringify(errorMsg, null, 2));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -378,18 +369,22 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
             {initialData && (
               <button 
                 type="button" 
+                disabled={isSubmitting}
                 onClick={async () => {
                   if (window.confirm('هل أنت متأكد من حذف هذه الدورة نهائياً؟')) {
+                    setIsSubmitting(true);
                     try {
                       await axios.delete(`/courses/${initialData.id}/`);
-                      onSuccess();
+                      await onSuccess();
                     } catch (err) {
                       console.error(err);
                       alert('حدث خطأ أثناء الحذف');
+                    } finally {
+                      setIsSubmitting(false);
                     }
                   }
                 }} 
-                className="px-6 py-2 rounded-xl font-bold text-red-500 hover:bg-red-500/20 transition-colors"
+                className={`px-6 py-2 rounded-xl font-bold text-red-500 transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-500/20'}`}
               >
                 حذف الدورة
               </button>
@@ -397,9 +392,9 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
           </div>
           
           {step < 3 ? (
-            <button type="button" onClick={() => setStep(step + 1)} className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-sm">التالي</button>
+            <button type="button" disabled={isSubmitting} onClick={() => setStep(step + 1)} className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-medium transition-colors shadow-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>التالي</button>
           ) : (
-            <button type="submit" form="course-form" className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-[0_0_15px_rgba(79,70,229,0.5)]">حفظ الدورة</button>
+            <button type="submit" disabled={isSubmitting} form="course-form" className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(79,70,229,0.5)] ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>{isSubmitting ? 'جاري الحفظ...' : 'حفظ الدورة'}</button>
           )}
         </div>
       </div>

@@ -262,9 +262,9 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { val: 'VIDEO_ONLY', label: 'فيديوهات مسجلة فقط', desc: 'لا يوجد لقاءات زووم' },
-                    { val: 'ZOOM_ONLY', label: 'لقاءات زووم فقط', desc: 'لا يوجد محتوى مسجل' },
-                    { val: 'HYBRID', label: 'مدمج (مسجل + زووم)', desc: 'محتوى مسجل مع لقاءات تفاعلية' }
+                    { val: 'VIDEO_ONLY', label: 'فيديوهات مسجلة فقط', desc: 'لا يوجد لقاءات مباشرة' },
+                    { val: 'ZOOM_ONLY', label: 'جلسات افتراضية فقط', desc: 'لا يوجد محتوى مسجل' },
+                    { val: 'HYBRID', label: 'مدمج (مسجل + جلسات)', desc: 'محتوى مسجل مع لقاءات تفاعلية' }
                   ].map(fmt => (
                     <div key={fmt.val} onClick={() => setValue('course_format', fmt.val)} className={`cursor-pointer p-5 border-2 rounded-xl transition-all ${courseFormat === fmt.val ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="font-bold text-lg text-gray-900 mb-1">{fmt.label}</div>
@@ -297,10 +297,10 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
               <div className="space-y-8 animate-fade-in">
                 <h3 className="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">محتوى الدورة</h3>
 
-                {/* ZOOM CONTENT */}
+                {/* VIRTUAL SESSION CONTENT */}
                 {(courseFormat === 'ZOOM_ONLY' || courseFormat === 'HYBRID') && (
                   <div className="glass-panel p-6 mb-8 border-indigo-500/30">
-                    <h4 className="font-bold text-indigo-300 text-lg mb-4">لقاءات الزووم التفاعلية</h4>
+                    <h4 className="font-bold text-indigo-300 text-lg mb-4">الجلسات الافتراضية</h4>
                     {groupFields.map((group, gIndex) => (
                       <div key={group.id} className="mb-6 last:mb-0 glass-panel p-4 border-none bg-black/20">
                         <div className="font-bold text-gray-200 mb-3 border-b border-white/10 pb-2">مجموعة: {watch(`groups.${gIndex}.name`) || `مجموعة ${gIndex+1}`}</div>
@@ -403,20 +403,26 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
   );
 }
 
-// Sub-component for deeply nested Zoom Sessions Field Array
+// Sub-component for deeply nested Virtual Session Field Array
 function ZoomSessionsList({ control, register, gIndex }: any) {
   const { fields, append, remove } = useFieldArray({ control, name: `groups.${gIndex}.zoom_sessions` });
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 mt-3 ml-6">
       {fields.map((field, index) => (
-        <div key={field.id} className="flex gap-3 items-center">
-          <input {...register(`groups.${gIndex}.zoom_sessions.${index}.title`, { required: true })} placeholder="عنوان اللقاء" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" />
-          <input type="datetime-local" {...register(`groups.${gIndex}.zoom_sessions.${index}.scheduled_time`)} className="p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg [&::-webkit-calendar-picker-indicator]:filter-[invert(1)]" />
-          <input type="text" {...register(`groups.${gIndex}.zoom_sessions.${index}.meeting_link`)} placeholder="رابط الزووم" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
-          <button type="button" onClick={() => remove(index)} className="text-red-400 hover:bg-red-500/20 p-2 rounded-lg transition-colors">✕</button>
+        <div key={field.id} className="flex gap-2 items-start">
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input {...register(`groups.${gIndex}.zoom_sessions.${index}.title`, { required: true })} placeholder="عنوان الجلسة الافتراضية" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" />
+              <input type="datetime-local" {...register(`groups.${gIndex}.zoom_sessions.${index}.scheduled_time`)} className="p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg [&::-webkit-calendar-picker-indicator]:filter-[invert(1)]" />
+            </div>
+            <div className="flex gap-2">
+              <input type="text" {...register(`groups.${gIndex}.zoom_sessions.${index}.meeting_link`)} placeholder="رابط الجلسة (اختياري)" className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />
+            </div>
+          </div>
+          <button type="button" onClick={() => remove(index)} className="p-2 text-red-400 hover:text-red-300 bg-red-400/10 rounded-lg shrink-0">🗑️</button>
         </div>
       ))}
-      <button type="button" onClick={() => append({ title: '', scheduled_time: '', meeting_link: '' })} className="text-xs font-bold text-indigo-400 hover:text-indigo-300 mt-2 block">+ إضافة لقاء</button>
+      <button type="button" onClick={() => append({ title: '', scheduled_time: '', meeting_link: '' })} className="text-sm text-indigo-400 hover:text-indigo-300 font-medium w-fit">+ إضافة جلسة افتراضية</button>
     </div>
   );
 }

@@ -121,10 +121,17 @@ function StudentDashboard() {
         );
     }
 
-    const enrolledCourses = Array.isArray(courses) ? courses : [];
-    const progressItems = Array.isArray(progressData) ? progressData : [];
+    const enrolledCourses = Array.isArray(courses?.results || courses) ? (courses?.results || courses) : [];
+    const progressItems = Array.isArray(progressData?.results || progressData) ? (progressData?.results || progressData) : [];
     const completedLessons = progressItems.filter((p: any) => p.is_completed).length;
-    const totalLessons = progressItems.length;
+    
+    const getTotalLessons = (course: any) => {
+        if (course.course_structure === 'LONG_NESTED') {
+            return course.units?.reduce((acc: number, unit: any) => acc + (unit.lessons?.length || 0), 0) || 0;
+        }
+        return course.flat_lessons?.length || 0;
+    };
+    const totalLessons = enrolledCourses.reduce((acc: number, course: any) => acc + getTotalLessons(course), 0);
     const overallCompletion = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
     const stats = {
@@ -179,7 +186,8 @@ function StudentDashboard() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
 
                             {/* Circular Progress (Overall Completion) */}
-                            <div className="flex justify-center p-6 bg-white/5 dark:bg-slate-800/50 rounded-2xl border border-white/10 backdrop-blur-md">
+                            <div className="flex justify-center p-8 bg-gradient-to-br from-emerald-500/5 to-teal-500/10 rounded-3xl border border-white/10 backdrop-blur-xl shadow-lg relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                 <CircularProgress
                                     percentage={stats.overallCompletion}
                                     color="#10B981"
@@ -188,21 +196,25 @@ function StudentDashboard() {
                             </div>
 
                             {/* Metric 1: Total Completed Topics */}
-                            <div className="flex flex-col justify-center p-6 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl border border-white/10 backdrop-blur-md h-full relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
-                                <BookOpen className="w-8 h-8 text-indigo-400 mb-3" />
-                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{stats.totalTopics}</span>
-                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <div className="flex flex-col justify-center p-8 bg-gradient-to-br from-indigo-500/5 to-purple-500/10 rounded-3xl border border-white/10 backdrop-blur-xl h-full relative overflow-hidden shadow-lg group">
+                                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
+                                <div className="p-3 bg-indigo-500/10 w-fit rounded-2xl mb-4">
+                                    <BookOpen className="w-8 h-8 text-indigo-500" />
+                                </div>
+                                <span className="text-5xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">{stats.totalTopics}</span>
+                                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                                     {locale === 'ar' ? 'الموضوعات المكتملة' : 'Completed Topics'}
                                 </span>
                             </div>
 
                             {/* Metric 2: Active Courses */}
-                            <div className="flex flex-col justify-center p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl border border-white/10 backdrop-blur-md h-full relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-amber-500/20 rounded-full blur-xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
-                                <GraduationCap className="w-8 h-8 text-amber-400 mb-3" />
-                                <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{stats.activeCourses}</span>
-                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            <div className="flex flex-col justify-center p-8 bg-gradient-to-br from-amber-500/5 to-orange-500/10 rounded-3xl border border-white/10 backdrop-blur-xl h-full relative overflow-hidden shadow-lg group">
+                                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
+                                <div className="p-3 bg-amber-500/10 w-fit rounded-2xl mb-4">
+                                    <GraduationCap className="w-8 h-8 text-amber-500" />
+                                </div>
+                                <span className="text-5xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">{stats.activeCourses}</span>
+                                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                                     {locale === 'ar' ? 'الدورات النشطة' : 'Active Courses'}
                                 </span>
                             </div>

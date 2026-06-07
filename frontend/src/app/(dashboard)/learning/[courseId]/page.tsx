@@ -18,10 +18,11 @@ import EmptyState from '@/components/ui/EmptyState';
 
 // --- Milestone Type Config ---
 const MILESTONE_CONFIG: Record<string, { icon: React.ElementType; color: string; gradient: string }> = {
-  ACHIEVEMENT: { icon: Award, color: 'text-amber-400', gradient: 'from-amber-500/20 to-orange-500/20' },
-  ASSESSMENT: { icon: ClipboardCheck, color: 'text-blue-400', gradient: 'from-blue-500/20 to-indigo-500/20' },
-  CHECKPOINT: { icon: Star, color: 'text-emerald-400', gradient: 'from-emerald-500/20 to-teal-500/20' },
-  NOTE: { icon: MessageSquare, color: 'text-purple-400', gradient: 'from-purple-500/20 to-violet-500/20' },
+  ACHIEVEMENT: { icon: Award, color: 'text-amber-400', gradient: 'from-amber-500/10 to-orange-500/20' },
+  ASSESSMENT: { icon: FileText, color: 'text-purple-400', gradient: 'from-purple-500/10 to-pink-500/20' },
+  CHECKPOINT: { icon: GitBranch, color: 'text-emerald-400', gradient: 'from-emerald-500/10 to-teal-500/20' },
+  NOTE: { icon: MessageSquare, color: 'text-blue-400', gradient: 'from-blue-500/10 to-indigo-500/20' },
+  VIRTUAL_SESSION: { icon: Video, color: 'text-blue-400', gradient: 'from-blue-500/10 to-cyan-500/20' }
 };
 
 // --- Timeline Branch Component ---
@@ -48,7 +49,7 @@ function TimelineBranch({ milestone, index, isAr }: { milestone: any; index: num
           <div className="relative z-10">
             <div className={`flex items-center gap-2 mb-2 ${isLeft ? 'justify-end' : 'justify-start'}`}>
               <span className={`text-xs font-bold uppercase tracking-wider ${config.color}`}>
-                {milestone.milestone_type}
+                {milestone.milestone_type === 'VIRTUAL_SESSION' ? (isAr ? 'جلسة افتراضية' : 'Virtual Session') : milestone.milestone_type}
               </span>
               {milestone.is_completed && (
                 <CheckCircle size={14} className="text-emerald-400" />
@@ -59,9 +60,24 @@ function TimelineBranch({ milestone, index, isAr }: { milestone: any; index: num
               <p className="text-sm text-slate-400 line-clamp-2">{milestone.description}</p>
             )}
             <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-              <span>{new Date(milestone.milestone_date).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span>{new Date(milestone.milestone_date).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}</span>
               {milestone.created_by_name && <span>• {milestone.created_by_name}</span>}
             </div>
+            
+            {milestone.milestone_type === 'VIRTUAL_SESSION' && (
+              <div className={`mt-4 flex ${isLeft ? 'justify-end' : 'justify-start'}`}>
+                {milestone.meeting_link ? (
+                  <a href={milestone.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm">
+                    <Video size={16} />
+                    {isAr ? 'انضمام للجلسة' : 'Join Session'}
+                  </a>
+                ) : (
+                  <div className="px-4 py-2 bg-slate-800 text-slate-500 rounded-lg text-center font-medium text-sm cursor-not-allowed">
+                    {isAr ? 'الرابط غير متوفر بعد' : 'Link not available yet'}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -120,7 +136,29 @@ export default function CoursePlayerPage() {
   const t = DICTIONARY[locale as 'en' | 'ar']?.learning || DICTIONARY.en.learning;
 
   const milestones = (milestonesData?.results || milestonesData || []);
-  const displayMilestones = milestones;
+  
+  let displayMilestones = [...milestones];
+  
+  if (course?.groups?.length > 0) {
+    course.groups.forEach((group: any) => {
+      if (group.zoom_sessions?.length > 0) {
+        group.zoom_sessions.forEach((session: any) => {
+          displayMilestones.push({
+            id: `virtual-${session.id}`,
+            milestone_type: 'VIRTUAL_SESSION',
+            title: session.title,
+            description: group.name,
+            milestone_date: session.scheduled_time || new Date().toISOString(),
+            is_completed: false,
+            meeting_link: session.meeting_link
+          });
+        });
+      }
+    });
+  }
+  
+  // Sort them chronologically
+  displayMilestones.sort((a, b) => new Date(a.milestone_date).getTime() - new Date(b.milestone_date).getTime());
 
   const allLessons = React.useMemo(() => {
     if (course?.course_structure === 'LONG_NESTED') {
@@ -349,55 +387,7 @@ export default function CoursePlayerPage() {
             <motion.div key="timeline" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
               {/* ========= VIEW B: EVALUATION TIMELINE (الغصون) ========= */}
               <div className="max-w-4xl mx-auto py-8 relative">
-                {/* Zoom Sessions (from course groups) */}
-                {course?.groups?.length > 0 && (
-                  <div className="mb-12">
-                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 mb-4">
-                        <Video size={16} className="text-blue-400" />
-                        <span className="text-sm font-semibold text-blue-400">{isAr ? 'جلسات البث المباشر (زووم)' : 'Live Sessions (Zoom)'}</span>
-                      </div>
-                      <h2 className="text-3xl font-extrabold text-white mb-2">{isAr ? 'الجلسات المباشرة' : 'Live Sessions'}</h2>
-                    </motion.div>
-                    
-                    <div className="space-y-6">
-                      {course.groups.map((group: any) => (
-                        <div key={group.id} className="glass-panel p-6 rounded-2xl border border-white/10">
-                          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                             <Circle size={12} className="text-blue-400 fill-current" />
-                             {group.name}
-                          </h3>
-                          {group.zoom_sessions?.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {group.zoom_sessions.map((session: any) => (
-                                <div key={session.id} className="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-colors">
-                                  <div>
-                                    <h4 className="text-base font-bold text-white mb-2">{session.title}</h4>
-                                    <p className="text-sm text-slate-400 mb-4">
-                                      {session.scheduled_time ? new Date(session.scheduled_time).toLocaleString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }) : (isAr ? 'غير مجدول' : 'Unscheduled')}
-                                    </p>
-                                  </div>
-                                  {session.meeting_link ? (
-                                    <a href={session.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm w-full">
-                                      <Video size={16} />
-                                      {isAr ? 'انضمام للزووم' : 'Join Zoom'}
-                                    </a>
-                                  ) : (
-                                    <div className="px-4 py-2 bg-slate-800 text-slate-500 rounded-lg text-center font-medium text-sm w-full cursor-not-allowed">
-                                      {isAr ? 'رابط الزووم غير متوفر بعد' : 'Zoom link not available yet'}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-slate-500 text-sm">{isAr ? 'لا توجد جلسات مجدولة' : 'No sessions scheduled'}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Evaluation Header */}
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">

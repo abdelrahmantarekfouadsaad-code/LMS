@@ -84,7 +84,7 @@ function StudentDashboard() {
   const t = DICTIONARY[locale as 'en' | 'ar']?.dashboard || DICTIONARY.en.dashboard;
 
   const { data: courses, isLoading } = useSWR(
-    session?.accessToken ? '/courses/' : null,
+    session?.accessToken ? '/courses/enrolled/' : null,
     (url) => api.get(url).then(res => res.data)
   );
 

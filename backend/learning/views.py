@@ -37,6 +37,28 @@ class CourseViewSet(viewsets.ModelViewSet):
                 
         return qs
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = request.user
+        
+        if user.role == 'STUDENT':
+            from payment.models import Subscription
+            has_access = Subscription.objects.filter(
+                user=user,
+                course=instance,
+                status='approved',
+                is_active=True
+            ).exists()
+            
+            if not has_access:
+                return Response(
+                    {"detail": "Content Locked - Please Subscribe", "code": "content_locked"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'])
     def enrolled(self, request):
         from payment.models import Subscription

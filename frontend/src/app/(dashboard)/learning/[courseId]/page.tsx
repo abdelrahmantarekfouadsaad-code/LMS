@@ -217,7 +217,24 @@ export default function CoursePlayerPage() {
             <ArrowLeft size={16} className={`mr-1 ${isAr ? 'rotate-180 ml-1 mr-0' : ''}`} />
             {isAr ? 'العودة إلى الكتالوج' : 'Back to Catalog'}
           </Link>
-          <div className="flex items-center justify-between">
+          
+          {error?.response?.status === 403 || error?.response?.data?.code === 'content_locked' ? (
+            <div className="flex flex-col items-center justify-center p-12 mt-10 glass-panel rounded-2xl border border-red-500/20 bg-red-500/5">
+              <Lock className="w-16 h-16 text-red-500 mb-6" />
+              <h2 className="text-3xl font-extrabold text-white mb-3 tracking-tight">
+                {isAr ? 'المحتوى مقفل' : 'Content Locked'}
+              </h2>
+              <p className="text-slate-400 mb-8 max-w-md text-center text-lg">
+                {isAr ? 'يرجى الاشتراك في هذه الدورة للوصول إلى محتواها الكامل والبدء في التعلم.' : 'Please subscribe to this course to unlock its full content and start learning.'}
+              </p>
+              <Link href={`/payment?courseId=${courseId}`} className="px-8 py-4 bg-primary text-white rounded-xl font-bold hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 flex items-center gap-2">
+                <Lock size={18} />
+                {isAr ? 'فتح المحتوى الآن' : 'Unlock Content Now'}
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2">
                 {course?.title || (isLoading ? 'Loading...' : t.title)}
@@ -439,6 +456,13 @@ export default function CoursePlayerPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        
+        {/* Close the false block correctly if error is present */}
+        {!(error?.response?.status === 403 || error?.response?.data?.code === 'content_locked') && (
+            <></>
+        )}
+        </div>
+        )}
       </main>
     </div>
   );

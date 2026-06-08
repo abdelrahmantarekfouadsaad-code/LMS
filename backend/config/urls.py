@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from accounts.views import UserViewSet, RegisterView, GoogleLoginView, ForgotPasswordView, ResetPasswordView, ParentVerifyView, ParentCreateView, ParentDashboardView, ParentCourseAnalyticsView
-from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet
+from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet
 from quizzes.views import QuizViewSet, StudentResultViewSet
 from live.views import LiveSessionViewSet, AttendanceViewSet
 from support.views import SupportTicketViewSet
@@ -22,6 +22,7 @@ router.register(r'milestones', StudentMilestoneViewSet, basename='milestone')
 router.register(r'certificates', CertificateViewSet, basename='certificate')
 router.register(r'projects', ProjectViewSet, basename='project')
 router.register(r'project-submissions', ProjectSubmissionViewSet, basename='projectsubmission')
+router.register(r'announcements', AnnouncementViewSet, basename='announcement')
 # Quizzes endpoints
 router.register(r'quizzes', QuizViewSet, basename='quiz')
 router.register(r'results', StudentResultViewSet, basename='result')

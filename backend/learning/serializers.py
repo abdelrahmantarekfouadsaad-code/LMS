@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, CourseGroup, ZoomSession, Unit, Lesson, Resource, StudentProgress, StudentMilestone, Certificate, Project, ProjectSubmission
+from .models import Course, CourseGroup, ZoomSession, Unit, Lesson, Resource, StudentProgress, StudentMilestone, Certificate, Project, ProjectSubmission, Announcement
 
 class ZoomSessionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,3 +86,9 @@ class ProjectSubmissionSerializer(serializers.ModelSerializer):
         model = ProjectSubmission
         fields = ['id', 'student', 'student_name', 'project', 'project_title', 'drive_link', 'submitted_at', 'is_graded', 'grade']
         read_only_fields = ['student', 'submitted_at', 'is_graded', 'grade']
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = ['id', 'image_url', 'is_active', 'created_at']
+        read_only_fields = ['created_at']

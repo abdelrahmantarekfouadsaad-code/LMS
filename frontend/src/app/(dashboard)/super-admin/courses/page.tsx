@@ -23,12 +23,12 @@ export default function CoursesPage() {
   const filteredCourses = courses.filter((c: any) => filter === 'ALL' || c.target_age === filter);
 
   return (
-    <div className="p-8 font-cairo bg-gray-50 min-h-screen" dir="rtl">
+    <div className="p-8 font-cairo bg-background-light dark:bg-background-dark min-h-screen" dir="rtl">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">إدارة الدورات</h1>
-          <p className="text-gray-500 mt-2">قم بإنشاء وإدارة دورات النظام</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">إدارة الدورات</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">قم بإنشاء وإدارة دورات النظام</p>
         </div>
         <button
           type="button"
@@ -51,8 +51,8 @@ export default function CoursesPage() {
             onClick={() => setFilter(age)}
             className={`px-6 py-2 rounded-full whitespace-nowrap transition-colors ${
               filter === age
-                ? 'bg-black text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                ? 'bg-primary text-white'
+                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/10'
             }`}
           >
             {age === 'ALL' ? 'الكل' : age === 'CHILDREN' ? 'أطفال' : age === 'TWEENS' ? 'يافعين' : 'شباب'}
@@ -63,8 +63,8 @@ export default function CoursesPage() {
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCourses.map((course: any) => (
-          <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setEditingCourse(course); setIsModalOpen(true); }}>
-            <div className="h-48 bg-gray-200 relative">
+          <div key={course.id} className="glass-panel p-0 bg-slate-900/50 rounded-xl shadow-lg border border-white/10 overflow-hidden hover:shadow-xl hover:border-white/20 transition-all cursor-pointer" onClick={() => { setEditingCourse(course); setIsModalOpen(true); }}>
+            <div className="h-48 bg-slate-800 relative">
               {course.thumbnail ? (
                 <img 
                   src={course.thumbnail} 
@@ -76,26 +76,26 @@ export default function CoursesPage() {
                   }}
                 />
               ) : (
-                <div className={`w-full h-full bg-gradient-to-br ${course.color || 'from-gray-100 to-gray-200'}`} />
+                <div className={`w-full h-full bg-gradient-to-br ${course.color || 'from-slate-800 to-slate-700'}`} />
               )}
               <div className="absolute top-4 right-4">
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${course.is_upload_completed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm backdrop-blur-md ${course.is_upload_completed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
                   {course.is_upload_completed ? 'مكتمل الرفع' : 'غير مكتمل الرفع'}
                 </span>
               </div>
             </div>
             <div className="p-5">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{course.title}</h3>
-              <p className="text-gray-500 text-sm mb-4 line-clamp-2">{course.description}</p>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
-                <span className="text-black font-bold">{course.price > 0 ? `${course.price} د.ك` : 'مجاني'}</span>
-                <span className="text-xs text-gray-400">{course.course_format}</span>
+              <h3 className="text-xl font-bold text-white mb-2">{course.title}</h3>
+              <p className="text-slate-400 text-sm mb-4 line-clamp-2">{course.description}</p>
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+                <span className="text-white font-bold">{course.price > 0 ? `${course.price} د.ك` : 'مجاني'}</span>
+                <span className="text-xs text-slate-500">{course.course_format}</span>
               </div>
             </div>
           </div>
         ))}
         {filteredCourses.length === 0 && (
-          <div className="col-span-full text-center py-12 text-gray-400">
+          <div className="col-span-full text-center py-12 text-slate-500">
             لا توجد دورات مطابقة
           </div>
         )}

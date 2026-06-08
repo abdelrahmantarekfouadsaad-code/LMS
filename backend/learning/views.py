@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
-from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission
-from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer
+from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission, Announcement
+from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer, AnnouncementSerializer
 from accounts.permissions import IsSuperAdmin, IsSupervisor
 
 class IsAdminOrSupervisorOrReadOnly(permissions.BasePermission):
@@ -343,3 +343,20 @@ class ProjectSubmissionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(student=self.request.user)
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    """
+    Announcements for the dynamic hero slider.
+    Only SuperAdmin/Supervisor can create/edit.
+    Students/Guests can read active announcements.
+    """
+    queryset = Announcement.objects.all()
+    serializer_class = AnnouncementSerializer
+    permission_classes = [IsAdminOrSupervisorOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if not (user and user.is_authenticated and user.role in ['SUPER_ADMIN', 'SUPERVISOR']):
+            qs = qs.filter(is_active=True)
+        return qs

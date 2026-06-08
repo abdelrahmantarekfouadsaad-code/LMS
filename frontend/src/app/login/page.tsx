@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, Chrome, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -29,7 +29,12 @@ export default function LoginPage() {
       setError('Invalid credentials. Please verify your email and password.');
       setIsLoading(false);
     } else {
-      router.push('/dashboard');
+      const session = await getSession();
+      if (session?.user?.role === 'SUPER_ADMIN') {
+        router.push('/super-admin/courses');
+      } else {
+        router.push('/dashboard');
+      }
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import api from '@/lib/axios';
+import { useTranslation } from '@/i18n/TranslationContext';
 import { Search, ChevronDown, MoreVertical, Shield, User, GraduationCap, X, Check, Eye, BookOpen } from 'lucide-react';
 
 const FILTER_ROLES = [
@@ -31,6 +32,7 @@ const REVERSE_ROLE_MAPPING: Record<string, string> = {
 };
 
 export default function SuperAdminUsersPage() {
+  const { t } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -106,14 +108,14 @@ export default function SuperAdminUsersPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">إدارة المستخدمين</h1>
-            <p className="text-gray-400">Manage all users, roles, and platform access.</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{t('users.title')}</h1>
+            <p className="text-gray-400">{t('users.subtitle')}</p>
           </div>
           <div className="relative">
             <Search className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input 
               type="text" 
-              placeholder="ابحث بالاسم أو البريد..." 
+              placeholder={t('users.searchPlaceholder')} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="ps-4 pe-10 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
@@ -144,17 +146,17 @@ export default function SuperAdminUsersPage() {
             <table className="w-full text-start text-sm text-gray-300" dir="ltr">
               <thead className="bg-white/5 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
                 <tr>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Age / Group</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4 text-end">Actions</th>
+                  <th className="px-6 py-4">{t('users.user')}</th>
+                  <th className="px-6 py-4">{t('users.ageGroup')}</th>
+                  <th className="px-6 py-4">{t('users.role')}</th>
+                  <th className="px-6 py-4 text-end">{t('users.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {!users ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">Loading users...</td></tr>
+                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">{t('users.loading')}</td></tr>
                 ) : filteredUsers.length === 0 ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No users found.</td></tr>
+                  <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">{t('users.noUsers')}</td></tr>
                 ) : (
                   filteredUsers.map((user: any) => (
                     <tr 
@@ -190,7 +192,7 @@ export default function SuperAdminUsersPage() {
                           className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white inline-flex items-center gap-2"
                         >
                           <Shield className="w-4 h-4" />
-                          <span className="text-xs">Change Role</span>
+                          <span className="text-xs">{t('users.changeRole')}</span>
                         </button>
                       </td>
                     </tr>
@@ -213,12 +215,12 @@ export default function SuperAdminUsersPage() {
               <X className="w-5 h-5" />
             </button>
             <div className="p-6">
-              <h3 className="text-xl font-bold text-white mb-1">Update Role</h3>
-              <p className="text-sm text-gray-400 mb-6">Modify access level for {roleModalUser.email}</p>
+              <h3 className="text-xl font-bold text-white mb-1">{t('users.updateRole')}</h3>
+              <p className="text-sm text-gray-400 mb-6">{t('users.modifyAccess')} {roleModalUser.email}</p>
               
               <form onSubmit={handleRoleUpdate} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">New Role</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('users.newRole')}</label>
                   <select 
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
@@ -237,10 +239,10 @@ export default function SuperAdminUsersPage() {
                 {newRole === 'PARENT' && (
                   <div className="space-y-4 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl mt-4">
                     <p className="text-xs text-indigo-300 flex items-center gap-2">
-                      <Shield className="w-4 h-4" /> Strict Parent Verification Required
+                      <Shield className="w-4 h-4" /> {t('users.strictParentVerification')}
                     </p>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1.5">Student Email</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('users.studentEmail')}</label>
                       <input 
                         type="email" 
                         required
@@ -251,7 +253,7 @@ export default function SuperAdminUsersPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1.5">New Parent Password</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('users.newParentPassword')}</label>
                       <input 
                         type="password" 
                         required
@@ -283,7 +285,7 @@ export default function SuperAdminUsersPage() {
                     disabled={roleChangeLoading}
                     className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {roleChangeLoading ? 'Saving...' : 'Save Changes'}
+                    {roleChangeLoading ? t('users.saving') : t('users.saveChanges')}
                   </button>
                 </div>
               </form>
@@ -318,25 +320,25 @@ export default function SuperAdminUsersPage() {
                   <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : statsError ? (
-                <div className="text-red-400 text-center py-8">Failed to load statistics</div>
+                <div className="text-red-400 text-center py-8">{t('users.failedToLoadStats')}</div>
               ) : (
                 <div className="space-y-6">
                   {/* KPI Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                      <p className="text-xs text-gray-400 mb-1">Attendance</p>
+                      <p className="text-xs text-gray-400 mb-1">{t('users.attendance')}</p>
                       <p className="text-2xl font-bold text-white">{studentStats?.attendance_ratio}%</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                      <p className="text-xs text-gray-400 mb-1">Avg Exam Score</p>
+                      <p className="text-xs text-gray-400 mb-1">{t('users.avgExamScore')}</p>
                       <p className="text-2xl font-bold text-indigo-400">{studentStats?.exam_scores_avg}%</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                      <p className="text-xs text-gray-400 mb-1">Overall Progress</p>
+                      <p className="text-xs text-gray-400 mb-1">{t('users.overallProgress')}</p>
                       <p className="text-2xl font-bold text-emerald-400">{studentStats?.overall_progress}%</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                      <p className="text-xs text-gray-400 mb-1">Projects Done</p>
+                      <p className="text-xs text-gray-400 mb-1">{t('users.projectsDone')}</p>
                       <p className="text-2xl font-bold text-purple-400">{studentStats?.submitted_projects_count}</p>
                     </div>
                   </div>
@@ -349,7 +351,7 @@ export default function SuperAdminUsersPage() {
                     </h4>
                     <div className="space-y-2">
                       {studentStats?.enrolled_courses?.length === 0 ? (
-                        <p className="text-sm text-gray-500">No active enrollments.</p>
+                        <p className="text-sm text-gray-500">{t('users.noActiveEnrollments')}</p>
                       ) : (
                         studentStats?.enrolled_courses?.map((course: any) => (
                           <div key={course.id} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg p-3">

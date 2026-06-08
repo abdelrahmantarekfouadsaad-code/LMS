@@ -3,8 +3,10 @@
 import React from 'react';
 import { DollarSign, Pickaxe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function SuperAdminFinancePage() {
+  const { t } = useTranslation();
   return (
     <div className="p-6 md:p-10 space-y-8 bg-background-light dark:bg-background-dark min-h-full flex items-center justify-center">
       <div className="glass-panel p-10 bg-slate-900/50 border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center max-w-2xl text-center relative overflow-hidden">
@@ -37,15 +39,9 @@ export default function SuperAdminFinancePage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <h1 className="text-3xl font-extrabold text-white mb-4 tracking-tight">
-            لوحة الإدارة المالية - تحت التطوير
-          </h1>
-          <p className="text-slate-400 text-lg leading-relaxed max-w-lg mx-auto">
-            نعمل حالياً على تطوير واجهة متقدمة لإدارة الموارد المالية، تتبع الإيرادات، وتحليل بيانات المبيعات بكل سهولة.
-          </p>
-          <p className="text-slate-500 text-sm mt-2">
-            Finance Management Dashboard - Under Construction
-          </p>
+          <h1 className="text-3xl font-extrabold text-white mb-4 tracking-tight">{t('finance.title')}</h1>
+          <p className="text-slate-400 text-lg leading-relaxed max-w-lg mx-auto">{t('finance.subtitle')}</p>
+          
         </motion.div>
 
         <motion.div
@@ -56,7 +52,7 @@ export default function SuperAdminFinancePage() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 text-amber-400 text-sm border border-amber-500/20">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            قريباً (Coming Soon)
+            {t('finance.comingSoon')}
           </div>
         </motion.div>
       </div>

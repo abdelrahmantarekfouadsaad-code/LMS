@@ -334,5 +334,38 @@
     "amount": "Amount",
     "date": "Date",
     "status": "Status"
+  },
+  "finance": {
+    "title": "Finance Management Dashboard - Under Construction",
+    "subtitle": "We are currently developing an advanced interface to manage financial resources, track revenue, and analyze sales data easily.",
+    "comingSoon": "Coming Soon"
+  },
+  "users": {
+    "title": "User Management",
+    "subtitle": "Manage all users, roles, and platform access.",
+    "searchPlaceholder": "Search users by name or email...",
+    "loading": "Loading users...",
+    "noUsers": "No users found.",
+    "changeRole": "Change Role",
+    "updateRole": "Update Role",
+    "modifyAccess": "Modify access level for",
+    "newRole": "New Role",
+    "studentEmail": "Student Email",
+    "newParentPassword": "New Parent Password",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "user": "User",
+    "ageGroup": "Age / Group",
+    "role": "Role",
+    "actions": "Actions",
+    "strictParentVerification": "Strict Parent Verification Required",
+    "failedToLoadStats": "Failed to load statistics",
+    "attendance": "Attendance",
+    "avgExamScore": "Avg Exam Score",
+    "overallProgress": "Overall Progress",
+    "projectsDone": "Projects Done",
+    "enrolledCourses": "Enrolled Courses",
+    "noActiveEnrollments": "No active enrollments."
   }
 }

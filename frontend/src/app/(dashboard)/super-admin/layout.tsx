@@ -10,11 +10,11 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
 
   const navItems = [
     { href: '/super-admin/users', label: 'المستخدمين', icon: Users },
-    { href: '/payment', label: 'المالية', icon: DollarSign },
+    { href: '/super-admin/finance', label: 'المالية', icon: DollarSign },
     { href: '/super-admin/courses', label: 'الدورات', icon: BookOpen },
-    { href: '/chat', label: 'المحادثات', icon: MessageSquare },
+    { href: '/super-admin/chats', label: 'المحادثات', icon: MessageSquare },
     { href: '/super-admin/news', label: 'الأخبار', icon: Newspaper },
-    { href: '/settings', label: 'الإعدادات', icon: Settings },
+    { href: '/super-admin/settings', label: 'الإعدادات', icon: Settings },
   ];
 
   return (

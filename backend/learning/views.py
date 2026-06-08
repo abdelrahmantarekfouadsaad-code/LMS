@@ -96,7 +96,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                     course_structure=data.get('course_structure', 'SHORT_FLAT'),
                     price=price_val,
                     thumbnail=thumbnail_val,
-                    instructor=data.get('instructor'),
+                    instructor_name=data.get('instructor_name'),
                     duration=data.get('duration'),
                     color=data.get('color', 'from-blue-500/20 to-indigo-600/20')
                 )
@@ -176,9 +176,10 @@ class CourseViewSet(viewsets.ModelViewSet):
                 course.course_structure = data.get('course_structure', course.course_structure)
                 course.price = price_val
                 course.thumbnail = thumbnail_val
-                course.instructor = data.get('instructor', course.instructor)
+                course.instructor_name = data.get('instructor_name', course.instructor_name)
                 course.duration = data.get('duration', course.duration)
                 course.color = data.get('color', course.color)
+                course.is_upload_completed = data.get('is_upload_completed', course.is_upload_completed)
                 course.save()
 
                 course.groups.all().delete()

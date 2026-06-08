@@ -32,7 +32,7 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'title_ar', 'description', 'target_age', 'course_format', 
             'course_structure', 'price', 'thumbnail', 'is_upload_completed', 
-            'instructor', 'duration', 'color', 'is_active', 'groups', 'units', 
+            'instructor_name', 'duration', 'color', 'is_active', 'groups', 'units', 
             'flat_lessons', 'created_at'
         ]
 

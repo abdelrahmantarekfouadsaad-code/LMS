@@ -129,6 +129,8 @@ type FormValues = {
   target_age: string;
   price: number;
   thumbnail: string;
+  instructor_name: string;
+  is_upload_completed: boolean;
   course_format: string;
   course_structure: string;
   groups: { name: string; zoom_sessions: { title: string; scheduled_time: string; meeting_link: string }[] }[];
@@ -141,13 +143,15 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue, reset } = useForm<FormValues>({
-    defaultValues: initialData || {
+      defaultValues: initialData || {
       target_age: 'ALL',
       course_format: 'VIDEO_ONLY',
       course_structure: 'SHORT_FLAT',
       groups: [{ name: 'المجموعة 1', zoom_sessions: [] }],
       units: [],
-      flat_lessons: []
+      flat_lessons: [],
+      instructor_name: 'أكاديمية نور النبوة',
+      is_upload_completed: false
     }
   });
 
@@ -161,7 +165,9 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
         course_structure: 'SHORT_FLAT',
         groups: [{ name: 'المجموعة 1', zoom_sessions: [] }],
         units: [],
-        flat_lessons: []
+        flat_lessons: [],
+        instructor_name: 'أكاديمية نور النبوة',
+        is_upload_completed: false
       });
     }
   }, [initialData, reset]);
@@ -243,6 +249,10 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                     <input type="number" step="0.01" {...register('price')} className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">اسم المعلم</label>
+                    <input type="text" {...register('instructor_name')} className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" />
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-400 mb-1">رابط الصورة المصغرة (Thumbnail URL)</label>
                     <input type="text" {...register('thumbnail')} placeholder="https://..." className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" dir="ltr" />
                   </div>
@@ -363,6 +373,14 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                     )}
                   </div>
                 )}
+
+                <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <label className="flex items-center gap-3 cursor-pointer text-white">
+                    <input type="checkbox" {...register('is_upload_completed')} className="w-5 h-5 rounded border-red-500/50 bg-black/50 text-red-500 focus:ring-red-500 focus:ring-offset-gray-900" />
+                    <span className="font-bold text-lg">أؤكد اكتمال رفع جميع محتويات الدورة</span>
+                  </label>
+                  <p className="text-red-400 text-sm mt-2 mr-8">تفعيل هذا الخيار سيغير حالة الدورة إلى "مكتمل الرفع". لا تقم بتفعيله حتى تتأكد من رفع جميع الدروس وملحقاتها.</p>
+                </div>
               </div>
             )}
           </form>

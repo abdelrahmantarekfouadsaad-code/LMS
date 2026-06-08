@@ -28,7 +28,7 @@ class Course(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     thumbnail = models.URLField(blank=True, null=True)
     is_upload_completed = models.BooleanField(default=False)
-    instructor = models.CharField(max_length=255, blank=True, null=True)
+    instructor_name = models.CharField(max_length=255, blank=True, null=True, default="أكاديمية نور النبوة")
     duration = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=100, default='from-blue-500/20 to-indigo-600/20')
     is_active = models.BooleanField(default=True)

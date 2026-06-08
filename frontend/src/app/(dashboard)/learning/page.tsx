@@ -206,25 +206,33 @@ export default function LearningPage() {
                       }
                     `}
                   >
-                    <div className={`glass-panel h-full flex flex-col bg-gradient-to-br ${course.color || 'from-blue-500/20 to-indigo-600/20'} relative`}>
+                    <div className={`glass-panel h-full flex flex-col bg-slate-900/50 relative border-0`}>
                       
-                      <div className="p-6 pb-0 flex-1">
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10">
-                            <BookOpen className={`w-6 h-6 ${!isGuest && (isSelected || isEnrolled) ? 'text-primary dark:text-emerald-400' : 'text-white'}`} />
-                          </div>
-                          
-                          {/* Course Price Tag */}
-                          <div className="px-3 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/10 text-white font-black text-lg shadow-inner z-10">
-                            ${course.price}
-                          </div>
-                        </div>
-                        
-                        <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-primary dark:group-hover:text-emerald-400 transition-colors">
+                      {/* Price Tag Overlay */}
+                      <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-white font-black text-lg shadow-xl z-20">
+                        ${course.price}
+                      </div>
+
+                      {/* Course Thumbnail */}
+                      <div className="relative w-full h-40 shrink-0 bg-slate-800 rounded-t-[14px]">
+                        <img 
+                          src={course.thumbnail} 
+                          alt={course.title} 
+                          className="object-cover w-full h-full rounded-t-[14px]"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2364748b">No Image</text></svg>';
+                          }}
+                        />
+                        <div className={`absolute inset-0 bg-gradient-to-t ${course.color || 'from-slate-900/90 to-transparent'} rounded-t-[14px]`} />
+                      </div>
+                      
+                      <div className="p-6 pb-0 flex-1 relative z-10 -mt-8">
+                        <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-primary dark:group-hover:text-emerald-400 transition-colors drop-shadow-md">
                           {isAr ? course.title_ar || course.title : course.title}
                         </h3>
                         <p className="text-slate-300 text-sm mb-6 flex items-center gap-2">
-                          <User size={14} /> {course.instructor || 'Academy Instructor'}
+                          <User size={14} /> {course.instructor_name || 'Academy Instructor'}
                         </p>
                       </div>
 

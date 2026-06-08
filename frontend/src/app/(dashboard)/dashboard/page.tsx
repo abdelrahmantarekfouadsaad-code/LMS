@@ -6,8 +6,6 @@ import { Trophy, BookOpen, GraduationCap, Target, PlayCircle, ChevronRight, Load
 import Sidebar from '@/components/layout/Sidebar';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { useUserRole } from '@/hooks/useUserRole';
 import GuestDashboard from '@/components/guest/GuestDashboard';
 import NewsCarousel from '@/components/guest/NewsCarousel';
@@ -76,12 +74,13 @@ export default function DashboardHome() {
 }
 
 import api from '@/lib/axios';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 // Student Dashboard (Phase 1 Execution)
 function StudentDashboard() {
   const { data: session } = useSession();
-  const locale = useLocale();
-  const t = DICTIONARY[locale as 'en' | 'ar']?.dashboard || DICTIONARY.en.dashboard;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.dashboard;
 
   const { data: courses, isLoading } = useSWR(
     session?.accessToken ? '/courses/enrolled/' : null,
@@ -155,7 +154,7 @@ function StudentDashboard() {
 
               {/* Metric 1: Total Completed Topics */}
               <div className="flex flex-col justify-center p-6 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-2xl border border-white/10 backdrop-blur-md h-full relative overflow-hidden group">
-                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
+                <div className="absolute top-0 end-0 -mt-6 -me-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
                 <BookOpen className="w-8 h-8 text-indigo-400 mb-3" />
                 <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{completedLessons}</span>
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -165,7 +164,7 @@ function StudentDashboard() {
 
               {/* Metric 2: Active Courses */}
               <div className="flex flex-col justify-center p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl border border-white/10 backdrop-blur-md h-full relative overflow-hidden group">
-                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-amber-500/20 rounded-full blur-xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
+                <div className="absolute top-0 end-0 -mt-6 -me-6 w-24 h-24 bg-amber-500/20 rounded-full blur-xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
                 <GraduationCap className="w-8 h-8 text-amber-400 mb-3" />
                 <span className="text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{enrolledCourses.length}</span>
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">

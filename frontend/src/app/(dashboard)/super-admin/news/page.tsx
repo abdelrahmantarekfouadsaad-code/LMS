@@ -119,7 +119,7 @@ export default function SuperAdminNewsPage() {
                       e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2364748b">Invalid URL</text></svg>';
                     }}
                   />
-                  <div className="absolute top-3 right-3 flex gap-2">
+                  <div className="absolute top-3 end-3 flex gap-2">
                     <button
                       onClick={() => handleToggleActive(ann.id, ann.is_active)}
                       title={ann.is_active ? "Deactivate" : "Activate"}

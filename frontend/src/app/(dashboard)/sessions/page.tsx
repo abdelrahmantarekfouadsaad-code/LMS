@@ -3,11 +3,10 @@
 import Sidebar from '@/components/layout/Sidebar';
 import { motion } from 'framer-motion';
 import { Video, Clock, User, Radio, Timer, CheckCircle, CalendarClock } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 function getSessionStatus(scheduledTime: string) {
   const now = new Date();
@@ -49,9 +48,9 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function SessionsPage() {
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
-  const t = DICTIONARY[locale as 'en' | 'ar']?.sessions || DICTIONARY.en.sessions;
+  const t = dict.sessions;
 
   const { data: sessionsData, error, isLoading } = useSWR('/sessions/', fetcher);
   const sessions = Array.isArray(sessionsData?.results) ? sessionsData.results : (Array.isArray(sessionsData) ? sessionsData : []);

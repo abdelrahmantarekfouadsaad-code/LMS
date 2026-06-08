@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, CreditCard, X } from 'lucide-react';
 import Link from 'next/link';
-import { useLocale } from '@/hooks/useLocale';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 interface RestrictionModalProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface RestrictionModalProps {
 }
 
 export default function RestrictionModal({ isOpen, onClose, courseTitle }: RestrictionModalProps) {
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
 
   return (
@@ -33,12 +33,12 @@ export default function RestrictionModal({ isOpen, onClose, courseTitle }: Restr
               className="bg-slate-900/90 border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
             >
               {/* Decorative elements */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
-              <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl" />
+              <div className="absolute top-0 end-0 -me-16 -mt-16 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 start-0 -ms-16 -mb-16 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl" />
 
               <button
                 onClick={onClose}
-                className={`absolute top-4 ${isAr ? 'left-4' : 'right-4'} p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors z-10`}
+                className={`absolute top-4 ${isAr ? 'start-4' : 'end-4'} p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors z-10`}
               >
                 <X size={20} />
               </button>
@@ -61,7 +61,7 @@ export default function RestrictionModal({ isOpen, onClose, courseTitle }: Restr
                 <div className="flex flex-col gap-3 w-full">
                   <Link 
                     href="/learning" 
-                    className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all hover:-translate-y-0.5"
+                    className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-e from-primary to-primary-hover text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all hover:-translate-y-0.5"
                     onClick={onClose}
                   >
                     <CreditCard size={18} />

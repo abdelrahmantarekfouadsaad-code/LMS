@@ -15,8 +15,8 @@ const ProgressTube = ({ percentage }: { percentage: number }) => {
   return (
     <div className="relative h-full w-12 md:w-16 flex flex-col justify-end items-center py-4 bg-slate-900/50 rounded-[40px] border border-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden group">
       {/* 3D Glass Reflection Overlay */}
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-white/10 via-transparent to-black/20 rounded-[40px] pointer-events-none z-10" />
-      <div className="absolute top-2 bottom-2 left-2 w-1.5 rounded-full bg-white/20 blur-[1px] z-10" />
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-e from-white/10 via-transparent to-black/20 rounded-[40px] pointer-events-none z-10" />
+      <div className="absolute top-2 bottom-2 start-2 w-1.5 rounded-full bg-white/20 blur-[1px] z-10" />
       
       {/* Percentage Text overlay */}
       <div className="absolute top-8 z-20 text-white font-bold text-sm md:text-base drop-shadow-md">
@@ -118,7 +118,7 @@ export default function WeeklySchedule() {
           </div>
 
           {/* Accordion List Column */}
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4 pb-20">
+          <div className="flex-1 overflow-y-auto pe-2 space-y-4 pb-20">
             {schedule.map((day: any, idx: number) => {
               const isExpanded = expandedDay === day.id;
               const completedTasksCount = day.tasks.filter((t: any) => t.isCompleted).length;
@@ -142,7 +142,7 @@ export default function WeeklySchedule() {
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg border ${isAllDone ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-white/10'}`}>
                         {idx + 1}
                       </div>
-                      <div className="text-left">
+                      <div className="text-start">
                         <div className="flex items-center gap-3">
                           <h3 className="text-xl font-bold text-white">{day.dayEn} <span className="text-slate-500 font-normal">| {day.dayAr}</span></h3>
                           {isAllDone && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}

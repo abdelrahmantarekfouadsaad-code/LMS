@@ -3,8 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 interface GuestRestrictionPopupProps {
   isOpen: boolean;
@@ -19,8 +18,8 @@ const WhatsAppIcon = () => (
 );
 
 export default function GuestRestrictionPopup({ isOpen, onClose }: GuestRestrictionPopupProps) {
-  const locale = useLocale();
-  const t = (DICTIONARY[locale as 'en' | 'ar'] as any)?.guest || (DICTIONARY.en as any).guest;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.guest;
 
   return (
     <AnimatePresence>
@@ -49,13 +48,13 @@ export default function GuestRestrictionPopup({ isOpen, onClose }: GuestRestrict
               onClick={(e) => e.stopPropagation()}
             >
               {/* Decorative gradient orbs */}
-              <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-20 -end-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-20 -start-20 w-40 h-40 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all duration-200"
+                className="absolute top-4 end-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all duration-200"
                 id="guest-popup-close"
               >
                 <X size={18} />

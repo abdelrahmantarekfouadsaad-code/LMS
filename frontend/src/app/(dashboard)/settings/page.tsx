@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/TranslationContext';
 import Sidebar from '@/components/layout/Sidebar';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -15,7 +16,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [locale, setLocale] = useState('en');
+  const { locale, setLocale, t } = useTranslation();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -34,17 +35,6 @@ export default function SettingsPage() {
     setToast({ message, type, isVisible: true });
   };
 
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-    // Initialize locale from NEXT_LOCALE cookie first
-    const cookieLocale = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('NEXT_LOCALE='))
-      ?.split('=')[1];
-    const initialLocale = cookieLocale || (document.documentElement.lang === 'ar' ? 'ar' : 'en');
-    setLocale(initialLocale);
-  }, []);
 
   useEffect(() => {
     if (session?.user) {
@@ -63,49 +53,10 @@ export default function SettingsPage() {
     }
   }, [session]);
 
-  // Sync RTL and lang tags physically to the DOM
-  useEffect(() => {
-    if (locale === 'ar') {
-      document.documentElement.dir = 'rtl';
-      document.documentElement.lang = 'ar';
-    } else {
-      document.documentElement.dir = 'ltr';
-      document.documentElement.lang = 'en';
-    }
-  }, [locale]);
 
   const userName = session?.user?.name || 'Student';
   const initial = userName.charAt(0).toUpperCase();
 
-  // Simple Translation Dictionary
-  const t = {
-    title: locale === 'ar' ? 'الملف الشخصي والإعدادات' : 'Profile & Settings',
-    subtitle: locale === 'ar' ? 'إدارة تفاصيل حسابك وتفضيلات التخصيص.' : 'Manage your account details and personalization preferences.',
-    personalDetails: locale === 'ar' ? 'البيانات الشخصية' : 'Personal Details',
-    fullName: locale === 'ar' ? 'الاسم الكامل' : 'Full Name',
-    email: locale === 'ar' ? 'البريد الإلكتروني' : 'Email Address',
-    role: locale === 'ar' ? 'دور الحساب' : 'Account Role',
-    studentRole: locale === 'ar' ? 'طالب' : 'Student',
-    saveChanges: locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes',
-    security: locale === 'ar' ? 'الأمان' : 'Security',
-    currentPass: locale === 'ar' ? 'كلمة المرور الحالية' : 'Current Password',
-    newPass: locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password',
-    confirmPass: locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password',
-    updatePass: locale === 'ar' ? 'تحديث كلمة المرور' : 'Update Password',
-    preferences: locale === 'ar' ? 'التفضيلات' : 'Preferences',
-    appearance: locale === 'ar' ? 'المظهر' : 'Appearance',
-    appearanceDesc: locale === 'ar' ? 'التبديل بين الوضع الداكن والفاتح.' : 'Toggle between dark and light mode.',
-    language: locale === 'ar' ? 'اللغة' : 'Language',
-    languageDesc: locale === 'ar' ? 'اختر لغة المنصة المفضلة لديك.' : 'Select your preferred platform language.',
-    parentAccount: locale === 'ar' ? 'حساب ولي الأمر' : 'Link Parent Account',
-    parentAccountDesc: locale === 'ar' ? 'أدخل البريد الإلكتروني لولي أمرك لربط حسابه.' : 'Enter your parent\'s email to link their account.',
-    parentEmail: locale === 'ar' ? 'البريد الإلكتروني لولي الأمر' : 'Parent Email',
-    supportAndLogout: locale === 'ar' ? 'الدعم الفني والجلسة' : 'Support & Session',
-    contactSupportBtn: locale === 'ar' ? 'التواصل مع الدعم الفني' : 'Contact Technical Support',
-    contactSupportDesc: locale === 'ar' ? 'هل تحتاج إلى مساعدة؟ تواصل مع فريق الدعم الفني لدينا.' : 'Need help? Reach out to our technical support team.',
-    logoutBtn: locale === 'ar' ? 'تسجيل الخروج' : 'Log Out',
-    logoutDesc: locale === 'ar' ? 'تسجيل الخروج من جلستك بشكل آمن.' : 'Sign out of your session securely.',
-  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,8 +138,6 @@ export default function SettingsPage() {
 
   const handleLocaleChange = (newLocale: string) => {
     setLocale(newLocale);
-    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
-    router.refresh();
   };
 
   return (
@@ -196,8 +145,8 @@ export default function SettingsPage() {
       <Sidebar />
       <main className="flex-1 p-6 lg:p-10 overflow-y-auto hide-scrollbar">
         <header className="mb-8">
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">{t.title}</h1>
-          <p className="text-slate-500 dark:text-slate-400">{t.subtitle}</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">{t('settings.title')}</h1>
+          <p className="text-slate-500 dark:text-slate-400">{t('settings.subtitle')}</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -206,7 +155,7 @@ export default function SettingsPage() {
           <div className="lg:col-span-5 space-y-6">
             <div className="glass-panel p-8">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <User className="text-primary" /> {t.personalDetails}
+                <User className="text-primary" /> {t('settings.personalDetails')}
               </h2>
 
               <div className="flex items-center gap-6 mb-8">
@@ -223,7 +172,7 @@ export default function SettingsPage() {
 
               <form className="space-y-5" onSubmit={handleUpdateProfile}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.fullName}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.fullName')}</label>
                   <input
                     type="text"
                     value={fullName}
@@ -233,7 +182,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.email}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.email')}</label>
                   <input
                     type="email"
                     value={email}
@@ -243,10 +192,10 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.role}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.role')}</label>
                   <input
                     type="text"
-                    value={session?.user?.role || t.studentRole}
+                    value={session?.user?.role || t('settings.studentRole')}
                     disabled
                     className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-slate-500 text-sm cursor-not-allowed"
                   />
@@ -256,7 +205,7 @@ export default function SettingsPage() {
                   disabled={isSavingProfile}
                   className="py-2.5 px-6 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSavingProfile ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {t.saveChanges}
+                  {isSavingProfile ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {t('settings.saveChanges')}
                 </button>
               </form>
             </div>
@@ -264,13 +213,13 @@ export default function SettingsPage() {
             {/* Parent Account Section */}
             <div className="glass-panel p-8 mt-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <User className="text-indigo-500" /> {t.parentAccount}
+                <User className="text-indigo-500" /> {t('settings.parentAccount')}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t.parentAccountDesc}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t('settings.parentAccountDesc')}</p>
 
               <form className="space-y-5" onSubmit={handleLinkParent}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.parentEmail}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.parentEmail')}</label>
                   <input
                     type="email"
                     value={parentEmail}
@@ -284,7 +233,7 @@ export default function SettingsPage() {
                   disabled={isSavingProfile}
                   className="py-2.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSavingProfile ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {t.saveChanges}
+                  {isSavingProfile ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} {t('settings.saveChanges')}
                 </button>
               </form>
             </div>
@@ -296,12 +245,12 @@ export default function SettingsPage() {
             {/* Security Section */}
             <div className="glass-panel p-8">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <Shield className="text-emerald-500" /> {t.security}
+                <Shield className="text-emerald-500" /> {t('settings.security')}
               </h2>
 
               <form className="space-y-5 max-w-lg" onSubmit={handleUpdatePassword}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.currentPass}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.currentPass')}</label>
                   <input
                     type="password"
                     placeholder="••••••••"
@@ -313,7 +262,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.newPass}</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.newPass')}</label>
                     <input
                       type="password"
                       placeholder="••••••••"
@@ -325,7 +274,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t.confirmPass}</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('settings.confirmPass')}</label>
                     <input
                       type="password"
                       placeholder="••••••••"
@@ -342,7 +291,7 @@ export default function SettingsPage() {
                   disabled={isSavingPassword}
                   className="py-2.5 px-6 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSavingPassword ? <Loader2 size={18} className="animate-spin" /> : null} {t.updatePass}
+                  {isSavingPassword ? <Loader2 size={18} className="animate-spin" /> : null} {t('settings.updatePass')}
                 </button>
               </form>
             </div>
@@ -350,15 +299,15 @@ export default function SettingsPage() {
             {/* Preferences Section */}
             <div className="glass-panel p-8">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <Globe className="text-blue-500" /> {t.preferences}
+                <Globe className="text-blue-500" /> {t('settings.preferences')}
               </h2>
 
               <div className="space-y-6 max-w-lg">
                 {/* Theme Toggle */}
                 <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
                   <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-1">{t.appearance}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.appearanceDesc}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-1">{t('settings.appearance')}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('settings.appearanceDesc')}</p>
                   </div>
                   {mounted && (
                     <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-lg">
@@ -381,8 +330,8 @@ export default function SettingsPage() {
                 {/* Language Select */}
                 <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
                   <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-1">{t.language}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.languageDesc}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-1">{t('settings.language')}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('settings.languageDesc')}</p>
                   </div>
                   <div className="relative">
                     <select
@@ -405,7 +354,7 @@ export default function SettingsPage() {
             {/* Support & Session Section */}
             <div className="glass-panel p-8">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <LifeBuoy className="text-primary animate-pulse" /> {t.supportAndLogout}
+                <LifeBuoy className="text-primary animate-pulse" /> {t('settings.supportAndLogout')}
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -415,14 +364,14 @@ export default function SettingsPage() {
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                       <LifeBuoy className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{t.contactSupportBtn}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t.contactSupportDesc}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{t('settings.contactSupportBtn')}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t('settings.contactSupportDesc')}</p>
                   </div>
                   <button
                     onClick={() => router.push('/support')}
-                    className="w-full py-2.5 px-4 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-hover hover:to-emerald-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary/15 text-xs flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-4 bg-gradient-to-e from-primary to-emerald-600 hover:from-primary-hover hover:to-emerald-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary/15 text-xs flex items-center justify-center gap-2"
                   >
-                    <LifeBuoy size={14} /> {t.contactSupportBtn}
+                    <LifeBuoy size={14} /> {t('settings.contactSupportBtn')}
                   </button>
                 </div>
 
@@ -432,14 +381,14 @@ export default function SettingsPage() {
                     <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                       <LogOut className="w-5 h-5 text-red-500" />
                     </div>
-                    <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{t.logoutBtn}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t.logoutDesc}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{t('settings.logoutBtn')}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t('settings.logoutDesc')}</p>
                   </div>
                   <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
-                    className="w-full py-2.5 px-4 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold rounded-xl transition-all shadow-md shadow-red-500/15 text-xs flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-4 bg-gradient-to-e from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold rounded-xl transition-all shadow-md shadow-red-500/15 text-xs flex items-center justify-center gap-2"
                   >
-                    <LogOut size={14} /> {t.logoutBtn}
+                    <LogOut size={14} /> {t('settings.logoutBtn')}
                   </button>
                 </div>
               </div>

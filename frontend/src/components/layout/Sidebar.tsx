@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import {
   LayoutDashboard, 
   BookOpen, 
@@ -28,6 +26,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 const NAV_ITEMS = [
   { nameKey: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -54,9 +53,9 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const { isGuest } = useUserRole();
   const isParent = session?.user?.role === 'PARENT';
-  const locale = useLocale();
-  const t = DICTIONARY[locale as 'en' | 'ar']?.sidebar || DICTIONARY.en.sidebar;
-  const tGuest = (DICTIONARY[locale as 'en' | 'ar'] as any)?.guest || (DICTIONARY.en as any).guest;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.sidebar;
+  const tGuest = dict.guest;
 
   let filteredNavItems = NAV_ITEMS;
   if (isGuest) {
@@ -80,7 +79,7 @@ export default function Sidebar() {
     <motion.aside 
       initial={false}
       animate={{ width: isExpanded ? '16rem' : '5rem' }}
-      className="h-screen sticky top-0 flex flex-col glass-panel border-r-0 rounded-l-none z-40 transition-all duration-300"
+      className="h-screen sticky top-0 flex flex-col glass-panel border-e-0 rounded-s-none z-40 transition-all duration-300"
     >
       {/* Header / Logo Area */}
       <div className="h-20 flex items-center justify-between px-4 border-b border-white/10 dark:border-slate-700/30">
@@ -90,7 +89,7 @@ export default function Sidebar() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-400"
+              className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-e from-primary to-emerald-400"
             >
               Noor LMS
             </motion.div>
@@ -124,7 +123,7 @@ export default function Sidebar() {
                 {isActive && (
                   <motion.div 
                     layoutId="active-nav-indicator"
-                    className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
+                    className="absolute start-0 w-1 h-8 bg-primary rounded-e-full"
                   />
                 )}
                 <Icon size={22} className={`shrink-0 ${isActive ? 'text-primary' : ''}`} />

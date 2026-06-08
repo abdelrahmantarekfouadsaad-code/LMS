@@ -7,14 +7,13 @@ import Sidebar from '@/components/layout/Sidebar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { useUserRole } from '@/hooks/useUserRole';
 import GuestDashboard from '@/components/guest/GuestDashboard';
 import NewsCarousel from '@/components/guest/NewsCarousel';
 import RestrictionModal from '@/components/shared/RestrictionModal';
 import useSWR from 'swr';
 import api from '@/lib/axios';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 // SVG Circular Progress Component
 const CircularProgress = ({ percentage, color, label }: { percentage: number, color: string, label: string }) => {
@@ -88,8 +87,8 @@ export default function DashboardHome() {
 // Student Dashboard (Phase 1 Execution)
 function StudentDashboard() {
     const { data: session } = useSession();
-    const locale = useLocale();
-    const t = DICTIONARY[locale as 'en' | 'ar']?.dashboard || DICTIONARY.en.dashboard;
+    const { locale, dict, t: translate } = useTranslation();
+    const t = dict.dashboard;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCourseTitle, setSelectedCourseTitle] = useState('');
 
@@ -202,7 +201,7 @@ function StudentDashboard() {
 
                             {/* Metric 1: Total Completed Topics */}
                             <div className="flex flex-col justify-center p-8 bg-gradient-to-br from-indigo-500/5 to-purple-500/10 rounded-3xl border border-white/10 backdrop-blur-xl h-full relative overflow-hidden shadow-lg group">
-                                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
+                                <div className="absolute top-0 end-0 -mt-6 -me-6 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
                                 <div className="p-3 bg-indigo-500/10 w-fit rounded-2xl mb-4">
                                     <BookOpen className="w-8 h-8 text-indigo-500" />
                                 </div>
@@ -214,7 +213,7 @@ function StudentDashboard() {
 
                             {/* Metric 2: Active Courses */}
                             <div className="flex flex-col justify-center p-8 bg-gradient-to-br from-amber-500/5 to-orange-500/10 rounded-3xl border border-white/10 backdrop-blur-xl h-full relative overflow-hidden shadow-lg group">
-                                <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
+                                <div className="absolute top-0 end-0 -mt-6 -me-6 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl group-hover:bg-amber-500/30 transition-all duration-500"></div>
                                 <div className="p-3 bg-amber-500/10 w-fit rounded-2xl mb-4">
                                     <GraduationCap className="w-8 h-8 text-amber-500" />
                                 </div>
@@ -264,7 +263,7 @@ function StudentDashboard() {
                                     <button 
                                         key={course.id} 
                                         onClick={(e) => handleCourseClick(e, locale === 'ar' ? (course.title_ar || course.title) : course.title)} 
-                                        className="group block h-full text-left w-full cursor-pointer focus:outline-none"
+                                        className="group block h-full text-start w-full cursor-pointer focus:outline-none"
                                     >
                                         <div className={`glass-panel h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 bg-slate-900/50 border-0 p-0 overflow-hidden`}>
 
@@ -281,7 +280,7 @@ function StudentDashboard() {
                                                 />
                                                 <div className={`absolute inset-0 bg-gradient-to-t ${courseColor.replace('from-', 'from-slate-900/90 to-')} to-transparent`} />
                                                 
-                                                <span className="absolute top-4 right-4 text-xs font-bold px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-xl z-20">
+                                                <span className="absolute top-4 end-4 text-xs font-bold px-2 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-xl z-20">
                                                     {courseProgress}%
                                                 </span>
                                             </div>
@@ -298,7 +297,7 @@ function StudentDashboard() {
                                             {/* Mini Progress Bar */}
                                             <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
                                                 <motion.div
-                                                    className={`h-full bg-gradient-to-r ${courseColor.replace('/20', '').replace('/20', '')}`}
+                                                    className={`h-full bg-gradient-to-e ${courseColor.replace('/20', '').replace('/20', '')}`}
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${courseProgress}%` }}
                                                     transition={{ duration: 1, delay: 0.5 }}

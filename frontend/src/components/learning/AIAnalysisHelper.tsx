@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bot, Copy, ExternalLink, CheckCircle2, X } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 interface AIAnalysisHelperProps {
   courseTitle: string;
@@ -24,9 +23,9 @@ export default function AIAnalysisHelper({ courseTitle, stats, exams }: AIAnalys
     setMounted(true);
   }, []);
 
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
-  const t = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+  const t = dict.parent;
 
   if (!mounted) return null;
 
@@ -72,7 +71,7 @@ Based on this data, please provide your academic and moral analysis.`;
   return (
     <>
       <div className="glass-panel p-6 bg-slate-900/60 border border-white/5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 end-0 -mt-8 -me-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="p-3 bg-primary/15 rounded-xl border border-primary/20 shrink-0">
@@ -133,7 +132,7 @@ Based on this data, please provide your academic and moral analysis.`;
                 </div>
 
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-emerald-500/10 rounded-xl blur"></div>
+                  <div className="absolute inset-0 bg-gradient-to-e from-primary/10 to-emerald-500/10 rounded-xl blur"></div>
                   <div className="relative bg-slate-950 border border-white/10 rounded-xl p-4 font-mono text-sm text-slate-300 leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto hide-scrollbar">
                     {getPrompt()}
                   </div>

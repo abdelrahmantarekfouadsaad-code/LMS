@@ -110,13 +110,13 @@ export default function SuperAdminUsersPage() {
             <p className="text-gray-400">Manage all users, roles, and platform access.</p>
           </div>
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input 
               type="text" 
               placeholder="ابحث بالاسم أو البريد..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-4 pr-10 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+              className="ps-4 pe-10 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
             />
           </div>
         </div>
@@ -141,13 +141,13 @@ export default function SuperAdminUsersPage() {
         {/* Vercel-style Table UI */}
         <div className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-300" dir="ltr">
+            <table className="w-full text-start text-sm text-gray-300" dir="ltr">
               <thead className="bg-white/5 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
                 <tr>
                   <th className="px-6 py-4">User</th>
                   <th className="px-6 py-4">Age / Group</th>
                   <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4 text-end">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -177,7 +177,7 @@ export default function SuperAdminUsersPage() {
                       <td className="px-6 py-4">
                         {getRoleBadge(user.role)}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-end">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -208,7 +208,7 @@ export default function SuperAdminUsersPage() {
           <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
             <button 
               onClick={() => setRoleModalUser(null)}
-              className="absolute right-4 top-4 text-gray-500 hover:text-white"
+              className="absolute end-4 top-4 text-gray-500 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -298,7 +298,7 @@ export default function SuperAdminUsersPage() {
           <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative">
             <button 
               onClick={() => setStatsModalUser(null)}
-              className="absolute right-4 top-4 text-gray-500 hover:text-white"
+              className="absolute end-4 top-4 text-gray-500 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>

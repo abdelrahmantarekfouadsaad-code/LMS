@@ -3,15 +3,14 @@
 import Sidebar from '@/components/layout/Sidebar';
 import { motion } from 'framer-motion';
 import { LifeBuoy, Send, Clock, CheckCircle, FileText, ChevronRight } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetcher, submitTicket } from '@/lib/api';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function SupportPage() {
-  const locale = useLocale();
-  const t = DICTIONARY[locale as 'en' | 'ar']?.support || DICTIONARY.en.support;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.support;
 
   const { data: ticketsData, error, mutate } = useSWR('/support/', fetcher);
   const isLoading = !ticketsData && !error;

@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import { Clock, User, BookOpen, Download, ShoppingCart, CheckCircle2, ChevronRight, Plus, X, Loader2, Sparkles, TrendingUp } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -14,9 +12,10 @@ import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import EmptyState from '@/components/ui/EmptyState';
 import { fetcher as apiFetcher } from '@/lib/api';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
 
   return (
@@ -36,12 +35,12 @@ function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
             onClick={(e) => e.stopPropagation()}
             className="bg-slate-900/90 border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-teal-500/20 rounded-full blur-3xl" />
+            <div className="absolute top-0 end-0 -me-16 -mt-16 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 start-0 -ms-16 -mb-16 w-32 h-32 bg-teal-500/20 rounded-full blur-3xl" />
 
             <button
               onClick={onClose}
-              className={`absolute top-4 ${isAr ? 'left-4' : 'right-4'} p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors z-10`}
+              className={`absolute top-4 ${isAr ? 'start-4' : 'end-4'} p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors z-10`}
             >
               <X size={20} />
             </button>
@@ -67,7 +66,7 @@ function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
                 href="https://wa.me/201062582736" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-e from-emerald-500 to-emerald-600 text-white font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.027 6.988 2.895a9.86 9.86 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
@@ -83,7 +82,7 @@ function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
 }
 
 export default function LearningPage() {
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
   const router = useRouter();
   
@@ -93,7 +92,7 @@ export default function LearningPage() {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const { data: session } = useSession();
 
-  const t = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+  const t = dict.parent;
 
   // Fetch standard courses
   const { data: courses, error, isLoading } = useSWR(
@@ -209,7 +208,7 @@ export default function LearningPage() {
                     <div className={`glass-panel h-full flex flex-col bg-slate-900/50 relative border-0`}>
                       
                       {/* Price Tag Overlay */}
-                      <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-white font-black text-lg shadow-xl z-20">
+                      <div className="absolute top-4 end-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-white font-black text-lg shadow-xl z-20">
                         ${course.price}
                       </div>
 
@@ -247,7 +246,7 @@ export default function LearningPage() {
                           <Link
                             href={`/parent/courses/${course.id}/analytics`}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/25 hover:border-emerald-500/40 text-emerald-400 transition-all duration-300 shadow-md"
+                            className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 bg-gradient-to-e from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/25 hover:border-emerald-500/40 text-emerald-400 transition-all duration-300 shadow-md"
                           >
                             <TrendingUp size={18} />
                             {t.enrolledBadge}
@@ -312,7 +311,7 @@ export default function LearningPage() {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', bounce: 0.4, duration: 0.6 }}
-            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-bounce-subtle"
+            className="fixed bottom-6 end-6 md:bottom-8 md:right-8 z-50 animate-bounce-subtle"
           >
             <div className="backdrop-blur-md bg-slate-900/90 rounded-2xl shadow-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 border border-white/10">
               <div className="flex items-center gap-4">
@@ -339,7 +338,7 @@ export default function LearningPage() {
               
               <button 
                 onClick={handleCheckout}
-                className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-primary to-orange-500 text-white font-bold text-lg rounded-2xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all hover:scale-105 flex items-center justify-center gap-2 group"
+                className="w-full md:w-auto px-8 py-4 bg-gradient-to-e from-primary to-orange-500 text-white font-bold text-lg rounded-2xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all hover:scale-105 flex items-center justify-center gap-2 group"
               >
                 {isAr ? 'الذهاب للدفع' : 'Proceed to Checkout'}
                 <ChevronRight className={`group-hover:translate-x-1 transition-transform ${isAr ? 'rotate-180' : ''}`} />

@@ -20,18 +20,17 @@ import {
 } from 'lucide-react';
 import useSWR from 'swr';
 import { fetcher as apiFetcher } from '@/lib/api';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { motion } from 'framer-motion';
 import AIAnalysisHelper from '@/components/learning/AIAnalysisHelper';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function CourseAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
-  const t = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+  const t = dict.parent;
 
   // Fetch course details
   const { data: course, error: courseError, isLoading: isLoadingCourse } = useSWR(
@@ -100,7 +99,7 @@ export default function CourseAnalyticsPage() {
             onClick={() => router.push('/parent-dashboard')} 
             className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-primary dark:hover:text-emerald-400 transition-colors w-fit"
           >
-            <ArrowLeft size={16} className={`mr-1 ${isAr ? 'rotate-180 ml-1 mr-0' : ''}`} />
+            <ArrowLeft size={16} className={`me-1 ${isAr ? 'rotate-180 ms-1 me-0' : ''}`} />
             {t.backToDashboard}
           </button>
           
@@ -129,7 +128,7 @@ export default function CourseAnalyticsPage() {
             
             {/* Overall Course Evaluation */}
             <div className="glass-panel p-6 bg-slate-900/60 border border-white/5 relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 -mt-8 -mr-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
+              <div className="absolute top-0 end-0 -mt-8 -me-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">{t.overallProgress}</span>
@@ -139,7 +138,7 @@ export default function CourseAnalyticsPage() {
               </div>
               <div className="mt-6">
                 <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden mb-2">
-                  <div className="h-full bg-gradient-to-r from-primary to-emerald-400 rounded-full" style={{ width: `${stats.overallProgress}%` }}></div>
+                  <div className="h-full bg-gradient-to-e from-primary to-emerald-400 rounded-full" style={{ width: `${stats.overallProgress}%` }}></div>
                 </div>
                 <p className="text-slate-500 text-xs">{t.evaluationScore}</p>
               </div>
@@ -147,7 +146,7 @@ export default function CourseAnalyticsPage() {
 
             {/* Attendance Ratio */}
             <div className="glass-panel p-6 bg-slate-900/60 border border-white/5 relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 -mt-8 -mr-8 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
+              <div className="absolute top-0 end-0 -mt-8 -me-8 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">{t.attendance}</span>
@@ -173,7 +172,7 @@ export default function CourseAnalyticsPage() {
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-start border-collapse">
                 <thead>
                   <tr className="border-b border-white/10 text-slate-500 text-xs font-bold uppercase tracking-wider">
                     <th className="pb-3 text-start">{isAr ? 'الامتحان / الاختبار' : 'Exam Name'}</th>

@@ -78,7 +78,7 @@ export default function CoursesPage() {
               ) : (
                 <div className={`w-full h-full bg-gradient-to-br ${course.color || 'from-slate-800 to-slate-700'}`} />
               )}
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 end-4">
                 <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm backdrop-blur-md ${course.is_upload_completed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
                   {course.is_upload_completed ? 'مكتمل الرفع' : 'غير مكتمل الرفع'}
                 </span>
@@ -360,7 +360,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                         {unitFields.map((field, uIndex) => (
                           <div key={field.id} className="glass-panel p-5 border-none bg-black/20">
                             <div className="flex justify-between mb-4">
-                              <input {...register(`units.${uIndex}.title`, { required: true })} placeholder={`عنوان الوحدة ${uIndex+1}`} className="text-lg font-bold p-2 border-b-2 border-white/20 bg-transparent focus:border-indigo-400 outline-none text-white flex-1 ml-4" />
+                              <input {...register(`units.${uIndex}.title`, { required: true })} placeholder={`عنوان الوحدة ${uIndex+1}`} className="text-lg font-bold p-2 border-b-2 border-white/20 bg-transparent focus:border-indigo-400 outline-none text-white flex-1 ms-4" />
                               <button type="button" onClick={() => removeUnit(uIndex)} className="text-red-400 text-sm hover:text-red-300">حذف الوحدة</button>
                             </div>
                             <UnitLessonsList control={control} register={register} uIndex={uIndex} />
@@ -379,7 +379,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                     <input type="checkbox" {...register('is_upload_completed')} className="w-5 h-5 rounded border-red-500/50 bg-black/50 text-red-500 focus:ring-red-500 focus:ring-offset-gray-900" />
                     <span className="font-bold text-lg">أؤكد اكتمال رفع جميع محتويات الدورة</span>
                   </label>
-                  <p className="text-red-400 text-sm mt-2 mr-8">تفعيل هذا الخيار سيغير حالة الدورة إلى "مكتمل الرفع". لا تقم بتفعيله حتى تتأكد من رفع جميع الدروس وملحقاتها.</p>
+                  <p className="text-red-400 text-sm mt-2 me-8">تفعيل هذا الخيار سيغير حالة الدورة إلى "مكتمل الرفع". لا تقم بتفعيله حتى تتأكد من رفع جميع الدروس وملحقاتها.</p>
                 </div>
               </div>
             )}
@@ -433,7 +433,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
 function ZoomSessionsList({ control, register, gIndex }: any) {
   const { fields, append, remove } = useFieldArray({ control, name: `groups.${gIndex}.zoom_sessions` });
   return (
-    <div className="space-y-3 mt-3 ml-6">
+    <div className="space-y-3 mt-3 ms-6">
       {fields.map((field, index) => (
         <div key={field.id} className="flex gap-2 items-start">
           <div className="flex-1 flex flex-col gap-2">
@@ -457,7 +457,7 @@ function ZoomSessionsList({ control, register, gIndex }: any) {
 function UnitLessonsList({ control, register, uIndex }: any) {
   const { fields, append, remove } = useFieldArray({ control, name: `units.${uIndex}.lessons` });
   return (
-    <div className="space-y-2 pr-4 border-r-2 border-white/10">
+    <div className="space-y-2 pe-4 border-e-2 border-white/10">
       {fields.map((field, index) => (
         <div key={field.id} className="glass-panel p-3 border-none bg-black/40 flex gap-3 items-start">
           <div className="flex-1 space-y-2">

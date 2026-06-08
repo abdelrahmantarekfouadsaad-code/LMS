@@ -7,10 +7,10 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Loader2, FolderOpen, ExternalLink, Send, X, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
-import { useLocale } from '@/hooks/useLocale';
 import { DJANGO_API } from '@/lib/api-config';
 
 import api from '@/lib/axios';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function ProjectsPage() {
   const { data: session } = useSession();
@@ -120,7 +120,7 @@ export default function ProjectsPage() {
                     <span className="text-slate-400">No due date</span>
                   )}
                   <span className="text-primary font-medium flex items-center group-hover:translate-x-1 transition-transform">
-                    View Details <ExternalLink size={16} className="ml-1" />
+                    View Details <ExternalLink size={16} className="ms-1" />
                   </span>
                 </div>
               </div>
@@ -157,7 +157,7 @@ export default function ProjectsPage() {
                 
                 {submitSuccess ? (
                   <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl flex items-center border border-emerald-200">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center me-3">
                       <Send size={16} />
                     </div>
                     Project submitted successfully!
@@ -184,7 +184,7 @@ export default function ProjectsPage() {
                       disabled={isSubmitting || !driveLink}
                       className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting ? <Loader2 size={18} className="animate-spin mr-2" /> : <Send size={18} className="mr-2" />}
+                      {isSubmitting ? <Loader2 size={18} className="animate-spin me-2" /> : <Send size={18} className="me-2" />}
                       {isSubmitting ? 'Submitting...' : 'Submit Link'}
                     </button>
                   </form>

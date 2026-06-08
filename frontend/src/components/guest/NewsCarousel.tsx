@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
 import useSWR from 'swr';
 import { fetcher as apiFetcher } from '@/lib/api';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 const AUTO_PLAY_INTERVAL = 5000;
 const FALLBACK_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2364748b">No Image</text></svg>';
@@ -13,7 +13,7 @@ const FALLBACK_IMAGE = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/20
 export default function NewsCarousel() {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
 
   const { data, isLoading, error } = useSWR('/announcements/', apiFetcher);
   
@@ -113,7 +113,7 @@ export default function NewsCarousel() {
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
             
-            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10 pointer-events-none">
+            <div className="absolute bottom-0 start-0 end-0 p-8 md:p-10 pointer-events-none">
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -132,18 +132,18 @@ export default function NewsCarousel() {
         <>
           <button
             onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+            className="absolute start-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
           >
             <ChevronLeft size={22} />
           </button>
           <button
             onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+            className="absolute end-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
           >
             <ChevronRight size={22} />
           </button>
 
-          <div className="absolute bottom-4 right-8 md:right-10 flex items-center gap-2 z-10">
+          <div className="absolute bottom-4 end-8 md:right-10 flex items-center gap-2 z-10">
             {slides.map((_: any, i: number) => (
               <button
                 key={i}

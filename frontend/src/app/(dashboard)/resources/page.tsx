@@ -4,11 +4,10 @@ import React, { useState } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FolderOpen, Download, FileText, Video, ChevronDown, Search, File, Sparkles } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import { useUserRole } from '@/hooks/useUserRole';
-import { DICTIONARY } from '@/locales/dictionary';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 const FILE_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
   pdf: { icon: FileText, color: 'text-red-400' },
@@ -23,22 +22,22 @@ function getFileType(url: string) {
 }
 
 export default function ResourcesPage() {
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
   const { role } = useUserRole();
   const isParent = role === 'PARENT';
 
   // Parent block
   if (isParent) {
-    const tParent = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+    const tParent = dict.parent;
     return (
       <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-y-auto hide-scrollbar">
           <div className="glass-panel p-8 md:p-12 text-center max-w-2xl w-full border border-indigo-500/20 bg-slate-900/85 backdrop-blur-md rounded-3xl relative overflow-hidden shadow-2xl">
             {/* Glow orb */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl" />
+            <div className="absolute -top-24 -end-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-24 -start-24 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl" />
             
             <div className="w-20 h-20 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
               <FolderOpen className="w-10 h-10 text-indigo-400" />

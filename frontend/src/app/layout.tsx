@@ -4,6 +4,7 @@ import { Cairo, Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import AuthProvider from '@/providers/AuthProvider'
 import { cookies } from 'next/headers'
+import { TranslationProvider } from '@/i18n/TranslationContext'
 
 const cairo = Cairo({ 
   subsets: ['arabic', 'latin'], 
@@ -41,13 +42,14 @@ export default function RootLayout({
       <body className={`${mainFont} font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors duration-300`}>
         {/* ThemeProvider (next-themes) for dark/light switching */}
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-
-          <AuthProvider>
-            {/* The main glass header would go here or in a layout wrapper */}
-            <main className="flex-grow">
-              {children}
-            </main>
-          </AuthProvider>
+          <TranslationProvider initialLocale={activeLocale}>
+            <AuthProvider>
+              {/* The main glass header would go here or in a layout wrapper */}
+              <main className="flex-grow">
+                {children}
+              </main>
+            </AuthProvider>
+          </TranslationProvider>
         </ThemeProvider>
       </body>
     </html>

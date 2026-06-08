@@ -3,13 +3,12 @@
 import Sidebar from '@/components/layout/Sidebar';
 import { motion } from 'framer-motion';
 import { Hash, Users, Send, Paperclip, Smile, MoreVertical, Search, Globe, UserCircle, BookOpen, Lock, Sparkles } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetcher, sendMessage } from '@/lib/api';
 import { useSession } from 'next-auth/react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 // Tier Config
 const TIER_CONFIG = {
@@ -28,21 +27,21 @@ export default function CommunityPage() {
   const { data: session } = useSession();
   const { isGuest, role } = useUserRole();
   const isParent = role === 'PARENT';
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
-  const t = DICTIONARY[locale as 'en' | 'ar']?.community || DICTIONARY.en.community;
+  const t = dict.community;
 
   // Parent block
   if (isParent) {
-    const tParent = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+    const tParent = dict.parent;
     return (
       <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-y-auto hide-scrollbar">
           <div className="glass-panel p-8 md:p-12 text-center max-w-2xl w-full border border-primary/20 bg-slate-900/85 backdrop-blur-md rounded-3xl relative overflow-hidden shadow-2xl">
             {/* Glow orb */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="absolute -top-24 -end-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-24 -start-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl" />
             
             <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/30 shadow-[0_0_20px_rgba(var(--tw-colors-primary),0.2)]">
               <Users className="w-10 h-10 text-primary dark:text-emerald-400" />

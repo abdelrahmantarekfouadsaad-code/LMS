@@ -1,12 +1,12 @@
 "use client";
 
 import React from 'react';
-import { useLocale } from '@/hooks/useLocale';
 import Sidebar from '@/components/layout/Sidebar';
 import { MessageSquare } from 'lucide-react';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function ChatPage() {
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
 
   return (

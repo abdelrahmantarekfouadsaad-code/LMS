@@ -10,9 +10,9 @@ export default function SuperAdminFinancePage() {
       <div className="glass-panel p-10 bg-slate-900/50 border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center max-w-2xl text-center relative overflow-hidden">
         
         {/* Animated Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50" />
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 start-0 w-full h-1 bg-gradient-to-e from-transparent via-amber-500 to-transparent opacity-50" />
+        <div className="absolute -top-20 -start-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -end-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
@@ -26,7 +26,7 @@ export default function SuperAdminFinancePage() {
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shadow-lg"
+            className="absolute -bottom-2 -end-2 w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shadow-lg"
           >
             <Pickaxe className="w-5 h-5 text-slate-400" />
           </motion.div>

@@ -6,14 +6,13 @@ import { BookOpen, ArrowRight, Sparkles } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import NewsCarousel from '@/components/guest/NewsCarousel';
 import { useSession } from 'next-auth/react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import Link from 'next/link';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function GuestDashboard() {
   const { data: session } = useSession();
-  const locale = useLocale();
-  const t = (DICTIONARY[locale as 'en' | 'ar'] as any)?.guest || (DICTIONARY.en as any).guest;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.guest;
 
   const userName = session?.user?.name || session?.user?.email || (locale === 'ar' ? 'زائر' : 'Guest');
 
@@ -66,9 +65,9 @@ export default function GuestDashboard() {
           <Link href="/learning" id="guest-browse-courses">
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-emerald-600 to-teal-700 p-8 md:p-12 group cursor-pointer hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500 hover:-translate-y-1">
               {/* Animated background decorations */}
-              <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 rounded-full bg-white/5 group-hover:scale-150 transition-transform duration-700 blur-2xl" />
-              <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-48 h-48 rounded-full bg-white/5 group-hover:scale-125 transition-transform duration-700 blur-2xl" />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <div className="absolute top-0 end-0 -me-10 -mt-10 w-64 h-64 rounded-full bg-white/5 group-hover:scale-150 transition-transform duration-700 blur-2xl" />
+              <div className="absolute bottom-0 start-0 -ms-10 -mb-10 w-48 h-48 rounded-full bg-white/5 group-hover:scale-125 transition-transform duration-700 blur-2xl" />
+              <div className="absolute inset-0 bg-gradient-to-e from-transparent via-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-6">

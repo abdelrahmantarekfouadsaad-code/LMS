@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useState, useEffect } from 'react';
 import { LayoutDashboard, Users, DollarSign, BookOpen, MessageSquare, Newspaper, Settings, Globe } from 'lucide-react';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 const DICTIONARY = {
   ar: {
@@ -64,7 +65,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
   return (
     <div className="flex h-screen bg-[#0A0A0A] text-white font-cairo" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Glassmorphism Sidebar */}
-      <aside className={`w-64 bg-white/5 backdrop-blur-xl border-white/10 flex flex-col ${locale === 'ar' ? 'border-l' : 'border-r'}`}>
+      <aside className={`w-64 bg-white/5 backdrop-blur-xl border-white/10 flex flex-col ${locale === 'ar' ? 'border-s' : 'border-e'}`}>
         <div className="p-6 border-b border-white/10">
           <h2 className="text-xl font-bold bg-gradient-to-l from-indigo-400 to-purple-400 bg-clip-text text-transparent">
             {t.title}

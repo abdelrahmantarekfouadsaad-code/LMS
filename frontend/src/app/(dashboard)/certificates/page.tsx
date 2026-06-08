@@ -7,14 +7,14 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Loader2, Download, Award, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
-import { useLocale } from '@/hooks/useLocale';
 import { DJANGO_API } from '@/lib/api-config';
 
 import api from '@/lib/axios';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function CertificatesPage() {
   const { data: session } = useSession();
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
   
   const { data: certificates, error, isLoading } = useSWR(
@@ -84,7 +84,7 @@ export default function CertificatesPage() {
                 transition={{ delay: idx * 0.1 }}
                 className="glass-panel rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 border border-white/5 hover:border-amber-500/20"
               >
-                <div className="h-3 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400" />
+                <div className="h-3 bg-gradient-to-e from-amber-500 via-orange-500 to-amber-400" />
                 <div className="p-6">
                   <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                     <Award className="w-7 h-7 text-amber-500" />

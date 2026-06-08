@@ -4,12 +4,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Construction, ArrowLeft, WalletCards } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from '@/hooks/useLocale';
 import Sidebar from '@/components/layout/Sidebar';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function PaymentUnderConstructionPage() {
   const router = useRouter();
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
 
   return (
@@ -18,8 +18,8 @@ export default function PaymentUnderConstructionPage() {
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
         
         {/* Decorative Background Elements */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 start-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 end-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[100px] pointer-events-none" />
 
         <motion.div 
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -30,7 +30,7 @@ export default function PaymentUnderConstructionPage() {
           <div className="glass-panel p-10 md:p-14 text-center rounded-3xl border border-white/10 shadow-2xl bg-slate-900/60 backdrop-blur-xl relative overflow-hidden">
             
             {/* Caution tape decoration top */}
-            <div className="absolute top-0 left-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#fbbf24,#fbbf24_10px,#000_10px,#000_20px)] opacity-80" />
+            <div className="absolute top-0 start-0 w-full h-2 bg-[repeating-linear-gradient(45deg,#fbbf24,#fbbf24_10px,#000_10px,#000_20px)] opacity-80" />
 
             <div className="flex justify-center mb-8 relative">
               <div className="w-24 h-24 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 relative">
@@ -40,7 +40,7 @@ export default function PaymentUnderConstructionPage() {
                 >
                   <Construction className="w-12 h-12 text-amber-500" />
                 </motion.div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center border border-primary/30 backdrop-blur-sm">
+                <div className="absolute -bottom-2 -end-2 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center border border-primary/30 backdrop-blur-sm">
                   <WalletCards className="w-5 h-5 text-primary" />
                 </div>
               </div>
@@ -65,7 +65,7 @@ export default function PaymentUnderConstructionPage() {
             </button>
             
             {/* Caution tape decoration bottom */}
-            <div className="absolute bottom-0 left-0 w-full h-2 bg-[repeating-linear-gradient(-45deg,#fbbf24,#fbbf24_10px,#000_10px,#000_20px)] opacity-80" />
+            <div className="absolute bottom-0 start-0 w-full h-2 bg-[repeating-linear-gradient(-45deg,#fbbf24,#fbbf24_10px,#000_10px,#000_20px)] opacity-80" />
           </div>
         </motion.div>
       </main>

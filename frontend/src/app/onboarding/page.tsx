@@ -6,8 +6,7 @@ import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, UserX, ChevronRight, ArrowLeft, Baby, Sprout, BookOpen, Loader2, ShieldAlert, CheckCircle } from 'lucide-react';
 import { submitOnboarding } from '@/lib/api';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 // Age group config
 const AGE_GROUPS = [
@@ -38,8 +37,8 @@ const slideVariants = {
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: session, update: updateSession } = useSession();
-  const locale = useLocale();
-  const t = DICTIONARY[locale as 'en' | 'ar']?.onboarding || DICTIONARY.en.onboarding;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.onboarding;
   const isAr = locale === 'ar';
 
   // Flow state
@@ -349,7 +348,7 @@ export default function OnboardingPage() {
                         className={`
                           w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-start
                           ${isSelected
-                            ? `border-white/20 bg-gradient-to-r ${group.gradient} bg-opacity-10 shadow-lg -translate-y-0.5`
+                            ? `border-white/20 bg-gradient-to-e ${group.gradient} bg-opacity-10 shadow-lg -translate-y-0.5`
                             : 'border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/10'
                           }
                         `}

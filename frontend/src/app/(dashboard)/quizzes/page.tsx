@@ -4,11 +4,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import { motion } from 'framer-motion';
 import { Target, CheckCircle, Clock, AlertCircle, Award, ArrowRight, ClipboardList } from 'lucide-react';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import Link from 'next/link';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 const CircularProgress = ({ percentage, color, label, subtext }: { percentage: number, color: string, label: string, subtext: string }) => {
   const [current, setCurrent] = useState(0);
@@ -54,8 +53,8 @@ const CircularProgress = ({ percentage, color, label, subtext }: { percentage: n
 };
 
 export default function QuizzesPage() {
-  const locale = useLocale();
-  const t = DICTIONARY[locale as 'en' | 'ar']?.quizzes || DICTIONARY.en.quizzes;
+  const { locale, dict, t: translate } = useTranslation();
+  const t = dict.quizzes;
 
   const { data: quizzesData, error: quizzesError } = useSWR('/quizzes/', fetcher);
   const { data: resultsData, error: resultsError } = useSWR('/results/', fetcher);

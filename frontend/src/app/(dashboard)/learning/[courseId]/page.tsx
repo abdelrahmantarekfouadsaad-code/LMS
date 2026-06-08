@@ -10,11 +10,12 @@ import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import dynamic from 'next/dynamic';
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
+
+
 import { useUserRole } from '@/hooks/useUserRole';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmptyState from '@/components/ui/EmptyState';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 // --- Milestone Type Config ---
 const MILESTONE_CONFIG: Record<string, { icon: React.ElementType; color: string; gradient: string }> = {
@@ -89,7 +90,7 @@ function TimelineBranch({ milestone, index, isAr }: { milestone: any; index: num
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4, delay: index * 0.12 + 0.2 }}
-          className={`absolute h-0.5 w-5 bg-gradient-to-r ${isLeft ? 'right-7 from-transparent to-white/30' : 'left-7 from-white/30 to-transparent'}`}
+          className={`absolute h-0.5 w-5 bg-gradient-to-e ${isLeft ? 'end-7 from-transparent to-white/30' : 'start-7 from-white/30 to-transparent'}`}
           style={{ originX: isLeft ? 1 : 0 }}
         />
         <motion.div
@@ -131,9 +132,10 @@ export default function CoursePlayerPage() {
   
   const completedLessonIds = new Set(progressData?.results?.filter((p: any) => p.is_completed).map((p: any) => p.lesson) || []);
 
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
+
   const isAr = locale === 'ar';
-  const t = DICTIONARY[locale as 'en' | 'ar']?.learning || DICTIONARY.en.learning;
+  const t = dict.learning;
 
   const milestones = (milestonesData?.results || milestonesData || []);
   
@@ -233,7 +235,7 @@ export default function CoursePlayerPage() {
 
         <header className="mb-6 flex flex-col gap-2">
           <Link href="/learning" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-primary transition-colors w-fit">
-            <ArrowLeft size={16} className={`mr-1 ${isAr ? 'rotate-180 ml-1 mr-0' : ''}`} />
+            <ArrowLeft size={16} className={`me-1 ${isAr ? 'rotate-180 ms-1 me-0' : ''}`} />
             {isAr ? 'العودة إلى الكتالوج' : 'Back to Catalog'}
           </Link>
           <div className="flex items-center justify-between">
@@ -424,7 +426,7 @@ export default function CoursePlayerPage() {
                     initial={{ scaleY: 0 }}
                     animate={{ scaleY: 1 }}
                     transition={{ duration: 1.2, ease: "easeOut" }}
-                    className="absolute left-1/2 -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-emerald-500/60 via-primary/40 to-transparent"
+                    className="absolute start-1/2 -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-emerald-500/60 via-primary/40 to-transparent"
                     style={{ transformOrigin: "top" }}
                   />
 
@@ -440,7 +442,7 @@ export default function CoursePlayerPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1 }}
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary/50 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
+                    className="absolute bottom-0 start-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary/50 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
                   />
                 </div>
 

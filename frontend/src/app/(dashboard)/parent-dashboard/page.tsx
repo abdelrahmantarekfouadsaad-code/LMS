@@ -9,18 +9,17 @@ import { useSession } from 'next-auth/react';
 import axios from 'axios';
 import EmptyState from '@/components/ui/EmptyState';
 import { DJANGO_API } from '@/lib/api-config';
-import { useLocale } from '@/hooks/useLocale';
-import { DICTIONARY } from '@/locales/dictionary';
 import NewsCarousel from '@/components/guest/NewsCarousel';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function ParentDashboard() {
   const { data: session } = useSession();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const locale = useLocale();
+  const { locale, dict, t: translate } = useTranslation();
   const isAr = locale === 'ar';
-  const t = DICTIONARY[locale as 'en' | 'ar']?.parent || DICTIONARY.en.parent;
+  const t = dict.parent;
 
   useEffect(() => {
     // Wait until the session is loaded and available
@@ -118,7 +117,7 @@ export default function ParentDashboard() {
         >
           <div className="backdrop-blur-md bg-slate-900/80 rounded-3xl shadow-xl p-6 mt-6 border border-emerald-500/20 relative overflow-hidden">
             {/* Background glowing orb effect for premium feel */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-0 end-0 -mt-10 -me-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
             
             <div className="flex items-center gap-3 mb-4 relative z-10">
               <div className="p-2.5 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
@@ -129,7 +128,7 @@ export default function ParentDashboard() {
               </h2>
             </div>
             
-            <div className="relative z-10 pl-14">
+            <div className="relative z-10 ps-14">
               <p className="text-slate-300 leading-relaxed font-medium">
                 {overall_evaluation || t.gatheringInsights}
               </p>
@@ -171,7 +170,7 @@ export default function ParentDashboard() {
                   className="group flex flex-col justify-between backdrop-blur-md bg-slate-900/60 p-6 rounded-2xl border border-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/10 h-full relative overflow-hidden"
                 >
                   {/* Decorative top border based on course color */}
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${course.color || 'from-emerald-500 to-indigo-500'}`}></div>
+                  <div className={`absolute top-0 start-0 w-full h-1 bg-gradient-to-e ${course.color || 'from-emerald-500 to-indigo-500'}`}></div>
                   
                   <div>
                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-1">

@@ -3,18 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
-import { LayoutDashboard, Users, DollarSign, BookOpen, MessageSquare, Newspaper } from 'lucide-react';
+import { LayoutDashboard, Users, DollarSign, BookOpen, MessageSquare, Newspaper, Settings } from 'lucide-react';
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/super-admin', label: 'لوحة القيادة', icon: LayoutDashboard },
     { href: '/super-admin/users', label: 'المستخدمين', icon: Users },
-    { href: '/super-admin/finance', label: 'المالية', icon: DollarSign },
+    { href: '/payment', label: 'المالية', icon: DollarSign },
     { href: '/super-admin/courses', label: 'الدورات', icon: BookOpen },
-    { href: '/super-admin/chats', label: 'المحادثات', icon: MessageSquare },
+    { href: '/chat', label: 'المحادثات', icon: MessageSquare },
     { href: '/super-admin/news', label: 'الأخبار', icon: Newspaper },
+    { href: '/settings', label: 'الإعدادات', icon: Settings },
   ];
 
   return (

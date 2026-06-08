@@ -8,8 +8,10 @@ import { User, Shield, Moon, Sun, Globe, Save, Loader2, LogOut, LifeBuoy } from 
 import Toast, { ToastType } from '@/components/ui/Toast';
 import axios from 'axios';
 import { DJANGO_API } from '@/lib/api-config';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function SuperAdminSettingsPage() {
+  const { t } = useTranslation();
   const { data: session, update } = useSession();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -61,9 +63,9 @@ export default function SuperAdminSettingsPage() {
       // Sync client session
       await update({ name: res.data.full_name, email: res.data.email });
       router.refresh();
-      showToast('تم تحديث الملف الشخصي بنجاح!', 'success');
+      showToast(t('admin.settings.profileUpdated'), 'success');
     } catch (error: any) {
-      showToast(error.response?.data?.detail || 'فشل تحديث الملف الشخصي.', 'error');
+      showToast(error.response?.data?.detail || t('admin.settings.profileUpdateFailed'), 'error');
     } finally {
       setIsSavingProfile(false);
     }
@@ -74,12 +76,12 @@ export default function SuperAdminSettingsPage() {
     if (!session?.accessToken) return;
 
     if (newPassword !== confirmPassword) {
-      showToast('كلمات المرور الجديدة غير متطابقة.', 'error');
+      showToast(t('admin.settings.passwordsMismatch'), 'error');
       return;
     }
 
     if (newPassword.length < 8) {
-      showToast('يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.', 'error');
+      showToast(t('admin.settings.passwordLength'), 'error');
       return;
     }
 
@@ -91,12 +93,12 @@ export default function SuperAdminSettingsPage() {
       }, {
         headers: { Authorization: `Bearer ${session.accessToken}` }
       });
-      showToast('تم تحديث كلمة المرور بنجاح!', 'success');
+      showToast(t('admin.settings.passwordUpdated'), 'success');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      showToast(error.response?.data?.error || 'فشل تحديث كلمة المرور.', 'error');
+      showToast(error.response?.data?.error || t('admin.settings.passwordUpdateFailed'), 'error');
     } finally {
       setIsSavingPassword(false);
     }
@@ -105,8 +107,8 @@ export default function SuperAdminSettingsPage() {
   return (
     <div className="flex-1 p-6 lg:p-10 overflow-y-auto hide-scrollbar bg-transparent">
       <header className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white mb-2">إعدادات المشرف العام</h1>
-        <p className="text-gray-400">إدارة تفاصيل حساب المشرف العام وتفضيلات النظام.</p>
+        <h1 className="text-3xl font-extrabold text-white mb-2">{t('admin.settings.title')}</h1>
+        <p className="text-gray-400">{t('admin.settings.subtitle')}</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -114,7 +116,7 @@ export default function SuperAdminSettingsPage() {
         <div className="lg:col-span-5 space-y-6">
           <div className="glass-panel p-8 bg-slate-900/50 border border-white/10 rounded-2xl">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <User className="text-indigo-400" /> البيانات الشخصية
+              <User className="text-indigo-400" /> {t('admin.settings.personalDetails')}
             </h2>
 
             <div className="flex items-center gap-6 mb-8">
@@ -125,13 +127,13 @@ export default function SuperAdminSettingsPage() {
                 <button className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors mb-1 block">
                   تغيير الصورة
                 </button>
-                <p className="text-xs text-gray-500">JPG, GIF, PNG. كحد أقصى 800K</p>
+                <p className="text-xs text-gray-500">{t('admin.settings.photoHint')}</p>
               </div>
             </div>
 
             <form className="space-y-5" onSubmit={handleUpdateProfile}>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">الاسم الكامل</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">{t('admin.settings.fullName')}</label>
                 <input
                   type="text"
                   value={fullName}
@@ -141,7 +143,7 @@ export default function SuperAdminSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">البريد الإلكتروني</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">{t('admin.settings.email')}</label>
                 <input
                   type="email"
                   value={email}
@@ -151,10 +153,10 @@ export default function SuperAdminSettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">دور الحساب</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">{t('admin.settings.accountRole')}</label>
                 <input
                   type="text"
-                  value="مشرف عام (Super Admin)"
+                  value={t('admin.settings.roleSuperAdmin')}
                   disabled
                   className="w-full bg-slate-800/30 border border-white/5 rounded-xl px-4 py-3 text-gray-500 text-sm cursor-not-allowed"
                 />
@@ -175,12 +177,12 @@ export default function SuperAdminSettingsPage() {
           {/* Security Section */}
           <div className="glass-panel p-8 bg-slate-900/50 border border-white/10 rounded-2xl">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Shield className="text-emerald-400" /> الأمان
+              <Shield className="text-emerald-400" /> {t('admin.settings.security')}
             </h2>
 
             <form className="space-y-5 max-w-lg" onSubmit={handleUpdatePassword}>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">كلمة المرور الحالية</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">{t('admin.settings.currentPassword')}</label>
                 <input
                   type="password"
                   placeholder="••••••••"
@@ -192,7 +194,7 @@ export default function SuperAdminSettingsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">كلمة المرور الجديدة</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t('admin.settings.newPassword')}</label>
                   <input
                     type="password"
                     placeholder="••••••••"
@@ -204,7 +206,7 @@ export default function SuperAdminSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">تأكيد كلمة المرور</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t('admin.settings.confirmPassword')}</label>
                   <input
                     type="password"
                     placeholder="••••••••"
@@ -229,7 +231,7 @@ export default function SuperAdminSettingsPage() {
           {/* Support & Session Section */}
           <div className="glass-panel p-8 bg-slate-900/50 border border-white/10 rounded-2xl">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <LifeBuoy className="text-indigo-400" /> الجلسة والدعم
+              <LifeBuoy className="text-indigo-400" /> {t('admin.settings.sessionAndSupport')}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -239,8 +241,8 @@ export default function SuperAdminSettingsPage() {
                   <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <LogOut className="w-5 h-5 text-red-400" />
                   </div>
-                  <h3 className="font-bold text-white text-sm mb-1">تسجيل الخروج</h3>
-                  <p className="text-xs text-gray-400 mb-4">تسجيل الخروج من جلستك بشكل آمن.</p>
+                  <h3 className="font-bold text-white text-sm mb-1">{t('admin.settings.logout')}</h3>
+                  <p className="text-xs text-gray-400 mb-4">{t('admin.settings.logoutDesc')}</p>
                 </div>
                 <button
                   onClick={() => signOut({ callbackUrl: '/login' })}

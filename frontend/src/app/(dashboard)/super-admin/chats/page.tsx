@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
+import { useTranslation } from '@/i18n/TranslationContext';
 
 export default function SuperAdminChatsPage() {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full bg-transparent overflow-hidden p-6 md:p-8">
       <div className="flex-1 flex overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-slate-900/50 backdrop-blur-xl items-center justify-center">
@@ -13,10 +15,10 @@ export default function SuperAdminChatsPage() {
             <MessageSquare className="w-10 h-10 text-indigo-500/50" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">
-            المحادثات
+            {t('admin.chats.title')}
           </h2>
           <p className="text-slate-400">
-            واجهة المحادثات الخاصة بالمشرف العام قيد التطوير.
+            {t('admin.chats.subtitle')}
           </p>
         </div>
 

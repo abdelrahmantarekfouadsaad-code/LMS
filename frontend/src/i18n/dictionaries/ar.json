@@ -291,5 +291,48 @@
     "parentSetup": "إعداد حساب ولي الأمر",
     "dontHaveAccount": "ليس لديك حساب؟",
     "signUp": "سجل الآن"
+  },
+  "superAdminSidebar": {
+    "dashboard": "لوحة التحكم",
+    "courses": "إدارة الدورات",
+    "users": "إدارة المستخدمين",
+    "finance": "المالية والتحليلات",
+    "news": "الأخبار والإعلانات",
+    "chats": "محادثات الدعم",
+    "settings": "إعدادات النظام",
+    "logout": "تسجيل الخروج"
+  },
+  "superAdminUsers": {
+    "title": "إدارة المستخدمين",
+    "subtitle": "إدارة جميع الطلاب وأولياء الأمور والمعلمين عبر المنصة.",
+    "searchPlaceholder": "البحث عن المستخدمين بالاسم أو البريد أو الدور...",
+    "filterAll": "جميع المستخدمين",
+    "filterStudents": "الطلاب",
+    "filterParents": "أولياء الأمور",
+    "filterAdmins": "المسؤولون",
+    "addUser": "إضافة مستخدم جديد",
+    "nameCol": "الاسم",
+    "emailCol": "البريد الإلكتروني",
+    "roleCol": "الدور",
+    "statusCol": "الحالة",
+    "actionsCol": "الإجراءات",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "edit": "تعديل",
+    "delete": "حذف"
+  },
+  "superAdminFinance": {
+    "title": "نظرة عامة مالية",
+    "subtitle": "تتبع الإيرادات والمدفوعات والتحليلات المالية.",
+    "totalRevenue": "إجمالي الإيرادات",
+    "activeSubscriptions": "الاشتراكات النشطة",
+    "pendingPayments": "المدفوعات المعلقة",
+    "successRate": "نسبة نجاح الدفع",
+    "recentTransactions": "المعاملات الأخيرة",
+    "transactionId": "رقم المعاملة",
+    "user": "المستخدم",
+    "amount": "المبلغ",
+    "date": "التاريخ",
+    "status": "الحالة"
   }
 }

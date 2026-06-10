@@ -9,8 +9,9 @@ import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import dynamic from 'next/dynamic';
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 import screenfull from 'screenfull';
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 
 import { useUserRole } from '@/hooks/useUserRole';
@@ -124,8 +125,8 @@ export default function CoursePlayerPage() {
   }, [isGuest, router]);
 
   const [activeLesson, setActiveLesson] = useState<number | null>(null);
-  const [videoDurations, setVideoDurations] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'content' | 'timeline'>('content');
+  const [videoDurations, setVideoDurations] = useState<Record<number, string>>({});
   const [mounted, setMounted] = useState(false);
 
   // --- Premium Player States ---
@@ -146,6 +147,265 @@ export default function CoursePlayerPage() {
   const completedLessonIds = new Set(progressData?.results?.filter((p: any) => p.is_completed).map((p: any) => p.lesson) || []);
 
   const { locale, dict, t: translate } = useTranslation();
+
+  const isAr = locale === 'ar';
+  const t = dict.learning;
+
+  const milestones = (milestonesData?.results || milestonesData || []);
+  
+  let displayMilestones = [...milestones];
+  
+  if (course?.groups?.length > 0) {
+    course.groups.forEach((group: any) => {
+      if (group.zoom_sessions?.length > 0) {
+        group.zoom_sessions.forEach((session: any) => {
+          displayMilestones.push({
+            id: `virtual-${session.id}`,
+            milestone_type: 'VIRTUAL_SESSION',
+            title: session.title,
+            description: group.name,
+            milestone_date: session.scheduled_time || new Date().toISOString(),
+            is_completed: false,
+            meeting_link: session.meeting_link
+          });
+        });
+      }
+    });
+  }
+  
+  // Sort them chronologically
+  displayMilestones.sort((a, b) => new Date(a.milestone_date).getTime() - new Date(b.milestone_date).getTime());
+
+  const allLessons = React.useMemo(() => {
+    if (course?.course_structure === 'LONG_NESTED') {
+        return course?.units?.flatMap((u: any) => u.lessons || []) || [];
+    } else {
+        return course?.flat_lessons || [];
+    }
+  }, [course]);
+
+  const currentLesson = activeLesson
+    ? allLessons.find((l: any) => l.id === activeLesson)
+    : allLessons[0];
+
+  useEffect(() => {
+    if (!activeLesson && allLessons[0]) {
+      setActiveLesson(allLessons[0].id);
+    }
+    // Reset player state on lesson change
+    setIsPlaying(false);
+    setPlayed(0);
+    setHasEnded(false);
+  }, [activeLesson, allLessons]);
+
+  const videoUrl = currentLesson?.video_url;
+  const isValidVideoUrl = !!videoUrl;
+
+  const handleVideoEnded = async () => {
+    setHasEnded(true);
+    setIsPlaying(false);
+    if (activeLesson && !completedLessonIds.has(activeLesson)) {
+      try {
+        await axios.post('/progress/mark_complete/', { lesson_id: activeLesson });
+        mutateProgress();
+      } catch (err) {
+        console.error("Failed to mark lesson complete", err);
+      }
+    }
+  };
+
+  const handleProgress = (state: { played: number, playedSeconds: number, loaded: number, loadedSeconds: number }) => {
+    if (!hasEnded) {
+      setPlayed(state.played);
+    }
+  };
+
+  const togglePlay = () => {
+    if (hasEnded) {
+      setHasEnded(false);
+      setPlayed(0);
+      playerRef.current?.seekTo(0);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleFullscreen = () => {
+    if (screenfull.isEnabled && playerContainerRef.current) {
+      screenfull.toggle(playerContainerRef.current);
+    }
+  };
+
+  const handleDuration = (e: any) => {
+    const durationInSeconds = e.target?.duration;
+    if (activeLesson && !videoDurations[activeLesson] && durationInSeconds) {
+      const minutes = Math.floor(durationInSeconds / 60);
+      const seconds = Math.floor(durationInSeconds % 60);
+      const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      setVideoDurations(prev => ({ ...prev, [activeLesson]: formatted }));
+    }
+  };
+
+  const tabs = [
+    { key: 'content' as const, label: isAr ? 'محتوى الدورة' : 'Course Content', icon: BookOpen },
+    { key: 'timeline' as const, label: isAr ? 'الغصون (التقييم)' : 'Timeline (الغصون)', icon: GitBranch },
+  ];
+
+  if (error?.response?.status === 403 || error?.response?.data?.code === 'content_locked') {
+    return (
+      <div className="flex h-screen bg-background-light dark:bg-background-dark items-center justify-center p-4">
+        <div className="glass-panel max-w-md w-full p-12 text-center flex flex-col items-center border border-red-500/20 bg-red-500/5 rounded-2xl shadow-2xl">
+          <Lock className="w-16 h-16 text-red-500 mb-6" />
+          <h2 className="text-3xl font-extrabold text-white mb-3 tracking-tight">{isAr ? 'المحتوى مقفل' : 'Content Locked'}</h2>
+          <p className="text-slate-400 mb-8 text-lg">{isAr ? 'يرجى الاشتراك في هذه الدورة للوصول إلى محتواها الكامل والبدء في التعلم.' : 'Please subscribe to this course to unlock its full content and start learning.'}</p>
+          <Link href={`/payment?courseId=${courseId}`} className="px-8 py-4 bg-primary text-white rounded-xl font-bold w-full hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+            <Lock size={18} />
+            {isAr ? 'فتح المحتوى الآن' : 'Unlock Content Now'}
+          </Link>
+          <Link href="/learning" className="mt-6 text-sm font-medium text-slate-500 hover:text-white transition-colors">
+            {isAr ? 'العودة للكتالوج' : 'Back to Catalog'}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-background-light dark:bg-background-dark overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto hide-scrollbar">
+
+        <header className="mb-6 flex flex-col gap-2">
+          <Link href="/learning" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-primary transition-colors w-fit">
+            <ArrowLeft size={16} className={`me-1 ${isAr ? 'rotate-180 ms-1 me-0' : ''}`} />
+            {isAr ? 'العودة إلى الكتالوج' : 'Back to Catalog'}
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2">
+                {course?.title || (isLoading ? 'Loading...' : t.title)}
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400">
+                {course?.description || (isLoading ? '' : t.subtitle)}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* Tab Switcher */}
+        <div className="mb-6 flex">
+          <div className="glass-panel p-1 rounded-xl flex gap-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                    activeTab === tab.key
+                      ? 'bg-white dark:bg-slate-800 text-primary shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {activeTab === 'content' ? (
+            <motion.div key="content" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+              {/* ========= VIEW A: COURSE CONTENT ========= */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+                {/* Left: Video Player (70%) */}
+                <div className="lg:col-span-8 flex flex-col">
+                  <div ref={playerContainerRef} className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group border border-slate-800">
+                    {isLoading || !mounted ? (
+                      <div className="w-full h-full animate-pulse bg-slate-800/50" />
+                    ) : isValidVideoUrl ? (
+                      <>
+                        <ReactPlayer
+                          ref={playerRef}
+                          src={videoUrl}
+                          width="100%"
+                          height="100%"
+                          controls={false}
+                          playing={isPlaying}
+                          onEnded={handleVideoEnded}
+                          onProgress={handleProgress}
+                          onDurationChange={handleDuration}
+                          style={{ backgroundColor: '#0f172a' }}
+                          config={{ 
+                            youtube: { 
+                              playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
+                            } 
+                          }}
+                        />
+
+                        {/* Custom Controls Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-40">
+                          {/* Progress Bar */}
+                          <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative" onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const pos = (e.clientX - rect.left) / rect.width;
+                            playerRef.current?.seekTo(pos);
+                            setPlayed(pos);
+                          }}>
+                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-150" style={{ width: `${played * 100}%` }} />
+                          </div>
+                          
+                          {/* Controls Row */}
+                          <div className="flex items-center justify-between text-white">
+                            <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                              {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
+                            </button>
+                            <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                              <Maximize size={20} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Black Curtain Overlay on End */}
+                        <AnimatePresence>
+                          {hasEnded && (
+                            <motion.div 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute inset-0 bg-black/95 z-50 flex items-center justify-center flex-col backdrop-blur-md"
+                            >
+                              <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                                <CheckCircle className="w-10 h-10 text-emerald-400" />
+                              </div>
+                              <h3 className="text-2xl font-bold text-white mb-6">
+                                {dict.learning?.lessonCompleted || 'Lesson Completed'}
+                              </h3>
+                              <button 
+                                onClick={togglePlay}
+                                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5"
+                              >
+                                <RotateCcw size={18} />
+                                {dict.learning?.replayVideo || 'Replay Video'}
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        
+                        {/* Play Overlay (when paused and not ended) */}
+                        {!isPlaying && !hasEnded && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                            <div className="w-20 h-20 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/10 shadow-2xl">
+                              <Play size={32} className="text-white ms-2 opacity-80" />
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full h-full aspect-video flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/20 to-slate-900/60 z-0" />
+                        <div className="relative z-10 flex flex-col items-center">
                           <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mb-4 border border-white/5 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
                             <Video className="text-slate-400 w-8 h-8" />
                           </div>

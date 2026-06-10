@@ -11,7 +11,6 @@ import axios from '@/lib/axios';
 import dynamic from 'next/dynamic';
 import screenfull from 'screenfull';
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 
 import { useUserRole } from '@/hooks/useUserRole';
@@ -334,14 +333,14 @@ export default function CoursePlayerPage() {
                           controls={false}
                           playing={isPlaying}
                           onEnded={handleVideoEnded}
-                          onProgress={handleProgress}
+                          onProgress={handleProgress as any}
                           onDurationChange={handleDuration}
                           style={{ backgroundColor: '#0f172a' }}
                           config={{ 
                             youtube: { 
                               playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
                             } 
-                          }}
+                          } as any}
                         />
 
                         {/* Custom Controls Overlay */}

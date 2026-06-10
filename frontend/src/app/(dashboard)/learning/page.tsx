@@ -90,6 +90,8 @@ export default function LearningPage() {
   const { isGuest, role } = useUserRole();
   const isParent = role === 'PARENT';
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const { data: session } = useSession();
 
   const t = dict.parent;
@@ -192,6 +194,9 @@ export default function LearningPage() {
                         setIsGuestModalOpen(true);
                       } else if (isEnrolled) {
                         router.push(`/parent/courses/${course.id}/analytics`);
+                      } else if (!isParent) {
+                        setSelectedCourse(course);
+                        setIsDetailsModalOpen(true);
                       }
                     }}
                     className={`
@@ -199,6 +204,8 @@ export default function LearningPage() {
                       ${isGuest ? 'cursor-pointer shadow-xl hover:shadow-2xl border border-white/5 hover:border-white/20 hover:-translate-y-1' : 
                         isEnrolled 
                         ? 'cursor-pointer shadow-[0_0_25px_rgba(16,185,129,0.15)] border border-emerald-500/30 hover:border-emerald-500/60 hover:-translate-y-1'
+                        : (!isParent)
+                        ? 'cursor-pointer shadow-xl hover:shadow-2xl border border-white/5 hover:border-white/20 hover:-translate-y-1'
                         : isSelected 
                         ? 'shadow-[0_0_20px_rgba(var(--tw-colors-primary),0.15)] border border-primary/30' 
                         : 'shadow-xl hover:shadow-2xl border border-white/5 hover:border-white/20 hover:-translate-y-0.5'
@@ -353,6 +360,113 @@ export default function LearningPage() {
         isOpen={isGuestModalOpen} 
         onClose={() => setIsGuestModalOpen(false)} 
       />
+
+      <CourseDetailsModal 
+        isOpen={isDetailsModalOpen} 
+        onClose={() => setIsDetailsModalOpen(false)} 
+        course={selectedCourse} 
+        addToCart={addToCart}
+        cartItems={cartItems}
+      />
     </div>
+  );
+}
+
+function CourseDetailsModal({ isOpen, onClose, course, addToCart, cartItems }: { isOpen: boolean, onClose: () => void, course: any, addToCart: (c: any) => void, cartItems: any[] }) {
+  const { locale, dict, t: translate } = useTranslation();
+  const isAr = locale === 'ar';
+  if (!course) return null;
+  const tLocal = dict.learning;
+  const isSelected = cartItems.some(item => item.id === course.id);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
+            dir={isAr ? 'rtl' : 'ltr'}
+          >
+            <button
+              onClick={onClose}
+              className={`absolute top-4 ${isAr ? 'start-4' : 'end-4'} p-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full transition-colors z-20 backdrop-blur-sm`}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Header Image */}
+            <div className="relative w-full h-64 shrink-0 bg-slate-800">
+              <img 
+                src={course.thumbnail} 
+                alt={course.title} 
+                className="object-cover w-full h-full"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2364748b">No Image</text></svg>';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
+              <div className="absolute bottom-6 px-8 w-full">
+                <div className="inline-block px-3 py-1 bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 text-indigo-300 text-xs font-bold rounded-full mb-3 uppercase tracking-wider">
+                  {tLocal.courseDetails || 'Course Details'}
+                </div>
+                <h2 className="text-3xl font-black text-white mb-2 leading-tight drop-shadow-lg">
+                  {isAr ? course.title_ar || course.title : course.title}
+                </h2>
+                <div className="flex items-center gap-4 text-slate-300 text-sm font-medium">
+                  <span className="flex items-center gap-1.5"><User size={16} className="text-indigo-400" /> {course.instructor_name || 'Academy Instructor'}</span>
+                  <span className="flex items-center gap-1.5"><Clock size={16} className="text-indigo-400" /> {course.duration || 'Flexible'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 overflow-y-auto">
+              <div className="prose prose-invert max-w-none mb-8">
+                <p className="text-slate-300 leading-relaxed text-lg whitespace-pre-wrap">
+                  {course.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-white/10 bg-slate-900/80 backdrop-blur-md shrink-0 flex items-center justify-between gap-6">
+              <div>
+                <div className="text-sm text-slate-400 mb-0.5">{dict.admin?.courses?.price || 'Price'}</div>
+                <div className="text-3xl font-black text-emerald-400">${course.price}</div>
+              </div>
+              
+              <button
+                onClick={() => {
+                  if (!isSelected) {
+                    addToCart(course);
+                  }
+                  onClose();
+                }}
+                disabled={isSelected}
+                className={`py-4 px-8 rounded-xl font-bold flex items-center justify-center gap-3 transition-all duration-300 shadow-xl w-48 ${
+                  isSelected 
+                    ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-1'
+                }`}
+              >
+                <ShoppingCart size={20} />
+                {isSelected ? (isAr ? 'مضاف للسلة' : 'Added to Cart') : (tLocal.subscribeNow || 'Subscribe Now')}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -714,3 +714,60 @@ class SuperAdminStudentStatsView(APIView):
         
         return Response(data, status=status.HTTP_200_OK)
 
+
+class SuperAdminEnrollStudentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != 'SUPER_ADMIN':
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from learning.models import Course, Enrollment, Lesson, StudentProgress
+        from payment.models import Subscription
+        
+        user_id = request.data.get('user_id')
+        course_id = request.data.get('course_id')
+        
+        if not user_id or not course_id:
+            return Response({'error': 'user_id and course_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            target_user = User.objects.get(id=user_id, role='STUDENT')
+        except User.DoesNotExist:
+            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Ensure subscription exists
+        sub, created = Subscription.objects.get_or_create(
+            user=target_user,
+            course=course,
+            defaults={'status': 'approved', 'is_active': True}
+        )
+        if not created:
+            sub.status = 'approved'
+            sub.is_active = True
+            sub.save()
+            
+        # Create Enrollment record (as requested by user)
+        Enrollment.objects.get_or_create(student=target_user, course=course)
+        
+        # Create StudentProgress for all lessons (matching the shell script logic)
+        lessons = Lesson.objects.filter(course=course)
+        if not lessons.exists():
+            lessons = Lesson.objects.filter(unit__course=course)
+            
+        for lesson in lessons:
+            StudentProgress.objects.get_or_create(student=target_user, lesson=lesson)
+            
+        try:
+            from chat.utils import setup_student_chat_rooms
+            setup_student_chat_rooms(target_user, course)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Chat room setup failed: {e}")
+            
+        return Response({'message': 'Student enrolled successfully'}, status=status.HTTP_200_OK)

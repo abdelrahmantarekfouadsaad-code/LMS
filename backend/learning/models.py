@@ -191,3 +191,14 @@ class Announcement(models.Model):
 
     def __str__(self):
         return f"Announcement {self.id} ({'Active' if self.is_active else 'Inactive'})"
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'STUDENT'})
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'course')
+
+    def __str__(self):
+        return f"{self.student.full_name} enrolled in {self.course.title}"

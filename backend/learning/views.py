@@ -76,6 +76,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         data = request.data
         
         try:
+            if not data.get('description') or not str(data.get('description')).strip():
+                return Response({'error': 'Description is required and cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+                
             with transaction.atomic():
                 # Handle potential empty strings from frontend
                 price_val = data.get('price')
@@ -159,6 +162,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         data = request.data
         
         try:
+            desc_val = data.get('description', course.description)
+            if not desc_val or not str(desc_val).strip():
+                return Response({'error': 'Description is required and cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+                
             with transaction.atomic():
                 price_val = data.get('price', course.price)
                 if price_val in [None, '', '0']:

@@ -50,7 +50,11 @@
     "lesson4": "مواد القراءة للأسبوع الأول",
     "lesson5": "شروط الوضوء",
     "lesson6": "نواقض الوضوء",
-    "lesson7": "كيفية الغسل"
+    "lesson7": "كيفية الغسل",
+    "courseDetails": "تفاصيل الدورة",
+    "subscribeNow": "اشترك الآن",
+    "replayVideo": "إعادة تشغيل الفيديو",
+    "lessonCompleted": "اكتمل الدرس"
   },
   "sessions": {
     "title": "الحصص المباشرة",
@@ -366,7 +370,13 @@
     "overallProgress": "التقدم العام",
     "projectsDone": "المشاريع المنجزة",
     "enrolledCourses": "الدورات المسجلة",
-    "noActiveEnrollments": "لا توجد اشتراكات نشطة."
+    "noActiveEnrollments": "لا توجد اشتراكات نشطة.",
+    "enrollStudent": "تسجيل طالب",
+    "enrollStudentDesc": "تسجيل طالب يدوياً في دورة.",
+    "selectStudent": "اختر الطالب",
+    "selectStudentPlaceholder": "-- اختر طالباً --",
+    "selectCourse": "اختر الدورة",
+    "selectCoursePlaceholder": "-- اختر دورة --"
   },
   "admin": {
     "courses": {

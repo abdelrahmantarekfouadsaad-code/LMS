@@ -47,6 +47,13 @@ export default function SuperAdminUsersPage() {
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
   const [roleChangeError, setRoleChangeError] = useState('');
 
+  // Enroll state
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollError, setEnrollError] = useState('');
+
   // Fetch users
   const fetcher = (url: string) => api.get(url).then(res => res.data);
   const endpoint = selectedFilter === 'All' 
@@ -60,6 +67,10 @@ export default function SuperAdminUsersPage() {
     statsModalUser ? `/super-admin/students/${statsModalUser.id}/stats/` : null,
     fetcher
   );
+
+  // Fetch data for enroll modal
+  const { data: allStudents } = useSWR(isEnrollModalOpen ? '/super-admin/users/?role=STUDENT' : null, fetcher);
+  const { data: allCourses } = useSWR(isEnrollModalOpen ? '/courses/' : null, fetcher);
 
   const filteredUsers = users?.filter((user: any) => 
     user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -111,7 +122,20 @@ export default function SuperAdminUsersPage() {
             <h1 className="text-3xl font-bold text-white mb-2">{t('users.title')}</h1>
             <p className="text-gray-400">{t('users.subtitle')}</p>
           </div>
-          <div className="relative">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setIsEnrollModalOpen(true);
+                setSelectedStudentId('');
+                setSelectedCourseId('');
+                setEnrollError('');
+              }}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+            >
+              <BookOpen className="w-5 h-5" />
+              {t('users.enrollStudent') || 'Enroll Student'}
+            </button>
+            <div className="relative">
             <Search className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input 
               type="text" 
@@ -364,6 +388,56 @@ export default function SuperAdminUsersPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Enroll Modal */}
+      {isEnrollModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="ltr">
+          <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <button onClick={() => setIsEnrollModalOpen(false)} className="absolute end-4 top-4 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-white mb-1">{t('users.enrollStudent') || 'Enroll Student'}</h3>
+              <p className="text-sm text-gray-400 mb-6">{t('users.enrollStudentDesc') || 'Manually enroll a student into a course.'}</p>
+              
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!selectedStudentId || !selectedCourseId) return setEnrollError('Please select both student and course.');
+                setEnrollLoading(true);
+                setEnrollError('');
+                try {
+                  await api.post('/super-admin/enroll/', { user_id: selectedStudentId, course_id: selectedCourseId });
+                  await mutate();
+                  setIsEnrollModalOpen(false);
+                } catch (err: any) {
+                  setEnrollError(err.response?.data?.error || 'Failed to enroll student');
+                } finally {
+                  setEnrollLoading(false);
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('users.selectStudent') || 'Select Student'}</label>
+                  <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">{t('users.selectStudentPlaceholder') || '-- Choose a student --'}</option>
+                    {allStudents?.map((s: any) => <option key={s.id} value={s.id}>{s.full_name} ({s.email})</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('users.selectCourse') || 'Select Course'}</label>
+                  <select value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">{t('users.selectCoursePlaceholder') || '-- Choose a course --'}</option>
+                    {allCourses?.map((c: any) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                  </select>
+                </div>
+                {enrollError && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">{enrollError}</div>}
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => setIsEnrollModalOpen(false)} className="flex-1 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors">{t('users.cancel') || 'Cancel'}</button>
+                  <button type="submit" disabled={enrollLoading} className="flex-1 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {enrollLoading ? t('users.saving') : t('users.enrollStudent') || 'Enroll'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

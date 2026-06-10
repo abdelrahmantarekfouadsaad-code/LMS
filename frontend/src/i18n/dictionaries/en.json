@@ -50,7 +50,11 @@
     "lesson4": "Week 1 Reading Materials",
     "lesson5": "The Conditions of Wudu",
     "lesson6": "Nullifiers of Wudu",
-    "lesson7": "How to perform Ghusl"
+    "lesson7": "How to perform Ghusl",
+    "courseDetails": "Course Details",
+    "subscribeNow": "Subscribe Now",
+    "replayVideo": "Replay Video",
+    "lessonCompleted": "Lesson Completed"
   },
   "sessions": {
     "title": "Live Sessions",
@@ -366,7 +370,13 @@
     "overallProgress": "Overall Progress",
     "projectsDone": "Projects Done",
     "enrolledCourses": "Enrolled Courses",
-    "noActiveEnrollments": "No active enrollments."
+    "noActiveEnrollments": "No active enrollments.",
+    "enrollStudent": "Enroll Student",
+    "enrollStudentDesc": "Manually enroll a student into a course.",
+    "selectStudent": "Select Student",
+    "selectStudentPlaceholder": "-- Choose a student --",
+    "selectCourse": "Select Course",
+    "selectCoursePlaceholder": "-- Choose a course --"
   },
   "admin": {
     "courses": {

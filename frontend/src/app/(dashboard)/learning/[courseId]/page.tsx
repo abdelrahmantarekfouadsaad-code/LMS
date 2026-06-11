@@ -136,6 +136,7 @@ export default function CoursePlayerPage() {
   const [hasEnded, setHasEnded] = useState(false);
   const [muted, setMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [seeking, setSeeking] = useState(false);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseMove = () => {
@@ -241,7 +242,7 @@ export default function CoursePlayerPage() {
   };
 
   const handleProgress = (state: { played: number, playedSeconds: number, loaded: number, loadedSeconds: number }) => {
-    if (!hasEnded) {
+    if (!hasEnded && !seeking) {
       setPlayed(state.played);
     }
   };
@@ -404,14 +405,17 @@ export default function CoursePlayerPage() {
                             <div className="absolute bottom-0 right-0 w-64 h-24 backdrop-blur-2xl bg-black/20 z-[-1]" />
 
                             {/* Progress Bar */}
-                            <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative pointer-events-auto" onClick={(e) => {
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const pos = (e.clientX - rect.left) / rect.width;
-                              playerRef.current?.seekTo(pos);
-                              setPlayed(pos);
-                            }}>
-                              <div className="h-full bg-emerald-500 rounded-full transition-all duration-150" style={{ width: `${played * 100}%` }} />
-                            </div>
+                            <input 
+                              type="range" 
+                              min={0} 
+                              max={0.999999} 
+                              step="any" 
+                              value={played} 
+                              onMouseDown={() => setSeeking(true)} 
+                              onChange={(e) => setPlayed(parseFloat(e.target.value))} 
+                              onMouseUp={(e) => { setSeeking(false); playerRef.current?.seekTo(parseFloat(e.currentTarget.value), 'fraction'); }} 
+                              className="w-full h-1.5 bg-gray-600/50 rounded-full appearance-none cursor-pointer accent-emerald-500 pointer-events-auto mb-4" 
+                            />
                             
                             {/* Controls Row */}
                             <div className="flex items-center justify-between text-white pointer-events-auto">
@@ -419,10 +423,10 @@ export default function CoursePlayerPage() {
                                 <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                                   {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
                                 </button>
-                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (playerRef.current) { playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10, 'seconds'); } }} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="-10s">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); const ct = playerRef.current?.getCurrentTime() || 0; playerRef.current?.seekTo(ct - 10, 'seconds'); }} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer pointer-events-auto" title="-10s">
                                   <Rewind size={18} />
                                 </button>
-                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (playerRef.current) { playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10, 'seconds'); } }} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="+10s">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); const ct = playerRef.current?.getCurrentTime() || 0; playerRef.current?.seekTo(ct + 10, 'seconds'); }} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer pointer-events-auto" title="+10s">
                                   <FastForward size={18} />
                                 </button>
                                 <div className="h-4 w-px bg-white/20 mx-1"></div>

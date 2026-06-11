@@ -147,7 +147,10 @@ export default function CoursePlayerPage() {
   };
 
   const handleMouseLeave = () => {
-    if (isPlaying) setShowControls(false);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
+    }
   };
 
   useEffect(() => {
@@ -416,10 +419,10 @@ export default function CoursePlayerPage() {
                                 <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                                   {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
                                 </button>
-                                <button onClick={skipBackward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="-10s">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (playerRef.current) { playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10, 'seconds'); } }} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="-10s">
                                   <Rewind size={18} />
                                 </button>
-                                <button onClick={skipForward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="+10s">
+                                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (playerRef.current) { playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10, 'seconds'); } }} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="+10s">
                                   <FastForward size={18} />
                                 </button>
                                 <div className="h-4 w-px bg-white/20 mx-1"></div>

@@ -135,6 +135,29 @@ export default function CoursePlayerPage() {
   const [played, setPlayed] = useState(0);
   const [hasEnded, setHasEnded] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseMove = () => {
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    setShowControls(true);
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isPlaying) setShowControls(false);
+  };
+
+  useEffect(() => {
+    if (!isPlaying) {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      setShowControls(true);
+    } else {
+      handleMouseMove();
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     setMounted(true);
@@ -237,13 +260,15 @@ export default function CoursePlayerPage() {
 
   const skipForward = () => {
     if (playerRef.current) {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10, 'seconds');
+      const ct = playerRef.current.getCurrentTime();
+      playerRef.current.seekTo(ct + 10);
     }
   };
 
   const skipBackward = () => {
     if (playerRef.current) {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10, 'seconds');
+      const ct = playerRef.current.getCurrentTime();
+      playerRef.current.seekTo(ct - 10);
     }
   };
 
@@ -333,7 +358,12 @@ export default function CoursePlayerPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
                 {/* Left: Video Player (70%) */}
                 <div className="lg:col-span-8 flex flex-col">
-                  <div ref={playerContainerRef} className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group border border-slate-800">
+                  <div 
+                    ref={playerContainerRef} 
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group border border-slate-800"
+                  >
                     {isLoading || !mounted ? (
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
@@ -359,41 +389,48 @@ export default function CoursePlayerPage() {
                           />
                         </div>
 
-                        {/* Top Mask for YouTube Title */}
-                        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black via-black/90 to-transparent z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                        {/* Custom Controls Overlay (Bottom Mask) */}
-                        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black via-black/90 to-transparent z-30 pointer-events-none flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          {/* Progress Bar */}
-                          <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative pointer-events-auto" onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = (e.clientX - rect.left) / rect.width;
-                            playerRef.current?.seekTo(pos);
-                            setPlayed(pos);
-                          }}>
-                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-150" style={{ width: `${played * 100}%` }} />
+                        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                          {/* Top Mask for YouTube Title */}
+                          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black via-black/95 to-transparent pointer-events-none">
+                            <div className="absolute top-0 inset-x-0 h-20 backdrop-blur-xl mask-image-b" />
                           </div>
-                          
-                          {/* Controls Row */}
-                          <div className="flex items-center justify-between text-white pointer-events-auto">
-                            <div className="flex items-center gap-2">
-                              <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
-                                {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
-                              </button>
-                              <button onClick={skipBackward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="-10s">
-                                <Rewind size={18} />
-                              </button>
-                              <button onClick={skipForward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="+10s">
-                                <FastForward size={18} />
-                              </button>
-                              <div className="h-4 w-px bg-white/20 mx-1"></div>
-                              <button onClick={() => setMuted(!muted)} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
-                                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+
+                          {/* Custom Controls Overlay (Bottom Mask) */}
+                          <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none flex flex-col justify-end p-4">
+                            {/* Targeted Logo Blur */}
+                            <div className="absolute bottom-0 right-0 w-64 h-24 backdrop-blur-2xl bg-black/20 z-[-1]" />
+
+                            {/* Progress Bar */}
+                            <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative pointer-events-auto" onClick={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const pos = (e.clientX - rect.left) / rect.width;
+                              playerRef.current?.seekTo(pos);
+                              setPlayed(pos);
+                            }}>
+                              <div className="h-full bg-emerald-500 rounded-full transition-all duration-150" style={{ width: `${played * 100}%` }} />
+                            </div>
+                            
+                            {/* Controls Row */}
+                            <div className="flex items-center justify-between text-white pointer-events-auto">
+                              <div className="flex items-center gap-2">
+                                <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                  {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
+                                </button>
+                                <button onClick={skipBackward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="-10s">
+                                  <Rewind size={18} />
+                                </button>
+                                <button onClick={skipForward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="+10s">
+                                  <FastForward size={18} />
+                                </button>
+                                <div className="h-4 w-px bg-white/20 mx-1"></div>
+                                <button onClick={() => setMuted(!muted)} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                  {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                                </button>
+                              </div>
+                              <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                <Maximize size={20} />
                               </button>
                             </div>
-                            <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
-                              <Maximize size={20} />
-                            </button>
                           </div>
                         </div>
 

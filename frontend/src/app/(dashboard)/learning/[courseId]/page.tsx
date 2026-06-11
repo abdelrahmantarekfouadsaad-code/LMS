@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
-import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, BookOpen, GitBranch, Award, ClipboardCheck, MessageSquare, Star, Pause, Maximize, RotateCcw } from 'lucide-react';
+import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, BookOpen, GitBranch, Award, ClipboardCheck, MessageSquare, Star, Pause, Maximize, RotateCcw, Volume2, VolumeX, FastForward, Rewind } from 'lucide-react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
@@ -134,6 +134,7 @@ export default function CoursePlayerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [played, setPlayed] = useState(0);
   const [hasEnded, setHasEnded] = useState(false);
+  const [muted, setMuted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -231,6 +232,18 @@ export default function CoursePlayerPage() {
   const toggleFullscreen = () => {
     if (screenfull.isEnabled && playerContainerRef.current) {
       screenfull.toggle(playerContainerRef.current);
+    }
+  };
+
+  const skipForward = () => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10);
+    }
+  };
+
+  const skipBackward = () => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10);
     }
   };
 
@@ -333,10 +346,11 @@ export default function CoursePlayerPage() {
                             height="100%"
                             controls={false}
                             playing={isPlaying}
+                            muted={muted}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}
-                            style={{ backgroundColor: '#0f172a', transform: 'scale(1.25)' }}
+                            style={{ backgroundColor: '#0f172a' }}
                             config={{ 
                               youtube: { 
                                 playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
@@ -346,7 +360,7 @@ export default function CoursePlayerPage() {
                         </div>
 
                         {/* Custom Controls Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-40 pointer-events-none">
+                        <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-40 pointer-events-none bg-gradient-to-t from-black via-black/80 to-transparent">
                           {/* Progress Bar */}
                           <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative pointer-events-auto" onClick={(e) => {
                             const rect = e.currentTarget.getBoundingClientRect();
@@ -359,9 +373,21 @@ export default function CoursePlayerPage() {
                           
                           {/* Controls Row */}
                           <div className="flex items-center justify-between text-white pointer-events-auto">
-                            <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
-                              {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
+                              </button>
+                              <button onClick={skipBackward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="-10s">
+                                <Rewind size={18} />
+                              </button>
+                              <button onClick={skipForward} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer" title="+10s">
+                                <FastForward size={18} />
+                              </button>
+                              <div className="h-4 w-px bg-white/20 mx-1"></div>
+                              <button onClick={() => setMuted(!muted)} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                              </button>
+                            </div>
                             <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                               <Maximize size={20} />
                             </button>

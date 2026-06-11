@@ -181,7 +181,7 @@ export default function LearningPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {Array.isArray(courses) && courses.map((course: any, idx: number) => {
                 const isSelected = mounted ? cartItems.some(item => item.id === course.id) : false;
-                const isEnrolled = isParent && Array.isArray(parentEnrolledCourses) && parentEnrolledCourses.some((c: any) => String(c.id) === String(course.id));
+                const isEnrolled = course.is_enrolled || (isParent && Array.isArray(parentEnrolledCourses) && parentEnrolledCourses.some((c: any) => String(c.id) === String(course.id)));
 
                 return (
                   <motion.div 
@@ -193,7 +193,7 @@ export default function LearningPage() {
                       if (isGuest) {
                         setIsGuestModalOpen(true);
                       } else if (isEnrolled) {
-                        router.push(`/parent/courses/${course.id}/analytics`);
+                        router.push(isParent ? `/parent/courses/${course.id}/analytics` : `/learning/${course.id}`);
                       } else if (!isParent) {
                         setSelectedCourse(course);
                         setIsDetailsModalOpen(true);
@@ -251,12 +251,12 @@ export default function LearningPage() {
                         {/* Parent Enrolled vs Add to Cart Actions */}
                         {isEnrolled ? (
                           <Link
-                            href={`/parent/courses/${course.id}/analytics`}
+                            href={isParent ? `/parent/courses/${course.id}/analytics` : `/learning/${course.id}`}
                             onClick={(e) => e.stopPropagation()}
                             className="w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 bg-gradient-to-e from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/25 hover:border-emerald-500/40 text-emerald-400 transition-all duration-300 shadow-md"
                           >
                             <TrendingUp size={18} />
-                            {t.enrolledBadge}
+                            {isParent ? t.enrolledBadge : (isAr ? 'متابعة الدورة' : 'Continue Course')}
                           </Link>
                         ) : !isGuest && (
                           <button

@@ -325,28 +325,30 @@ export default function CoursePlayerPage() {
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
                     ) : isValidVideoUrl ? (
                       <>
-                        <ReactPlayer
-                          ref={playerRef}
-                          src={videoUrl}
-                          width="100%"
-                          height="100%"
-                          controls={false}
-                          playing={isPlaying}
-                          onEnded={handleVideoEnded}
-                          onProgress={handleProgress as any}
-                          onDurationChange={handleDuration}
-                          style={{ backgroundColor: '#0f172a' }}
-                          config={{ 
-                            youtube: { 
-                              playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
-                            } 
-                          } as any}
-                        />
+                        <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+                          <ReactPlayer
+                            ref={playerRef}
+                            src={videoUrl}
+                            width="100%"
+                            height="100%"
+                            controls={false}
+                            playing={isPlaying}
+                            onEnded={handleVideoEnded}
+                            onProgress={handleProgress as any}
+                            onDurationChange={handleDuration}
+                            style={{ backgroundColor: '#0f172a', transform: 'scale(1.25)' }}
+                            config={{ 
+                              youtube: { 
+                                playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
+                              } 
+                            } as any}
+                          />
+                        </div>
 
                         {/* Custom Controls Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-40">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-40 pointer-events-none">
                           {/* Progress Bar */}
-                          <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative" onClick={(e) => {
+                          <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative pointer-events-auto" onClick={(e) => {
                             const rect = e.currentTarget.getBoundingClientRect();
                             const pos = (e.clientX - rect.left) / rect.width;
                             playerRef.current?.seekTo(pos);
@@ -356,11 +358,11 @@ export default function CoursePlayerPage() {
                           </div>
                           
                           {/* Controls Row */}
-                          <div className="flex items-center justify-between text-white">
-                            <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                          <div className="flex items-center justify-between text-white pointer-events-auto">
+                            <button onClick={togglePlay} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                               {isPlaying ? <Pause size={20} /> : <Play size={20} className="ms-1" />}
                             </button>
-                            <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                            <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                               <Maximize size={20} />
                             </button>
                           </div>
@@ -394,9 +396,12 @@ export default function CoursePlayerPage() {
                         
                         {/* Play Overlay (when paused and not ended) */}
                         {!isPlaying && !hasEnded && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                            <div className="w-20 h-20 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/10 shadow-2xl">
-                              <Play size={32} className="text-white ms-2 opacity-80" />
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center z-30 pointer-events-auto cursor-pointer bg-black/40 backdrop-blur-[2px] transition-all"
+                            onClick={togglePlay}
+                          >
+                            <div className="w-20 h-20 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transition-transform hover:scale-110">
+                              <Play size={32} className="text-white ms-2 opacity-100" fill="currentColor" />
                             </div>
                           </div>
                         )}

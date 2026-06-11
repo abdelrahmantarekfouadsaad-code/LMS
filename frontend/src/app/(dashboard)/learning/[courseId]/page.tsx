@@ -237,13 +237,13 @@ export default function CoursePlayerPage() {
 
   const skipForward = () => {
     if (playerRef.current) {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10);
+      playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10, 'seconds');
     }
   };
 
   const skipBackward = () => {
     if (playerRef.current) {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10);
+      playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10, 'seconds');
     }
   };
 
@@ -347,6 +347,8 @@ export default function CoursePlayerPage() {
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
+                            light={true}
+                            playIcon={<React.Fragment />}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}
@@ -359,8 +361,11 @@ export default function CoursePlayerPage() {
                           />
                         </div>
 
-                        {/* Custom Controls Overlay */}
-                        <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-40 pointer-events-none bg-gradient-to-t from-black via-black/80 to-transparent">
+                        {/* Top Mask for YouTube Title */}
+                        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black via-black/90 to-transparent z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                        {/* Custom Controls Overlay (Bottom Mask) */}
+                        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black via-black/90 to-transparent z-30 pointer-events-none flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           {/* Progress Bar */}
                           <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer overflow-hidden relative pointer-events-auto" onClick={(e) => {
                             const rect = e.currentTarget.getBoundingClientRect();

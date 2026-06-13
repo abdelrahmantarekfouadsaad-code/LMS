@@ -8,7 +8,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
-import ReactPlayer from 'react-player';
+import ReactPlayer from 'react-player/youtube';
 import screenfull from 'screenfull';
 
 import { useUserRole } from '@/hooks/useUserRole';
@@ -126,13 +126,13 @@ export default function CoursePlayerPage() {
   const [videoDurations, setVideoDurations] = useState<Record<number, string>>({});
   const [mounted, setMounted] = useState(false);
   const [isGhostModeEnabled, setIsGhostModeEnabled] = useState(true);
+  const [securityInitialized, setSecurityInitialized] = useState(false);
 
   useEffect(() => {
     // Read initial state
-    const savedMode = localStorage.getItem('ghostMode');
-    if (savedMode !== null) {
-      setIsGhostModeEnabled(savedMode === 'true');
-    }
+    const saved = localStorage.getItem('ghostMode');
+    setIsGhostModeEnabled(saved !== 'false'); // Defaults to true unless explicitly 'false'
+    setSecurityInitialized(true);
 
     // Listen for cross-tab changes (when Super Admin toggles it)
     const handleStorageChange = (e: StorageEvent) => {
@@ -188,7 +188,8 @@ export default function CoursePlayerPage() {
   }, [isStagnant, isBuffering, isPlaying]);
 
   useEffect(() => {
-    if (!isGhostModeEnabled) return;
+    // ONLY run trap if we are initialized AND ghost mode is actually enabled
+    if (!securityInitialized || !isGhostModeEnabled) return;
 
     // Layer 3: The Booby Trap
     const disableShortcuts = (e: KeyboardEvent) => {
@@ -216,7 +217,7 @@ export default function CoursePlayerPage() {
       window.removeEventListener('contextmenu', disableContextMenu);
       clearInterval(devToolsTrap);
     };
-  }, [isGhostModeEnabled]);
+  }, [isGhostModeEnabled, securityInitialized]);
 
   useEffect(() => {
     setMounted(true);

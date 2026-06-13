@@ -170,30 +170,6 @@ export default function CoursePlayerPage() {
     }
   }, [isStagnant, isBuffering, isPlaying]);
 
-  // --- Ghost Player DevTools Trap (Backend-Driven) ---
-  useEffect(() => {
-    if (!course?.is_ghost_mode) return;
-
-    const disableShortcuts = (e: KeyboardEvent) => {
-      if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
-        e.preventDefault();
-      }
-    };
-    const disableContextMenu = (e: MouseEvent) => e.preventDefault();
-
-    window.addEventListener('keydown', disableShortcuts);
-    window.addEventListener('contextmenu', disableContextMenu);
-
-    const devToolsTrap = setInterval(() => {
-      Function('debugger')();
-    }, 50);
-
-    return () => {
-      window.removeEventListener('keydown', disableShortcuts);
-      window.removeEventListener('contextmenu', disableContextMenu);
-      clearInterval(devToolsTrap);
-    };
-  }, [course?.is_ghost_mode]);
 
   useEffect(() => {
     setMounted(true);
@@ -220,6 +196,31 @@ export default function CoursePlayerPage() {
   const { data: course, error, isLoading } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
   const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
   const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
+
+  // --- Ghost Player DevTools Trap (Backend-Driven) ---
+  useEffect(() => {
+    if (!course?.is_ghost_mode) return;
+
+    const disableShortcuts = (e: KeyboardEvent) => {
+      if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
+        e.preventDefault();
+      }
+    };
+    const disableContextMenu = (e: MouseEvent) => e.preventDefault();
+
+    window.addEventListener('keydown', disableShortcuts);
+    window.addEventListener('contextmenu', disableContextMenu);
+
+    const devToolsTrap = setInterval(() => {
+      Function('debugger')();
+    }, 50);
+
+    return () => {
+      window.removeEventListener('keydown', disableShortcuts);
+      window.removeEventListener('contextmenu', disableContextMenu);
+      clearInterval(devToolsTrap);
+    };
+  }, [course?.is_ghost_mode]);
   
   const completedLessonIds = new Set(progressData?.results?.filter((p: any) => p.is_completed).map((p: any) => p.lesson) || []);
 

@@ -409,8 +409,8 @@ export default function CoursePlayerPage() {
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
-                            onBuffer={() => setIsBuffering(true)}
-                            onBufferEnd={() => setIsBuffering(false)}
+                            onWaiting={() => setIsBuffering(true)}
+                            onPlaying={() => setIsBuffering(false)}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}

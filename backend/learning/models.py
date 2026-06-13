@@ -202,3 +202,25 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} enrolled in {self.course.title}"
+
+
+# --- GHOST PLAYER GLOBAL SETTINGS (Singleton) ---
+class GlobalSettings(models.Model):
+    """Singleton model for platform-wide settings like Ghost Mode."""
+    ghost_mode_enabled = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Global Settings'
+        verbose_name_plural = 'Global Settings'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Enforce singleton — only one row ever exists
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return f"Ghost Mode: {'ON' if self.ghost_mode_enabled else 'OFF'}"

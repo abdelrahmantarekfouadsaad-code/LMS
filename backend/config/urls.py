@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from accounts.views import UserViewSet, RegisterView, GoogleLoginView, ForgotPasswordView, ResetPasswordView, ParentVerifyView, ParentCreateView, ParentDashboardView, ParentCourseAnalyticsView
-from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet
+from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet, GhostModeView
 from quizzes.views import QuizViewSet, StudentResultViewSet
 from live.views import LiveSessionViewSet, AttendanceViewSet
 from support.views import SupportTicketViewSet
@@ -59,6 +59,8 @@ urlpatterns = [
     path('api/parents/dashboard/', ParentDashboardView.as_view(), name='parent_dashboard'),
     path('api/parents/courses/<int:course_id>/analytics/', ParentCourseAnalyticsView.as_view(), name='parent_course_analytics'),
 
+    # Ghost Player Admin API
+    path('api/admin/settings/ghost-mode/', GhostModeView.as_view(), name='ghost_mode'),
     
     # Core API Routers
     path('api/', include('accounts.urls')),

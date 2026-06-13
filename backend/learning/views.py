@@ -1,9 +1,10 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.utils import timezone
 from django.db import transaction
-from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission, Announcement
+from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission, Announcement, GlobalSettings
 from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer, AnnouncementSerializer
 from accounts.permissions import IsSuperAdmin, IsSupervisor
 
@@ -367,3 +368,20 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         if not (user and user.is_authenticated and user.role in ['SUPER_ADMIN', 'SUPERVISOR']):
             qs = qs.filter(is_active=True)
         return qs
+
+
+class GhostModeView(APIView):
+    """Super Admin endpoint to read/toggle the Ghost Player security system."""
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        gs = GlobalSettings.load()
+        return Response({'ghost_mode_enabled': gs.ghost_mode_enabled})
+
+    def put(self, request):
+        gs = GlobalSettings.load()
+        ghost_mode = request.data.get('ghost_mode_enabled')
+        if ghost_mode is not None:
+            gs.ghost_mode_enabled = bool(ghost_mode)
+            gs.save()
+        return Response({'ghost_mode_enabled': gs.ghost_mode_enabled})

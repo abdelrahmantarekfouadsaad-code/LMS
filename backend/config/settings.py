@@ -149,6 +149,10 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
+# Ghost Player Encryption Key (must match NEXT_PUBLIC_GHOST_SECRET_KEY on frontend)
+GHOST_SECRET_KEY = os.environ.get('GHOST_SECRET_KEY', 'ghost-player-secret-2024')
+
+
 # Production settings under Vercel Reverse Proxy
 if os.environ.get('VERCEL'):
     FORCE_SCRIPT_NAME = '/_/backend'

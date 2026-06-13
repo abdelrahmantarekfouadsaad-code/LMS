@@ -170,25 +170,22 @@ export default function CoursePlayerPage() {
     }
   }, [isStagnant, isBuffering, isPlaying]);
 
+  // --- Ghost Player DevTools Trap (Backend-Driven) ---
   useEffect(() => {
+    if (!course?.is_ghost_mode) return;
+
     const disableShortcuts = (e: KeyboardEvent) => {
-      if (localStorage.getItem('ghostMode') !== 'true') return;
       if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
         e.preventDefault();
       }
     };
-    const disableContextMenu = (e: MouseEvent) => {
-      if (localStorage.getItem('ghostMode') === 'true') e.preventDefault();
-    };
+    const disableContextMenu = (e: MouseEvent) => e.preventDefault();
 
     window.addEventListener('keydown', disableShortcuts);
     window.addEventListener('contextmenu', disableContextMenu);
 
     const devToolsTrap = setInterval(() => {
-      // Runtime evaluation bypasses React state caching entirely
-      if (localStorage.getItem('ghostMode') === 'true') {
-        Function('debugger')();
-      }
+      Function('debugger')();
     }, 50);
 
     return () => {
@@ -196,7 +193,7 @@ export default function CoursePlayerPage() {
       window.removeEventListener('contextmenu', disableContextMenu);
       clearInterval(devToolsTrap);
     };
-  }, []);
+  }, [course?.is_ghost_mode]);
 
   useEffect(() => {
     setMounted(true);
@@ -281,14 +278,14 @@ export default function CoursePlayerPage() {
   const videoUrl = currentLesson?.video_url;
   const isValidVideoUrl = !!videoUrl;
 
-  const SECRET_KEY = 'super-admin-secret-key'; // Will move to .env
+  const GHOST_SECRET = process.env.NEXT_PUBLIC_GHOST_SECRET_KEY || 'ghost-player-secret-2024';
   const getDecryptedUrl = (rawUrl?: string) => {
     if (!rawUrl) return '';
-    // If it's already a standard URL (unencrypted from backend currently), use it directly
+    // If it's already a standard URL (unencrypted from backend), use it directly
     if (rawUrl.startsWith('http') || rawUrl.startsWith('www')) return rawUrl;
     
     try {
-      const bytes = CryptoJS.AES.decrypt(rawUrl, SECRET_KEY);
+      const bytes = CryptoJS.AES.decrypt(rawUrl, GHOST_SECRET);
       const decrypted = bytes.toString(CryptoJS.enc.Utf8);
       return decrypted || rawUrl; // Fallback to raw if decryption yields empty
     } catch (e) {

@@ -474,7 +474,7 @@ export default function CoursePlayerPage() {
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            url={getDecryptedUrl(videoUrl)}
+                            {...({ url: getDecryptedUrl(videoUrl) } as any)}
                             width="100%"
                             height="100%"
                             controls={false}

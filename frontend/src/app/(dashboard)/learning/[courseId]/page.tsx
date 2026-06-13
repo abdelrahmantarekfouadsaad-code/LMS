@@ -8,9 +8,8 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
-import dynamic from 'next/dynamic';
+import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 
 import { useUserRole } from '@/hooks/useUserRole';
@@ -387,15 +386,7 @@ export default function CoursePlayerPage() {
                             style={{ backgroundColor: '#0f172a' }}
                             config={{ 
                               youtube: { 
-                                playerVars: { 
-                                  modestbranding: 1, 
-                                  rel: 0, 
-                                  showinfo: 0, 
-                                  iv_load_policy: 3, 
-                                  disablekb: 1,
-                                  enablejsapi: 1,
-                                  origin: typeof window !== 'undefined' ? window.location.origin : 'https://nourelnobowalms.vercel.app'
-                                } 
+                                playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
                               } 
                             } as any}
                           />

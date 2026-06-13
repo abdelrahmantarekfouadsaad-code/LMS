@@ -166,6 +166,18 @@ export default function CoursePlayerPage() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying && !seeking) {
+      interval = setInterval(() => {
+        if (playerRef.current && playerRef.current.duration > 0) {
+          setPlayed(playerRef.current.currentTime / playerRef.current.duration);
+        }
+      }, 250); // Sync UI 4 times a second
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, seeking]);
+
   const { data: course, error, isLoading } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
   const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
   const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
@@ -267,6 +279,9 @@ export default function CoursePlayerPage() {
     e.preventDefault(); e.stopPropagation();
     if (playerRef.current) {
       playerRef.current.currentTime += 10;
+      if (playerRef.current.duration > 0) {
+        setPlayed(playerRef.current.currentTime / playerRef.current.duration);
+      }
     }
   };
 
@@ -274,6 +289,9 @@ export default function CoursePlayerPage() {
     e.preventDefault(); e.stopPropagation();
     if (playerRef.current) {
       playerRef.current.currentTime -= 10;
+      if (playerRef.current.duration > 0) {
+        setPlayed(playerRef.current.currentTime / playerRef.current.duration);
+      }
     }
   };
 

@@ -313,6 +313,9 @@ export default function CoursePlayerPage() {
     }
   };
 
+  const topGlowOpacity = mousePos.y < 40 ? 0.4 : 0;
+  const bottomGlowOpacity = mousePos.y > 60 ? 0.4 : 0;
+
   const tabs = [
     { key: 'content' as const, label: isAr ? 'محتوى الدورة' : 'Course Content', icon: BookOpen },
     { key: 'timeline' as const, label: isAr ? 'الغصون (التقييم)' : 'Timeline (الغصون)', icon: GitBranch },
@@ -408,8 +411,10 @@ export default function CoursePlayerPage() {
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
-                            onWaiting={() => { setIsBuffering(true); handleControlsVisibility(true); }}
-                            onPlaying={() => { setIsBuffering(false); handleControlsVisibility(false); }}
+                            // @ts-ignore
+                            onBuffer={() => { setIsBuffering(true); handleControlsVisibility(true); }}
+                            // @ts-ignore
+                            onBufferEnd={() => { setIsBuffering(false); handleControlsVisibility(false); }}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}
@@ -425,9 +430,9 @@ export default function CoursePlayerPage() {
                         <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${(showControls || isBuffering || !isPlaying) ? 'opacity-100' : 'opacity-0'}`}>
                           {/* Top Mask for YouTube Title */}
                           <div 
-                            className="absolute top-0 inset-x-0 h-36 backdrop-blur-md z-30 pointer-events-none transition-all duration-700"
+                            className="absolute top-0 inset-x-0 h-[25%] backdrop-blur-md z-30 pointer-events-none transition-all duration-700"
                             style={{
-                              background: `radial-gradient(ellipse at ${mousePos.x}% -20%, rgba(16, 185, 129, 0.4), transparent 70%), linear-gradient(to bottom, rgba(2, 6, 23, 0.95) 30%, transparent)`,
+                              background: `radial-gradient(ellipse at ${mousePos.x}% -20%, rgba(16, 185, 129, ${topGlowOpacity}), transparent 70%), linear-gradient(to bottom, rgba(2, 6, 23, 0.95) 30%, transparent)`,
                               maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
                               WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
                             }} 
@@ -435,9 +440,9 @@ export default function CoursePlayerPage() {
 
                           {/* Custom Controls Overlay (Bottom Mask) */}
                           <div 
-                            className="absolute bottom-0 inset-x-0 h-40 backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700"
+                            className="absolute bottom-0 inset-x-0 h-[30%] backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700"
                             style={{
-                              background: `radial-gradient(ellipse at ${mousePos.x}% 120%, rgba(16, 185, 129, 0.4), transparent 70%), linear-gradient(to top, rgba(2, 6, 23, 0.95) 30%, transparent)`,
+                              background: `radial-gradient(ellipse at ${mousePos.x}% 120%, rgba(16, 185, 129, ${bottomGlowOpacity}), transparent 70%), linear-gradient(to top, rgba(2, 6, 23, 0.95) 30%, transparent)`,
                               maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
                               WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)'
                             }} 

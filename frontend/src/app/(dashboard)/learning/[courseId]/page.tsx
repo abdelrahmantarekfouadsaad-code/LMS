@@ -139,8 +139,10 @@ export default function CoursePlayerPage() {
   const [isBuffering, setIsBuffering] = useState(false);
   const [isStagnant, setIsStagnant] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [quality, setQuality] = useState<string>('auto');
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const prevTimeRef = React.useRef(0);
+  const qualitySwapTimeRef = React.useRef<number | null>(null);
 
   const handleControlsVisibility = (forceShow = false) => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -311,6 +313,13 @@ export default function CoursePlayerPage() {
     }
   };
 
+  const handleQualityChange = (newQuality: string) => {
+    if (playerRef.current) {
+      qualitySwapTimeRef.current = playerRef.current.currentTime;
+      setQuality(newQuality);
+    }
+  };
+
   const handleDuration = (e: any) => {
     const durationInSeconds = e.target?.duration;
     if (activeLesson && !videoDurations[activeLesson] && durationInSeconds) {
@@ -433,13 +442,27 @@ export default function CoursePlayerPage() {
                             onBuffer={() => { setIsBuffering(true); handleControlsVisibility(true); }}
                             // @ts-ignore
                             onBufferEnd={() => { setIsBuffering(false); handleControlsVisibility(false); }}
+                            // @ts-ignore
+                            onReady={() => {
+                              if (qualitySwapTimeRef.current !== null && playerRef.current) {
+                                playerRef.current.currentTime = qualitySwapTimeRef.current;
+                                qualitySwapTimeRef.current = null;
+                              }
+                            }}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}
                             style={{ backgroundColor: '#0f172a' }}
                             config={{ 
                               youtube: { 
-                                playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
+                                playerVars: { 
+                                  modestbranding: 1, 
+                                  rel: 0, 
+                                  showinfo: 0, 
+                                  iv_load_policy: 3, 
+                                  disablekb: 1,
+                                  vq: quality !== 'auto' ? quality : undefined
+                                } 
                               } 
                             } as any}
                           />
@@ -500,9 +523,17 @@ export default function CoursePlayerPage() {
                                   {formatTime(currentTime)} / {formatTime(duration)}
                                 </div>
                               </div>
-                              <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
-                                <Maximize size={20} />
-                              </button>
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-white/80 border border-white/10 rounded px-2 py-1 bg-black/40 pointer-events-auto">
+                                  <button onClick={() => handleQualityChange('auto')} className={`hover:text-emerald-400 ${quality === 'auto' ? 'text-emerald-400' : ''}`}>Auto</button>
+                                  <button onClick={() => handleQualityChange('hd1080')} className={`hover:text-emerald-400 ${quality === 'hd1080' ? 'text-emerald-400' : ''}`}>1080p</button>
+                                  <button onClick={() => handleQualityChange('hd720')} className={`hover:text-emerald-400 ${quality === 'hd720' ? 'text-emerald-400' : ''}`}>720p</button>
+                                  <button onClick={() => handleQualityChange('large')} className={`hover:text-emerald-400 ${quality === 'large' ? 'text-emerald-400' : ''}`}>480p</button>
+                                </div>
+                                <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                  <Maximize size={20} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>

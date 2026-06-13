@@ -137,8 +137,10 @@ export default function CoursePlayerPage() {
   const [showControls, setShowControls] = useState(true);
   const [seeking, setSeeking] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isStagnant, setIsStagnant] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const prevTimeRef = React.useRef(0);
 
   const handleControlsVisibility = (forceShow = false) => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -170,8 +172,14 @@ export default function CoursePlayerPage() {
     let interval: NodeJS.Timeout;
     if (isPlaying && !seeking) {
       interval = setInterval(() => {
-        if (playerRef.current && playerRef.current.duration > 0) {
-          setPlayed(playerRef.current.currentTime / playerRef.current.duration);
+        if (playerRef.current) {
+          const ct = playerRef.current.currentTime;
+          // If playing but time hasn't moved, we are stagnant/buffering
+          setIsStagnant(ct === prevTimeRef.current);
+          prevTimeRef.current = ct;
+          if (playerRef.current.duration > 0) {
+            setPlayed(ct / playerRef.current.duration);
+          }
         }
       }, 250); // Sync UI 4 times a second
     }
@@ -313,8 +321,18 @@ export default function CoursePlayerPage() {
     }
   };
 
-  const topGlowOpacity = mousePos.y < 40 ? 0.4 : 0;
-  const bottomGlowOpacity = mousePos.y > 60 ? 0.4 : 0;
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return '00:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const topGlowOpacity = Math.max(0, 0.5 - (mousePos.y * 0.025));
+  const bottomGlowOpacity = Math.max(0, (mousePos.y - 80) * 0.025);
+
+  const duration = playerRef.current?.duration || 0;
+  const currentTime = played * duration;
 
   const tabs = [
     { key: 'content' as const, label: isAr ? 'محتوى الدورة' : 'Course Content', icon: BookOpen },
@@ -427,7 +445,7 @@ export default function CoursePlayerPage() {
                           />
                         </div>
 
-                        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${(showControls || isBuffering || !isPlaying) ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${(showControls || isStagnant || isBuffering || !isPlaying) ? 'opacity-100' : 'opacity-0'}`}>
                           {/* Top Mask for YouTube Title */}
                           <div 
                             className="absolute top-0 inset-x-0 h-[25%] backdrop-blur-md z-30 pointer-events-none transition-all duration-700"
@@ -478,6 +496,9 @@ export default function CoursePlayerPage() {
                                 <button onClick={() => setMuted(!muted)} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                                   {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                                 </button>
+                                <div className="text-white text-sm font-medium opacity-90 mx-4 pointer-events-none tracking-widest" dir="ltr">
+                                  {formatTime(currentTime)} / {formatTime(duration)}
+                                </div>
                               </div>
                               <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
                                 <Maximize size={20} />

@@ -136,31 +136,32 @@ export default function CoursePlayerPage() {
   const [muted, setMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [seeking, setSeeking] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseMove = () => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     setShowControls(true);
-    if (isPlaying) {
+    if (isPlaying && !isBuffering) {
       controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
     }
   };
 
   const handleMouseLeave = () => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    if (isPlaying) {
+    if (isPlaying && !isBuffering) {
       controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
     }
   };
 
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying || isBuffering) {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       setShowControls(true);
     } else {
       handleMouseMove();
     }
-  }, [isPlaying]);
+  }, [isPlaying, isBuffering]);
 
   useEffect(() => {
     setMounted(true);
@@ -408,6 +409,8 @@ export default function CoursePlayerPage() {
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
+                            onBuffer={() => setIsBuffering(true)}
+                            onBufferEnd={() => setIsBuffering(false)}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}
@@ -422,14 +425,11 @@ export default function CoursePlayerPage() {
 
                         <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
                           {/* Top Mask for YouTube Title */}
-                          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black via-black/95 to-transparent pointer-events-none">
-                            <div className="absolute top-0 inset-x-0 h-20 backdrop-blur-xl mask-image-b" />
+                          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-slate-950 via-emerald-950/40 to-transparent backdrop-blur-md z-30 pointer-events-none transition-all duration-700">
                           </div>
 
                           {/* Custom Controls Overlay (Bottom Mask) */}
-                          <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none flex flex-col justify-end p-4">
-                            {/* Targeted Logo Blur */}
-                            <div className="absolute bottom-0 right-0 w-64 h-24 backdrop-blur-2xl bg-black/20 z-[-1]" />
+                          <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-slate-950 via-emerald-950/40 to-transparent backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700 hover:via-emerald-900/60">
 
                             {/* Progress Bar */}
                             <input 
@@ -438,10 +438,11 @@ export default function CoursePlayerPage() {
                               max={0.999999} 
                               step="any" 
                               value={played} 
+                              style={{ background: `linear-gradient(to right, #10b981 ${played * 100}%, rgba(75, 85, 99, 0.5) ${played * 100}%)` }}
                               onMouseDown={() => setSeeking(true)} 
                               onChange={handleTimelineChange} 
                               onMouseUp={() => setSeeking(false)} 
-                              className="w-full h-1.5 bg-gray-600/50 rounded-full appearance-none cursor-pointer accent-emerald-500 pointer-events-auto mb-4" 
+                              className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-emerald-500 pointer-events-auto mb-4 bg-transparent" 
                             />
                             
                             {/* Controls Row */}

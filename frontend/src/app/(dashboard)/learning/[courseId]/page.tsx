@@ -148,10 +148,11 @@ export default function CoursePlayerPage() {
   };
 
   const handleMouseLeave = () => {
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    if (isPlaying && !isBuffering) {
-      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
+    if (!isPlaying || isBuffering) {
+      setShowControls(true); // NEVER hide if buffering or paused
+      return;
     }
+    setShowControls(false);
   };
 
   useEffect(() => {
@@ -425,11 +426,11 @@ export default function CoursePlayerPage() {
 
                         <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
                           {/* Top Mask for YouTube Title */}
-                          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-slate-950 via-emerald-950/40 to-transparent backdrop-blur-md z-30 pointer-events-none transition-all duration-700">
+                          <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-slate-950 via-slate-950/60 to-transparent backdrop-blur-md z-30 pointer-events-none transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-950/50">
                           </div>
 
                           {/* Custom Controls Overlay (Bottom Mask) */}
-                          <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-slate-950 via-emerald-950/40 to-transparent backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700 hover:via-emerald-900/60">
+                          <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-900/60">
 
                             {/* Progress Bar */}
                             <input 

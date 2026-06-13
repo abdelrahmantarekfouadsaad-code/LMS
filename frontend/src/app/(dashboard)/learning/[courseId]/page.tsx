@@ -8,8 +8,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
-// @ts-expect-error react-player/youtube typings are missing
-import ReactPlayer from 'react-player/youtube';
+import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
 
 import { useUserRole } from '@/hooks/useUserRole';

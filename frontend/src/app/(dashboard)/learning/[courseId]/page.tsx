@@ -137,14 +137,21 @@ export default function CoursePlayerPage() {
   const [showControls, setShowControls] = useState(true);
   const [seeking, setSeeking] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const handleMouseMove = () => {
+  const handleControlsVisibility = (forceShow = false) => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     setShowControls(true);
-    if (isPlaying && !isBuffering) {
+    if (!forceShow && isPlaying && !isBuffering) {
       controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
     }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect(); 
+    setMousePos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+    handleControlsVisibility(false);
   };
 
   const handleMouseLeave = () => {
@@ -152,16 +159,12 @@ export default function CoursePlayerPage() {
       setShowControls(true); // NEVER hide if buffering or paused
       return;
     }
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     setShowControls(false);
   };
 
   useEffect(() => {
-    if (!isPlaying || isBuffering) {
-      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-      setShowControls(true);
-    } else {
-      handleMouseMove();
-    }
+    handleControlsVisibility(isBuffering || !isPlaying);
   }, [isPlaying, isBuffering]);
 
   useEffect(() => {
@@ -410,8 +413,8 @@ export default function CoursePlayerPage() {
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
-                            onWaiting={() => setIsBuffering(true)}
-                            onPlaying={() => setIsBuffering(false)}
+                            onWaiting={() => { setIsBuffering(true); handleControlsVisibility(true); }}
+                            onPlaying={() => { setIsBuffering(false); handleControlsVisibility(false); }}
                             onEnded={handleVideoEnded}
                             onProgress={handleProgress as any}
                             onDurationChange={handleDuration}
@@ -425,12 +428,27 @@ export default function CoursePlayerPage() {
                         </div>
 
                         <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+                          {/* Live Watercolor Aura */}
+                          <div 
+                            className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-20"
+                            style={{
+                              background: `radial-gradient(circle 500px at ${mousePos.x}% ${mousePos.y}%, rgba(16, 185, 129, 0.15), transparent 80%)`,
+                              opacity: showControls ? 1 : 0
+                            }}
+                          />
+
                           {/* Top Mask for YouTube Title */}
-                          <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-slate-950 via-slate-950/60 to-transparent backdrop-blur-md z-30 pointer-events-none transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-950/50">
+                          <div 
+                            className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-slate-950 via-slate-950/60 to-transparent backdrop-blur-md z-30 pointer-events-none transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-950/50"
+                            style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)' }}
+                          >
                           </div>
 
                           {/* Custom Controls Overlay (Bottom Mask) */}
-                          <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-900/60">
+                          <div 
+                            className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-900/60"
+                            style={{ maskImage: 'linear-gradient(to top, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)' }}
+                          >
 
                             {/* Progress Bar */}
                             <input 

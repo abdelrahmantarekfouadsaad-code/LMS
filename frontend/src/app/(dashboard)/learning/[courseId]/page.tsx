@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
-import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, BookOpen, GitBranch, Award, ClipboardCheck, MessageSquare, Star, Pause, Maximize, RotateCcw, Volume2, VolumeX, FastForward, Rewind, Settings } from 'lucide-react';
+import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, BookOpen, GitBranch, Award, ClipboardCheck, MessageSquare, Star, Pause, Maximize, RotateCcw, Volume2, VolumeX, FastForward, Rewind } from 'lucide-react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
@@ -139,9 +139,6 @@ export default function CoursePlayerPage() {
   const [isBuffering, setIsBuffering] = useState(false);
   const [isStagnant, setIsStagnant] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
-  const [quality, setQuality] = useState('auto');
-  const [restoreTime, setRestoreTime] = useState<number | null>(null);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const prevTimeRef = React.useRef(0);
 
@@ -161,14 +158,6 @@ export default function CoursePlayerPage() {
 
   const handleMouseLeave = () => {
     handleControlsVisibility(false);
-  };
-
-  const handleQualityChange = (newQuality: string) => {
-    if (playerRef.current) {
-      setRestoreTime(playerRef.current.currentTime);
-    }
-    setQuality(newQuality);
-    setShowQualityMenu(false);
   };
 
   useEffect(() => {
@@ -345,8 +334,6 @@ export default function CoursePlayerPage() {
   const duration = playerRef.current?.duration || 0;
   const currentTime = played * duration;
 
-  const activeVideoUrl = quality === 'auto' ? videoUrl : `${videoUrl}${videoUrl?.includes('?') ? '&' : '?'}vq=${quality}`;
-
   const tabs = [
     { key: 'content' as const, label: isAr ? 'محتوى الدورة' : 'Course Content', icon: BookOpen },
     { key: 'timeline' as const, label: isAr ? 'الغصون (التقييم)' : 'Timeline (الغصون)', icon: GitBranch },
@@ -436,18 +423,12 @@ export default function CoursePlayerPage() {
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            src={activeVideoUrl}
+                            src={videoUrl}
                             width="100%"
                             height="100%"
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
-                            onReady={() => {
-                              if (restoreTime !== null && playerRef.current) {
-                                playerRef.current.currentTime = restoreTime;
-                                setRestoreTime(null);
-                              }
-                            }}
                             // @ts-ignore
                             onBuffer={() => { setIsBuffering(true); handleControlsVisibility(true); }}
                             // @ts-ignore
@@ -519,40 +500,9 @@ export default function CoursePlayerPage() {
                                   {formatTime(currentTime)} / {formatTime(duration)}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 relative">
-                                <button onClick={() => setShowQualityMenu(!showQualityMenu)} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer pointer-events-auto">
-                                  <Settings size={20} className={showQualityMenu ? "animate-spin-slow" : ""} />
-                                </button>
-                                
-                                <AnimatePresence>
-                                  {showQualityMenu && (
-                                    <motion.div 
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      exit={{ opacity: 0, y: 10 }}
-                                      className="absolute bottom-full right-0 mb-4 bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-xl overflow-hidden shadow-2xl flex flex-col min-w-[120px] pointer-events-auto z-50"
-                                    >
-                                      {[
-                                        { id: 'auto', label: 'Auto' },
-                                        { id: 'hd1080', label: '1080p' },
-                                        { id: 'hd720', label: '720p' },
-                                        { id: 'large', label: '480p' }
-                                      ].map((q) => (
-                                        <button
-                                          key={q.id}
-                                          onClick={() => handleQualityChange(q.id)}
-                                          className={`px-4 py-2.5 text-sm text-left hover:bg-emerald-500/20 transition-colors ${quality === q.id ? 'text-emerald-400 font-medium bg-emerald-500/10' : 'text-slate-200'}`}
-                                        >
-                                          {q.label}
-                                        </button>
-                                      ))}
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                                <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer pointer-events-auto">
-                                  <Maximize size={20} />
-                                </button>
-                              </div>
+                              <button onClick={toggleFullscreen} className="hover:text-emerald-400 transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm cursor-pointer">
+                                <Maximize size={20} />
+                              </button>
                             </div>
                           </div>
                         </div>

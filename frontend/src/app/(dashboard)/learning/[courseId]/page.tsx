@@ -10,7 +10,7 @@ import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
-
+import CryptoJS from 'crypto-js';
 
 import { useUserRole } from '@/hooks/useUserRole';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -126,6 +126,7 @@ export default function CoursePlayerPage() {
   const [activeTab, setActiveTab] = useState<'content' | 'timeline'>('content');
   const [videoDurations, setVideoDurations] = useState<Record<number, string>>({});
   const [mounted, setMounted] = useState(false);
+  const [isGhostModeEnabled, setIsGhostModeEnabled] = useState(true);
 
   // --- Premium Player States ---
   const playerRef = React.useRef<any>(null);
@@ -163,6 +164,43 @@ export default function CoursePlayerPage() {
   useEffect(() => {
     handleControlsVisibility(isBuffering || !isPlaying);
   }, [isPlaying, isBuffering]);
+
+  useEffect(() => {
+    if (!isStagnant && !isBuffering && isPlaying) {
+      handleControlsVisibility(false); // This triggers the 10s countdown
+    }
+  }, [isStagnant, isBuffering, isPlaying]);
+
+  useEffect(() => {
+    if (!isGhostModeEnabled) return;
+
+    // Layer 3: The Booby Trap
+    const disableShortcuts = (e: KeyboardEvent) => {
+      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (
+        e.keyCode === 123 || 
+        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
+        (e.ctrlKey && e.keyCode === 85)
+      ) {
+        e.preventDefault();
+      }
+    };
+    const disableContextMenu = (e: MouseEvent) => e.preventDefault();
+
+    window.addEventListener('keydown', disableShortcuts);
+    window.addEventListener('contextmenu', disableContextMenu);
+
+    // The Debugger Loop Freeze
+    const devToolsTrap = setInterval(() => {
+      Function('debugger')();
+    }, 50);
+
+    return () => {
+      window.removeEventListener('keydown', disableShortcuts);
+      window.removeEventListener('contextmenu', disableContextMenu);
+      clearInterval(devToolsTrap);
+    };
+  }, [isGhostModeEnabled]);
 
   useEffect(() => {
     setMounted(true);
@@ -247,6 +285,19 @@ export default function CoursePlayerPage() {
   const videoUrl = currentLesson?.video_url;
   const isValidVideoUrl = !!videoUrl;
 
+  const SECRET_KEY = 'super-admin-secret-key'; // To be moved to .env
+  const getDecryptedUrl = (rawUrl: string) => {
+    if (!isGhostModeEnabled || !rawUrl) return rawUrl;
+    try {
+      // If it starts with https, it's not encrypted yet (for current dev mode)
+      if (rawUrl.startsWith('http')) return rawUrl; 
+      const bytes = CryptoJS.AES.decrypt(rawUrl, SECRET_KEY);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch (e) {
+      return '';
+    }
+  };
+
   const handleVideoEnded = async () => {
     setHasEnded(true);
     setIsPlaying(false);
@@ -322,7 +373,7 @@ export default function CoursePlayerPage() {
   };
 
   const formatTime = (seconds: number) => {
-    if (isNaN(seconds)) return '00:00';
+    if (!seconds || isNaN(seconds) || seconds === Infinity) return '00:00';
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -414,7 +465,7 @@ export default function CoursePlayerPage() {
                     ref={playerContainerRef} 
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
-                    className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group border border-slate-800"
+                    className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.15)] ring-1 ring-white/5 flex items-center justify-center group border border-slate-800"
                   >
                     {isLoading || !mounted ? (
                       <div className="w-full h-full animate-pulse bg-slate-800/50" />
@@ -423,7 +474,7 @@ export default function CoursePlayerPage() {
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            src={videoUrl}
+                            url={getDecryptedUrl(videoUrl)}
                             width="100%"
                             height="100%"
                             controls={false}

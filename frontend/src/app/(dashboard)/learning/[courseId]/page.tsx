@@ -10,6 +10,7 @@ import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
+import CryptoJS from 'crypto-js';
 
 import { useUserRole } from '@/hooks/useUserRole';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -125,24 +126,6 @@ export default function CoursePlayerPage() {
   const [activeTab, setActiveTab] = useState<'content' | 'timeline'>('content');
   const [videoDurations, setVideoDurations] = useState<Record<number, string>>({});
   const [mounted, setMounted] = useState(false);
-  const [isGhostModeEnabled, setIsGhostModeEnabled] = useState(true);
-  const [securityInitialized, setSecurityInitialized] = useState(false);
-
-  useEffect(() => {
-    // Read initial state
-    const saved = localStorage.getItem('ghostMode');
-    setIsGhostModeEnabled(saved !== 'false'); // Defaults to true unless explicitly 'false'
-    setSecurityInitialized(true);
-
-    // Listen for cross-tab changes (when Super Admin toggles it)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'ghostMode') {
-        setIsGhostModeEnabled(e.newValue === 'true');
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
   // --- Premium Player States ---
   const playerRef = React.useRef<any>(null);
@@ -188,28 +171,24 @@ export default function CoursePlayerPage() {
   }, [isStagnant, isBuffering, isPlaying]);
 
   useEffect(() => {
-    // ONLY run trap if we are initialized AND ghost mode is actually enabled
-    if (!securityInitialized || !isGhostModeEnabled) return;
-
-    // Layer 3: The Booby Trap
     const disableShortcuts = (e: KeyboardEvent) => {
-      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-      if (
-        e.keyCode === 123 || 
-        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
-        (e.ctrlKey && e.keyCode === 85)
-      ) {
+      if (localStorage.getItem('ghostMode') !== 'true') return;
+      if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
         e.preventDefault();
       }
     };
-    const disableContextMenu = (e: MouseEvent) => e.preventDefault();
+    const disableContextMenu = (e: MouseEvent) => {
+      if (localStorage.getItem('ghostMode') === 'true') e.preventDefault();
+    };
 
     window.addEventListener('keydown', disableShortcuts);
     window.addEventListener('contextmenu', disableContextMenu);
 
-    // The Debugger Loop Freeze
     const devToolsTrap = setInterval(() => {
-      Function('debugger')();
+      // Runtime evaluation bypasses React state caching entirely
+      if (localStorage.getItem('ghostMode') === 'true') {
+        Function('debugger')();
+      }
     }, 50);
 
     return () => {
@@ -217,7 +196,7 @@ export default function CoursePlayerPage() {
       window.removeEventListener('contextmenu', disableContextMenu);
       clearInterval(devToolsTrap);
     };
-  }, [isGhostModeEnabled, securityInitialized]);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -301,6 +280,21 @@ export default function CoursePlayerPage() {
 
   const videoUrl = currentLesson?.video_url;
   const isValidVideoUrl = !!videoUrl;
+
+  const SECRET_KEY = 'super-admin-secret-key'; // Will move to .env
+  const getDecryptedUrl = (rawUrl?: string) => {
+    if (!rawUrl) return '';
+    // If it's already a standard URL (unencrypted from backend currently), use it directly
+    if (rawUrl.startsWith('http') || rawUrl.startsWith('www')) return rawUrl;
+    
+    try {
+      const bytes = CryptoJS.AES.decrypt(rawUrl, SECRET_KEY);
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+      return decrypted || rawUrl; // Fallback to raw if decryption yields empty
+    } catch (e) {
+      return rawUrl;
+    }
+  };
 
   const handleVideoEnded = async () => {
     setHasEnded(true);
@@ -471,14 +465,16 @@ export default function CoursePlayerPage() {
                     onMouseLeave={handleMouseLeave}
                     className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.15)] ring-1 ring-white/5 flex items-center justify-center group border border-slate-800"
                   >
-                    {isLoading || !mounted ? (
-                      <div className="w-full h-full animate-pulse bg-slate-800/50" />
+                    {isLoading || !mounted || !videoUrl ? (
+                      <div className="absolute inset-0 w-full h-full bg-slate-900 animate-pulse flex items-center justify-center">
+                        <span className="text-slate-500 font-medium">Loading stream...</span>
+                      </div>
                     ) : isValidVideoUrl ? (
                       <>
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            {...({ url: videoUrl } as any)}
+                            {...({ url: getDecryptedUrl(videoUrl) } as any)}
                             width="100%"
                             height="100%"
                             controls={false}

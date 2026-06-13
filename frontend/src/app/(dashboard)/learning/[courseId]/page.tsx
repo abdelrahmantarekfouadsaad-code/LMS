@@ -8,7 +8,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
-import ReactPlayer from 'react-player/youtube';
+import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
 
 
@@ -250,7 +250,9 @@ export default function CoursePlayerPage() {
     if (hasEnded) {
       setHasEnded(false);
       setPlayed(0);
-      playerRef.current?.seekTo(0);
+      if (playerRef.current) {
+        playerRef.current.currentTime = 0;
+      }
     }
     setIsPlaying(!isPlaying);
   };
@@ -263,37 +265,23 @@ export default function CoursePlayerPage() {
 
   const handleSeekForward = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() + 10, 'seconds');
+    if (playerRef.current) {
+      playerRef.current.currentTime += 10;
     }
   };
 
   const handleSeekBackward = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-      playerRef.current.seekTo(playerRef.current.getCurrentTime() - 10, 'seconds');
+    if (playerRef.current) {
+      playerRef.current.currentTime -= 10;
     }
   };
 
   const handleTimelineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setPlayed(val);
-    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-      playerRef.current.seekTo(val, 'fraction');
-    }
-  };
-
-  const skipForward = () => {
-    if (playerRef.current) {
-      const ct = playerRef.current.getCurrentTime();
-      playerRef.current.seekTo(ct + 10);
-    }
-  };
-
-  const skipBackward = () => {
-    if (playerRef.current) {
-      const ct = playerRef.current.getCurrentTime();
-      playerRef.current.seekTo(ct - 10);
+    if (playerRef.current && playerRef.current.duration) {
+      playerRef.current.currentTime = val * playerRef.current.duration;
     }
   };
 

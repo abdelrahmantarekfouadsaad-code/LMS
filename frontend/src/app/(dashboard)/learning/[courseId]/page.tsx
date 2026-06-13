@@ -387,7 +387,15 @@ export default function CoursePlayerPage() {
                             style={{ backgroundColor: '#0f172a' }}
                             config={{ 
                               youtube: { 
-                                playerVars: { modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1 } 
+                                playerVars: { 
+                                  modestbranding: 1, 
+                                  rel: 0, 
+                                  showinfo: 0, 
+                                  iv_load_policy: 3, 
+                                  disablekb: 1,
+                                  enablejsapi: 1,
+                                  origin: typeof window !== 'undefined' ? window.location.origin : 'https://nourelnobowalms.vercel.app'
+                                } 
                               } 
                             } as any}
                           />

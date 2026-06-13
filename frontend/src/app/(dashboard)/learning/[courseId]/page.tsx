@@ -10,7 +10,6 @@ import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
-import CryptoJS from 'crypto-js';
 
 import { useUserRole } from '@/hooks/useUserRole';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -127,6 +126,23 @@ export default function CoursePlayerPage() {
   const [videoDurations, setVideoDurations] = useState<Record<number, string>>({});
   const [mounted, setMounted] = useState(false);
   const [isGhostModeEnabled, setIsGhostModeEnabled] = useState(true);
+
+  useEffect(() => {
+    // Read initial state
+    const savedMode = localStorage.getItem('ghostMode');
+    if (savedMode !== null) {
+      setIsGhostModeEnabled(savedMode === 'true');
+    }
+
+    // Listen for cross-tab changes (when Super Admin toggles it)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ghostMode') {
+        setIsGhostModeEnabled(e.newValue === 'true');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // --- Premium Player States ---
   const playerRef = React.useRef<any>(null);
@@ -284,19 +300,6 @@ export default function CoursePlayerPage() {
 
   const videoUrl = currentLesson?.video_url;
   const isValidVideoUrl = !!videoUrl;
-
-  const SECRET_KEY = 'super-admin-secret-key'; // To be moved to .env
-  const getDecryptedUrl = (rawUrl: string) => {
-    if (!isGhostModeEnabled || !rawUrl) return rawUrl;
-    try {
-      // If it starts with https, it's not encrypted yet (for current dev mode)
-      if (rawUrl.startsWith('http')) return rawUrl; 
-      const bytes = CryptoJS.AES.decrypt(rawUrl, SECRET_KEY);
-      return bytes.toString(CryptoJS.enc.Utf8);
-    } catch (e) {
-      return '';
-    }
-  };
 
   const handleVideoEnded = async () => {
     setHasEnded(true);
@@ -474,7 +477,7 @@ export default function CoursePlayerPage() {
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            {...({ url: getDecryptedUrl(videoUrl) } as any)}
+                            {...({ url: videoUrl } as any)}
                             width="100%"
                             height="100%"
                             controls={false}

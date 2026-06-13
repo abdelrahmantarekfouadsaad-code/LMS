@@ -9,6 +9,7 @@ import Toast, { ToastType } from '@/components/ui/Toast';
 import axios from 'axios';
 import { DJANGO_API } from '@/lib/api-config';
 import { useTranslation } from '@/i18n/TranslationContext';
+import SecurityToggle from '@/components/ui/SecurityToggle';
 
 export default function SuperAdminSettingsPage() {
   const { t } = useTranslation();
@@ -226,6 +227,10 @@ export default function SuperAdminSettingsPage() {
                 {isSavingPassword ? <Loader2 size={18} className="animate-spin" /> : null} تحديث كلمة المرور
               </button>
             </form>
+
+            <div className="mt-8 border-t border-white/10 pt-6">
+              <SecurityToggle />
+            </div>
           </div>
 
           {/* Support & Session Section */}

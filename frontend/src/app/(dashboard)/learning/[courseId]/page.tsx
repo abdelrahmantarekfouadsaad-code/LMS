@@ -155,12 +155,7 @@ export default function CoursePlayerPage() {
   };
 
   const handleMouseLeave = () => {
-    if (!isPlaying || isBuffering) {
-      setShowControls(true); // NEVER hide if buffering or paused
-      return;
-    }
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    setShowControls(false);
+    handleControlsVisibility(false);
   };
 
   useEffect(() => {
@@ -427,27 +422,25 @@ export default function CoursePlayerPage() {
                           />
                         </div>
 
-                        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-                          {/* Live Watercolor Aura */}
-                          <div 
-                            className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-20"
-                            style={{
-                              background: `radial-gradient(circle 500px at ${mousePos.x}% ${mousePos.y}%, rgba(16, 185, 129, 0.15), transparent 80%)`,
-                              opacity: showControls ? 1 : 0
-                            }}
-                          />
-
+                        <div className={`absolute inset-0 z-30 transition-opacity duration-500 ${(showControls || isBuffering || !isPlaying) ? 'opacity-100' : 'opacity-0'}`}>
                           {/* Top Mask for YouTube Title */}
                           <div 
-                            className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-slate-950 via-slate-950/60 to-transparent backdrop-blur-md z-30 pointer-events-none transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-950/50"
-                            style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)' }}
-                          >
-                          </div>
+                            className="absolute top-0 inset-x-0 h-36 backdrop-blur-md z-30 pointer-events-none transition-all duration-700"
+                            style={{
+                              background: `radial-gradient(ellipse at ${mousePos.x}% -20%, rgba(16, 185, 129, 0.4), transparent 70%), linear-gradient(to bottom, rgba(2, 6, 23, 0.95) 30%, transparent)`,
+                              maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+                              WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
+                            }} 
+                          />
 
                           {/* Custom Controls Overlay (Bottom Mask) */}
                           <div 
-                            className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700 group-hover:from-slate-950 group-hover:via-emerald-900/60"
-                            style={{ maskImage: 'linear-gradient(to top, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)' }}
+                            className="absolute bottom-0 inset-x-0 h-40 backdrop-blur-md z-30 pointer-events-none flex flex-col justify-end p-4 transition-all duration-700"
+                            style={{
+                              background: `radial-gradient(ellipse at ${mousePos.x}% 120%, rgba(16, 185, 129, 0.4), transparent 70%), linear-gradient(to top, rgba(2, 6, 23, 0.95) 30%, transparent)`,
+                              maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
+                              WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)'
+                            }} 
                           >
 
                             {/* Progress Bar */}

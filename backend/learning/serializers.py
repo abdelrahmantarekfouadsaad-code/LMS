@@ -63,7 +63,16 @@ class LessonSerializer(serializers.ModelSerializer):
     def get_video_url(self, obj):
         if not obj.video_url:
             return None
-        if _get_ghost_mode():
+
+        request = self.context.get('request')
+        # Privileged users always get raw URLs to prevent DB corruption on save
+        is_privileged = False
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            if request.user.is_superuser or getattr(request.user, 'role', '') in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+                is_privileged = True
+
+        # ONLY encrypt for regular students when ghost mode is ON
+        if _get_ghost_mode() and not is_privileged:
             return encrypt_url(obj.video_url)
         return obj.video_url
 

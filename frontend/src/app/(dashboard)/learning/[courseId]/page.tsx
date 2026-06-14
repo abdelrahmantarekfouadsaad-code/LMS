@@ -484,16 +484,16 @@ export default function CoursePlayerPage() {
                     onMouseLeave={handleMouseLeave}
                     className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.15)] ring-1 ring-white/5 flex items-center justify-center group border border-slate-800"
                   >
-                    {isLoading || !mounted || !finalVideoUrl ? (
+                    {isLoading || !mounted || (videoUrl && !finalVideoUrl) ? (
                       <div className="absolute inset-0 w-full h-full bg-slate-900 animate-pulse flex items-center justify-center">
                         <span className="text-slate-500 font-medium">Securing stream...</span>
                       </div>
-                    ) : (
+                    ) : finalVideoUrl ? (
                       <>
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            url={finalVideoUrl}
+                            {...({ url: finalVideoUrl } as any)}
                             width="100%"
                             height="100%"
                             controls={false}

@@ -10,7 +10,8 @@ import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
-import CryptoJS from 'crypto-js';
+import AES from 'crypto-js/aes';
+import encUtf8 from 'crypto-js/enc-utf8';
 
 import { useUserRole } from '@/hooks/useUserRole';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -282,15 +283,25 @@ export default function CoursePlayerPage() {
   const GHOST_SECRET = process.env.NEXT_PUBLIC_GHOST_SECRET_KEY || 'ghost-player-secret-2024';
   const getDecryptedUrl = (rawUrl?: string) => {
     if (!rawUrl) return '';
+    console.log("getDecryptedUrl INPUT:", rawUrl);
     // If it's already a standard URL (unencrypted from backend), use it directly
-    if (rawUrl.startsWith('http') || rawUrl.startsWith('www')) return rawUrl;
+    if (rawUrl.startsWith('http') || rawUrl.startsWith('www')) {
+      console.log("getDecryptedUrl EARLY RETURN:", rawUrl);
+      return rawUrl;
+    }
     
     try {
-      const bytes = CryptoJS.AES.decrypt(rawUrl, GHOST_SECRET);
-      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-      return decrypted || rawUrl; // Fallback to raw if decryption yields empty
+      const bytes = AES.decrypt(rawUrl, GHOST_SECRET);
+      const decrypted = bytes.toString(encUtf8);
+      console.log("getDecryptedUrl SUCCESS:", decrypted);
+      if (decrypted && (decrypted.startsWith('http') || decrypted.startsWith('www'))) {
+        return decrypted;
+      }
+      console.log("getDecryptedUrl DECRYPTED BUT INVALID URL:", decrypted);
+      return ''; // Force empty if it didn't decrypt to a valid URL to avoid FilePlayer fallback
     } catch (e) {
-      return rawUrl;
+      console.log("getDecryptedUrl ERROR:", e);
+      return '';
     }
   };
 
@@ -470,6 +481,11 @@ export default function CoursePlayerPage() {
                     ) : isValidVideoUrl ? (
                       <>
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+                          <div className="absolute top-0 left-0 z-50 bg-black/80 text-white p-2 font-mono text-xs max-w-full break-all pointer-events-auto">
+                            DEBUG URL: {getDecryptedUrl(videoUrl)} | 
+                            RAW: {videoUrl} | 
+                            GHOST: {String(course?.is_ghost_mode)}
+                          </div>
                           <ReactPlayer
                             ref={playerRef}
                             {...({ url: getDecryptedUrl(videoUrl) } as any)}

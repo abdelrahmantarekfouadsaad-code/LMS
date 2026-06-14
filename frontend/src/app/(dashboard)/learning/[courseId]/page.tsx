@@ -283,26 +283,29 @@ export default function CoursePlayerPage() {
   const GHOST_SECRET = process.env.NEXT_PUBLIC_GHOST_SECRET_KEY || 'ghost-player-secret-2024';
   const getDecryptedUrl = (rawUrl?: string) => {
     if (!rawUrl) return '';
-    console.log("getDecryptedUrl INPUT:", rawUrl);
-    // If it's already a standard URL (unencrypted from backend), use it directly
-    if (rawUrl.startsWith('http') || rawUrl.startsWith('www')) {
-      console.log("getDecryptedUrl EARLY RETURN:", rawUrl);
-      return rawUrl;
+
+    let urlToProcess = rawUrl;
+
+    // If encrypted (doesn't start with http), decrypt it
+    if (!rawUrl.startsWith('http') && !rawUrl.startsWith('www')) {
+       try {
+         const bytes = AES.decrypt(rawUrl, GHOST_SECRET);
+         urlToProcess = bytes.toString(encUtf8);
+       } catch (e) {
+         return '';
+       }
     }
-    
-    try {
-      const bytes = AES.decrypt(rawUrl, GHOST_SECRET);
-      const decrypted = bytes.toString(encUtf8);
-      console.log("getDecryptedUrl SUCCESS:", decrypted);
-      if (decrypted && (decrypted.startsWith('http') || decrypted.startsWith('www'))) {
-        return decrypted;
-      }
-      console.log("getDecryptedUrl DECRYPTED BUT INVALID URL:", decrypted);
-      return ''; // Force empty if it didn't decrypt to a valid URL to avoid FilePlayer fallback
-    } catch (e) {
-      console.log("getDecryptedUrl ERROR:", e);
-      return '';
+
+    // 1. SANITIZE: Strip all invisible control characters and AES padding bytes
+    let cleanUrl = urlToProcess.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+
+    // 2. NORMALIZE: Convert short links to standard watch links to bypass regex bugs
+    if (cleanUrl.includes('youtu.be/')) {
+       const id = cleanUrl.split('youtu.be/')[1].split('?')[0].substring(0, 11);
+       cleanUrl = `https://www.youtube.com/watch?v=${id}`;
     }
+
+    return cleanUrl;
   };
 
   const handleVideoEnded = async () => {
@@ -481,11 +484,6 @@ export default function CoursePlayerPage() {
                     ) : isValidVideoUrl ? (
                       <>
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
-                          <div className="absolute top-0 left-0 z-50 bg-black/80 text-white p-2 font-mono text-xs max-w-full break-all pointer-events-auto">
-                            DEBUG URL: {getDecryptedUrl(videoUrl)} | 
-                            RAW: {videoUrl} | 
-                            GHOST: {String(course?.is_ghost_mode)}
-                          </div>
                           <ReactPlayer
                             ref={playerRef}
                             {...({ url: getDecryptedUrl(videoUrl) } as any)}

@@ -10,8 +10,7 @@ import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import ReactPlayer from 'react-player';
 import screenfull from 'screenfull';
-import AES from 'crypto-js/aes';
-import encUtf8 from 'crypto-js/enc-utf8';
+import CryptoJS from 'crypto-js';
 
 import { useUserRole } from '@/hooks/useUserRole';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -280,33 +279,41 @@ export default function CoursePlayerPage() {
   const videoUrl = currentLesson?.video_url;
   const isValidVideoUrl = !!videoUrl;
 
-  const GHOST_SECRET = process.env.NEXT_PUBLIC_GHOST_SECRET_KEY || 'ghost-player-secret-2024';
-  const getDecryptedUrl = (rawUrl?: string) => {
-    if (!rawUrl) return '';
+  const [finalVideoUrl, setFinalVideoUrl] = useState('');
 
-    let urlToProcess = rawUrl;
+  useEffect(() => {
+    if (!videoUrl) return;
 
-    // If encrypted (doesn't start with http), decrypt it
-    if (!rawUrl.startsWith('http') && !rawUrl.startsWith('www')) {
-       try {
-         const bytes = AES.decrypt(rawUrl, GHOST_SECRET);
-         urlToProcess = bytes.toString(encUtf8);
-       } catch (e) {
-         return '';
-       }
+    let urlToProcess = videoUrl;
+    const GHOST_SECRET = process.env.NEXT_PUBLIC_GHOST_SECRET_KEY || 'ghost-player-secret-2024';
+
+    // 1. Explicit Decryption matching Python
+    if (course?.is_ghost_mode && !videoUrl.startsWith('http')) {
+      try {
+        const payload = CryptoJS.enc.Base64.parse(videoUrl);
+        const iv = CryptoJS.lib.WordArray.create(payload.words.slice(0, 4), 16);
+        const ciphertext = CryptoJS.lib.WordArray.create(payload.words.slice(4), payload.sigBytes - 16);
+        // @ts-ignore
+        const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, CryptoJS.SHA256(GHOST_SECRET), { iv: iv });
+        urlToProcess = decrypted.toString(CryptoJS.enc.Utf8);
+      } catch (e) {
+        console.error("Decryption trap activated.");
+        return; // Abort, do not set invalid URL
+      }
     }
 
-    // 1. SANITIZE: Strip all invisible control characters and AES padding bytes
+    // 2. Sanitize and Normalize
     let cleanUrl = urlToProcess.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
-
-    // 2. NORMALIZE: Convert short links to standard watch links to bypass regex bugs
     if (cleanUrl.includes('youtu.be/')) {
-       const id = cleanUrl.split('youtu.be/')[1].split('?')[0].substring(0, 11);
-       cleanUrl = `https://www.youtube.com/watch?v=${id}`;
+        const id = cleanUrl.split('youtu.be/')[1].split('?')[0].substring(0, 11);
+        cleanUrl = `https://www.youtube.com/watch?v=${id}`;
     }
 
-    return cleanUrl;
-  };
+    // 3. Gate the Mount: Only set if definitively YouTube
+    if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+        setFinalVideoUrl(cleanUrl);
+    }
+  }, [videoUrl, course?.is_ghost_mode]);
 
   const handleVideoEnded = async () => {
     setHasEnded(true);
@@ -477,16 +484,16 @@ export default function CoursePlayerPage() {
                     onMouseLeave={handleMouseLeave}
                     className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.15)] ring-1 ring-white/5 flex items-center justify-center group border border-slate-800"
                   >
-                    {isLoading || !mounted || !videoUrl ? (
+                    {isLoading || !mounted || !finalVideoUrl ? (
                       <div className="absolute inset-0 w-full h-full bg-slate-900 animate-pulse flex items-center justify-center">
-                        <span className="text-slate-500 font-medium">Loading stream...</span>
+                        <span className="text-slate-500 font-medium">Securing stream...</span>
                       </div>
-                    ) : isValidVideoUrl ? (
+                    ) : (
                       <>
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            {...({ url: getDecryptedUrl(videoUrl) } as any)}
+                            url={finalVideoUrl}
                             width="100%"
                             height="100%"
                             controls={false}

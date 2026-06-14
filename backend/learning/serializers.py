@@ -14,28 +14,18 @@ from .models import (
 )
 
 
-# --- OpenSSL-compatible AES Encryption (crypto-js compatible) ---
-def _evp_bytes_to_key(password: bytes, salt: bytes, key_len=32, iv_len=16):
-    """Derive key and IV using OpenSSL's EVP_BytesToKey with MD5.
-    This matches crypto-js's default passphrase-based key derivation."""
-    dtot = b''
-    d = b''
-    while len(dtot) < key_len + iv_len:
-        d = hashlib.md5(d + password + salt).digest()
-        dtot += d
-    return dtot[:key_len], dtot[key_len:key_len + iv_len]
-
-
-def encrypt_url(plain_text: str, passphrase: str) -> str:
-    """Encrypt a string into a format that crypto-js AES.decrypt(ciphertext, passphrase) can decode.
-    Output: Base64("Salted__" + 8-byte-salt + AES-CBC-ciphertext)"""
-    salt = os.urandom(8)
-    password = passphrase.encode('utf-8')
-    key, iv = _evp_bytes_to_key(password, salt)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    padded = pad(plain_text.encode('utf-8'), AES.block_size)
-    encrypted = cipher.encrypt(padded)
-    return base64.b64encode(b'Salted__' + salt + encrypted).decode('utf-8')
+def encrypt_url(raw_url):
+    if not raw_url:
+        return raw_url
+    try:
+        # Explicit AES-256-CBC with strict IV prepending
+        key = hashlib.sha256(settings.GHOST_SECRET_KEY.encode('utf-8')).digest()
+        iv = os.urandom(16)
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        ct_bytes = cipher.encrypt(pad(raw_url.encode('utf-8'), AES.block_size))
+        return base64.b64encode(iv + ct_bytes).decode('utf-8')
+    except Exception as e:
+        return raw_url
 
 
 def _get_ghost_mode():
@@ -74,7 +64,7 @@ class LessonSerializer(serializers.ModelSerializer):
         if not obj.video_url:
             return None
         if _get_ghost_mode():
-            return encrypt_url(obj.video_url, settings.GHOST_SECRET_KEY)
+            return encrypt_url(obj.video_url)
         return obj.video_url
 
 class UnitSerializer(serializers.ModelSerializer):

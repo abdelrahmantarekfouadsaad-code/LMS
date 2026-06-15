@@ -282,6 +282,7 @@ export default function CoursePlayerPage() {
   const [finalVideoUrl, setFinalVideoUrl] = useState('');
 
   useEffect(() => {
+    setFinalVideoUrl('');
     if (!videoUrl) return;
 
     let urlToProcess = videoUrl;
@@ -493,18 +494,16 @@ export default function CoursePlayerPage() {
                         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
                           <ReactPlayer
                             ref={playerRef}
-                            {...({ url: finalVideoUrl } as any)}
+                            src={finalVideoUrl}
                             width="100%"
                             height="100%"
                             controls={false}
                             playing={isPlaying}
                             muted={muted}
-                            // @ts-ignore
-                            onBuffer={() => { setIsBuffering(true); handleControlsVisibility(true); }}
-                            // @ts-ignore
-                            onBufferEnd={() => { setIsBuffering(false); handleControlsVisibility(false); }}
+                            onWaiting={() => { setIsBuffering(true); handleControlsVisibility(true); }}
+                            onPlaying={() => { setIsBuffering(false); handleControlsVisibility(false); }}
                             onEnded={handleVideoEnded}
-                            onProgress={handleProgress as any}
+                            onTimeUpdate={handleProgress as any}
                             onDurationChange={handleDuration}
                             style={{ backgroundColor: '#0f172a' }}
                             config={{ 

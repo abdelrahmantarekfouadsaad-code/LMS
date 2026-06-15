@@ -77,15 +77,19 @@ class LessonSerializer(serializers.ModelSerializer):
         return obj.video_url
 
 class UnitSerializer(serializers.ModelSerializer):
-    lessons = LessonSerializer(many=True, read_only=True)
+    lessons = serializers.SerializerMethodField()
+
     class Meta:
         model = Unit
         fields = ['id', 'title', 'order', 'lessons']
 
+    def get_lessons(self, obj):
+        return LessonSerializer(obj.lessons.all(), many=True, context=self.context).data
+
 class CourseSerializer(serializers.ModelSerializer):
     groups = CourseGroupSerializer(many=True, read_only=True)
     units = UnitSerializer(many=True, read_only=True)
-    flat_lessons = LessonSerializer(many=True, read_only=True)
+    flat_lessons = serializers.SerializerMethodField()
     is_ghost_mode = serializers.SerializerMethodField()
 
     class Meta:
@@ -96,6 +100,9 @@ class CourseSerializer(serializers.ModelSerializer):
             'instructor_name', 'duration', 'color', 'is_active', 'groups', 'units', 
             'flat_lessons', 'created_at', 'is_ghost_mode'
         ]
+
+    def get_flat_lessons(self, obj):
+        return LessonSerializer(obj.flat_lessons.all(), many=True, context=self.context).data
 
     def get_is_ghost_mode(self, obj):
         return _get_ghost_mode()

@@ -4,9 +4,9 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from accounts.views import UserViewSet, RegisterView, GoogleLoginView, ForgotPasswordView, ResetPasswordView, ParentVerifyView, ParentCreateView, ParentDashboardView, ParentCourseAnalyticsView
-from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet, GhostModeView
+from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet, GhostModeView, CourseGroupViewSet
 from quizzes.views import QuizViewSet, StudentResultViewSet
-from live.views import LiveSessionViewSet, AttendanceViewSet
+from live.views import VirtualSessionViewSet, AttendanceViewSet, SessionFeedbackViewSet
 from support.views import SupportTicketViewSet
 from chat.views import ChatRoomViewSet, MessageViewSet
 
@@ -28,7 +28,9 @@ router.register(r'quizzes', QuizViewSet, basename='quiz')
 router.register(r'results', StudentResultViewSet, basename='result')
 
 # Live endpoints
-router.register(r'sessions', LiveSessionViewSet, basename='livesession')
+router.register(r'sessions', VirtualSessionViewSet, basename='virtualsession')
+router.register(r'course-groups', CourseGroupViewSet, basename='coursegroup')
+router.register(r'feedbacks', SessionFeedbackViewSet, basename='sessionfeedback')
 router.register(r'attendance', AttendanceViewSet, basename='attendance')
 
 # Support endpoints

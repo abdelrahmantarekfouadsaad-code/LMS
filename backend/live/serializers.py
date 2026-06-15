@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from .models import LiveSession, Attendance
+from .models import VirtualSession, Attendance, SessionFeedback
 
-class LiveSessionSerializer(serializers.ModelSerializer):
+class VirtualSessionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = LiveSession
+        model = VirtualSession
         fields = [
-            'id', 'teacher', 'study_group', 'title', 'scheduled_time', 
+            'id', 'teacher', 'course_group', 'title', 'scheduled_time', 
             'zoom_join_url', 'zoom_start_url', 'zoom_meeting_id', 
             'zoom_passcode', 'created_at'
         ]
@@ -24,3 +24,9 @@ class AttendanceSerializer(serializers.ModelSerializer):
         model = Attendance
         fields = ['id', 'session', 'student', 'joined_at']
         read_only_fields = ['student', 'joined_at']
+
+class SessionFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionFeedback
+        fields = '__all__'
+        read_only_fields = ['student', 'teacher', 'created_at']

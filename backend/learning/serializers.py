@@ -47,7 +47,7 @@ class CourseGroupSerializer(serializers.ModelSerializer):
     zoom_sessions = ZoomSessionSerializer(many=True, read_only=True)
     class Meta:
         model = CourseGroup
-        fields = ['id', 'name', 'zoom_sessions']
+        fields = ['id', 'name', 'official_day', 'official_time', 'capacity', 'primary_teacher', 'zoom_sessions']
 
 class LessonSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField()
@@ -95,7 +95,7 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            'id', 'title', 'title_ar', 'description', 'target_age', 'course_format', 
+            'id', 'title', 'title_ar', 'description', 'target_age_min', 'target_age_max', 'course_format', 
             'course_structure', 'price', 'thumbnail', 'is_upload_completed', 
             'instructor_name', 'duration', 'color', 'is_active', 'groups', 'units', 
             'flat_lessons', 'created_at', 'is_ghost_mode'

@@ -88,27 +88,7 @@ class User(AbstractUser):
         return self.role in [self.Role.SUPERVISOR, self.Role.SUPER_ADMIN]
 
 
-class StudyGroup(models.Model):
-    """
-    Represents a Cohort/Class mapping a Teacher to multiple Students.
-    """
-    name = models.CharField(max_length=100) # e.g., "Noor Al-Bayan - Batch 1"
-    course = models.ForeignKey(
-        'learning.Course', # Lazy reference to Course model in 'learning' app
-        on_delete=models.CASCADE, 
-        related_name='study_groups'
-    )
-    primary_teacher = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        limit_choices_to={'role': User.Role.TEACHER}, 
-        related_name='assigned_groups'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
 
 
 class StudentProfile(models.Model):
@@ -122,7 +102,7 @@ class StudentProfile(models.Model):
         limit_choices_to={'role': User.Role.PARENT},
         blank=True
     )
-    study_groups = models.ManyToManyField(StudyGroup, related_name='students', blank=True)
+    course_groups = models.ManyToManyField('learning.CourseGroup', related_name='students', blank=True)
     parent_email = models.EmailField(blank=True, null=True)
     date_of_birth = models.DateField(null=True, blank=True)
 

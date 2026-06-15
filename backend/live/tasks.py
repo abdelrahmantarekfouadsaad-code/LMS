@@ -27,15 +27,15 @@ def get_zoom_access_token():
 @shared_task
 def create_zoom_meeting_task(session_id):
     """
-    Asynchronously creates a Zoom meeting and updates the LiveSession model.
+    Asynchronously creates a Zoom meeting and updates the VirtualSession model.
     """
     # Delay import to avoid circular dependencies
-    from live.models import LiveSession
+    from live.models import VirtualSession
     
     try:
-        session = LiveSession.objects.get(id=session_id)
-    except LiveSession.DoesNotExist:
-        logger.error(f"LiveSession {session_id} not found.")
+        session = VirtualSession.objects.get(id=session_id)
+    except VirtualSession.DoesNotExist:
+        logger.error(f"VirtualSession {session_id} not found.")
         return False
 
     token = get_zoom_access_token()

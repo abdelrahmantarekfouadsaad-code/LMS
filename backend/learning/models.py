@@ -3,12 +3,6 @@ from accounts.models import User
 
 # --- LEARNING MODULES (STRICT RBAC: Super Admins & Supervisors ONLY) ---
 class Course(models.Model):
-    class TargetAge(models.TextChoices):
-        CHILDREN = 'CHILDREN', 'Children'
-        TWEENS = 'TWEENS', 'Tweens'
-        TEENS = 'TEENS', 'Teens'
-        ALL = 'ALL', 'All Ages'
-
     class CourseFormat(models.TextChoices):
         ZOOM_ONLY = 'ZOOM_ONLY', 'Zoom Only'
         VIDEO_ONLY = 'VIDEO_ONLY', 'Video Only'
@@ -22,7 +16,8 @@ class Course(models.Model):
     title = models.CharField(max_length=255)
     title_ar = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField()
-    target_age = models.CharField(max_length=20, choices=TargetAge.choices, default=TargetAge.ALL)
+    target_age_min = models.PositiveIntegerField(default=0)
+    target_age_max = models.PositiveIntegerField(default=99)
     course_format = models.CharField(max_length=20, choices=CourseFormat.choices, default=CourseFormat.VIDEO_ONLY)
     course_structure = models.CharField(max_length=20, choices=CourseStructure.choices, default=CourseStructure.SHORT_FLAT)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -38,8 +33,27 @@ class Course(models.Model):
         return self.title
 
 class CourseGroup(models.Model):
+    class DayOfWeek(models.IntegerChoices):
+        MONDAY = 0, 'Monday'
+        TUESDAY = 1, 'Tuesday'
+        WEDNESDAY = 2, 'Wednesday'
+        THURSDAY = 3, 'Thursday'
+        FRIDAY = 4, 'Friday'
+        SATURDAY = 5, 'Saturday'
+        SUNDAY = 6, 'Sunday'
+
     course = models.ForeignKey(Course, related_name='groups', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
+    primary_teacher = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        limit_choices_to={'role': User.Role.TEACHER}, 
+        related_name='assigned_course_groups'
+    )
+    official_day = models.IntegerField(choices=DayOfWeek.choices, default=DayOfWeek.MONDAY)
+    official_time = models.TimeField(null=True, blank=True)
+    capacity = models.PositiveIntegerField(default=25)
     
     def __str__(self):
         return f"{self.course.title} - {self.name}"

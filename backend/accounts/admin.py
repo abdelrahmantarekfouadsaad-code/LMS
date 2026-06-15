@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, StudyGroup, StudentProfile, TeacherProfile
+from .models import User, StudentProfile, TeacherProfile
 
 class CustomUserAdmin(UserAdmin):
     model = User
@@ -24,12 +24,6 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
-class StudyGroupAdmin(admin.ModelAdmin):
-    list_display = ['name', 'course', 'primary_teacher', 'created_at']
-    list_filter = ['course']
-    search_fields = ['name']
-
 admin.site.register(User, CustomUserAdmin)
-admin.site.register(StudyGroup, StudyGroupAdmin)
 admin.site.register(StudentProfile)
 admin.site.register(TeacherProfile)

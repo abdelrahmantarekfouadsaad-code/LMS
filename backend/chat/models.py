@@ -1,6 +1,6 @@
 import uuid
 from django.db import models
-from accounts.models import User, StudyGroup
+from accounts.models import User
 
 class ChatRoom(models.Model):
     class RoomType(models.TextChoices):
@@ -16,7 +16,7 @@ class ChatRoom(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room_type = models.CharField(max_length=20, choices=RoomType.choices)
     participants = models.ManyToManyField(User, related_name='chat_rooms')
-    study_group = models.ForeignKey(StudyGroup, on_delete=models.SET_NULL, null=True, blank=True)
+    course_group = models.ForeignKey('learning.CourseGroup', on_delete=models.SET_NULL, null=True, blank=True)
     # Phase 3: Multi-tier community targeting fields
     age_group = models.CharField(max_length=20, choices=User.AgeGroup.choices, blank=True, null=True)
     course = models.ForeignKey('learning.Course', on_delete=models.CASCADE, null=True, blank=True, related_name='chat_rooms')

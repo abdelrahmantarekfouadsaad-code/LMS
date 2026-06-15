@@ -1,9 +1,29 @@
 import uuid
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
-from .models import User, StudentProfile, TeacherProfile, StudyGroup
+from .models import User, StudentProfile, TeacherProfile
+from django.db.models import Avg
 
+class TeacherProfileSerializer(serializers.ModelSerializer):
+    overall_rating = serializers.SerializerMethodField()
 
+    class Meta:
+        model = TeacherProfile
+        fields = ['id', 'bio', 'specialization', 'overall_rating']
+
+    def get_overall_rating(self, obj):
+        from live.models import SessionFeedback
+        feedbacks = SessionFeedback.objects.filter(teacher=obj.user)
+        if not feedbacks.exists():
+            return 0.00
+            
+        aggregate_kwargs = {f"avg_q{i}": Avg(f"q{i}_rating") for i in range(1, 10)}
+        avgs = feedbacks.aggregate(**aggregate_kwargs)
+        
+        total = sum(val for val in avgs.values() if val is not None)
+        count = sum(1 for val in avgs.values() if val is not None)
+        
+        return round(total / count, 2) if count > 0 else 0.00
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):

@@ -28,13 +28,16 @@ class CourseViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         if user.role == 'STUDENT':
-            # Assuming the user model has an `age_group` field
-            age_group = getattr(user, 'age_group', None)
-            if age_group:
+            from datetime import date
+            today = date.today()
+            dob = user.student_profile.date_of_birth if hasattr(user, 'student_profile') else None
+            age = user.exact_age
+            if dob:
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                
+            if age is not None:
                 from django.db.models import Q
-                qs = qs.filter(Q(target_age=age_group) | Q(target_age='ALL'))
-            else:
-                qs = qs.filter(target_age='ALL')
+                qs = qs.filter(Q(target_age_min__lte=age) & Q(target_age_max__gte=age))
                 
         return qs
 
@@ -95,7 +98,8 @@ class CourseViewSet(viewsets.ModelViewSet):
                     title=data.get('title'),
                     title_ar=data.get('title_ar'),
                     description=data.get('description'),
-                    target_age=data.get('target_age', 'ALL'),
+                    target_age_min=data.get('target_age_min', 0),
+                    target_age_max=data.get('target_age_max', 99),
                     course_format=data.get('course_format', 'VIDEO_ONLY'),
                     course_structure=data.get('course_structure', 'SHORT_FLAT'),
                     price=price_val,
@@ -108,7 +112,14 @@ class CourseViewSet(viewsets.ModelViewSet):
             # Create Groups & Zoom Sessions if any
             groups_data = data.get('groups', [])
             for group_data in groups_data:
-                group = CourseGroup.objects.create(course=course, name=group_data.get('name'))
+                group = CourseGroup.objects.create(
+                    course=course, 
+                    name=group_data.get('name'),
+                    official_day=group_data.get('official_day', 0),
+                    official_time=group_data.get('official_time'),
+                    capacity=group_data.get('capacity', 25),
+                    primary_teacher_id=group_data.get('primary_teacher')
+                )
                 for session_data in group_data.get('zoom_sessions', []):
                     ZoomSession.objects.create(
                         course_group=group,
@@ -179,7 +190,8 @@ class CourseViewSet(viewsets.ModelViewSet):
                 course.title = data.get('title', course.title)
                 course.title_ar = data.get('title_ar', course.title_ar)
                 course.description = data.get('description', course.description)
-                course.target_age = data.get('target_age', course.target_age)
+                course.target_age_min = data.get('target_age_min', course.target_age_min)
+                course.target_age_max = data.get('target_age_max', course.target_age_max)
                 course.course_format = data.get('course_format', course.course_format)
                 course.course_structure = data.get('course_structure', course.course_structure)
                 course.price = price_val
@@ -193,7 +205,14 @@ class CourseViewSet(viewsets.ModelViewSet):
                 course.groups.all().delete()
                 groups_data = data.get('groups', [])
                 for group_data in groups_data:
-                    group = CourseGroup.objects.create(course=course, name=group_data.get('name'))
+                    group = CourseGroup.objects.create(
+                        course=course, 
+                        name=group_data.get('name'),
+                        official_day=group_data.get('official_day', 0),
+                        official_time=group_data.get('official_time'),
+                        capacity=group_data.get('capacity', 25),
+                        primary_teacher_id=group_data.get('primary_teacher')
+                    )
                     for session_data in group_data.get('zoom_sessions', []):
                         ZoomSession.objects.create(
                             course_group=group,
@@ -385,3 +404,52 @@ class GhostModeView(APIView):
             gs.ghost_mode_enabled = bool(ghost_mode)
             gs.save()
         return Response({'ghost_mode_enabled': gs.ghost_mode_enabled})
+
+class CourseGroupViewSet(viewsets.ModelViewSet):
+    queryset = CourseGroup.objects.all()
+    from .serializers import CourseGroupSerializer
+    serializer_class = CourseGroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=True, methods=['post'])
+    def add_student(self, request, pk=None):
+        if request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+            
+        group = self.get_object()
+        user_id = request.data.get('user_id')
+        
+        try:
+            from accounts.models import User
+            student = User.objects.get(id=user_id, role='STUDENT')
+            profile = student.student_profile
+        except Exception:
+            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        if profile.course_groups.filter(id=group.id).exists():
+            return Response({'error': 'Student already in group'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        current_students = profile.__class__.objects.filter(course_groups=group).count()
+        if current_students >= group.capacity:
+            return Response({'error': 'Group is at full capacity'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        profile.course_groups.add(group)
+        return Response({'message': 'Student added successfully'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def remove_student(self, request, pk=None):
+        if request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+            
+        group = self.get_object()
+        user_id = request.data.get('user_id')
+        
+        try:
+            from accounts.models import User
+            student = User.objects.get(id=user_id, role='STUDENT')
+            student.student_profile.course_groups.remove(group)
+        except Exception:
+            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response({'message': 'Student removed successfully'}, status=status.HTTP_200_OK)
+

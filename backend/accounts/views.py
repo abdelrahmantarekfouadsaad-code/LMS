@@ -452,7 +452,7 @@ class ParentCourseAnalyticsView(APIView):
         from .models import StudentProfile
         from learning.models import Course, StudentProgress, Lesson, Project, ProjectSubmission
         from quizzes.models import StudentResult, Quiz
-        from live.models import Attendance, LiveSession
+        from live.models import Attendance, VirtualSession
         from django.shortcuts import get_object_or_404
         
         # 1. Get Course
@@ -472,9 +472,9 @@ class ParentCourseAnalyticsView(APIView):
         student_user = student_profile.user
         
         # 3. Calculate Attendance Metrics
-        # Get live sessions for study groups that the student belongs to
-        study_groups = student_profile.study_groups.all()
-        sessions = LiveSession.objects.filter(study_group__in=study_groups)
+        # Get live sessions for course groups that the student belongs to
+        course_groups = student_profile.course_groups.all()
+        sessions = VirtualSession.objects.filter(course_group__in=course_groups)
         expected_count = sessions.count()
         attended_count = Attendance.objects.filter(session__in=sessions, student=student_user).count()
         
@@ -591,9 +591,33 @@ class SuperAdminUserListView(APIView):
             return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
         
         role_filter = request.query_params.get('role', 'All')
+        min_age = request.query_params.get('min_age')
+        max_age = request.query_params.get('max_age')
+        
         users = User.objects.all().order_by('-created_at')
         if role_filter and role_filter != 'All':
             users = users.filter(role=role_filter)
+            
+        if min_age is not None or max_age is not None:
+            from datetime import date
+            today = date.today()
+            filtered_users = []
+            for user in users:
+                age = user.exact_age
+                if hasattr(user, 'student_profile') and user.student_profile.date_of_birth:
+                    dob = user.student_profile.date_of_birth
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                
+                if age is None:
+                    continue
+                    
+                if min_age is not None and age < int(min_age):
+                    continue
+                if max_age is not None and age > int(max_age):
+                    continue
+                filtered_users.append(user)
+            users = filtered_users
+
             
         data = []
         for user in users:
@@ -675,8 +699,8 @@ class SuperAdminStudentStatsView(APIView):
             return Response({'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
             
         # 1. Attendance Ratio
-        study_groups = student_profile.study_groups.all()
-        sessions = LiveSession.objects.filter(study_group__in=study_groups)
+        course_groups = student_profile.course_groups.all()
+        sessions = VirtualSession.objects.filter(course_group__in=course_groups)
         expected_count = sessions.count()
         attended_count = Attendance.objects.filter(session__in=sessions, student=target_user).count()
         attendance_ratio = round((attended_count / expected_count) * 100) if expected_count > 0 else 0
@@ -687,7 +711,7 @@ class SuperAdminStudentStatsView(APIView):
         exam_scores_avg = round(float(total_score) / quiz_results.count(), 2) if quiz_results.exists() else 0
         
         # 3. Overall Progress
-        total_lessons = Lesson.objects.filter(week__course__study_groups__in=study_groups).distinct().count()
+        total_lessons = Lesson.objects.filter(week__course__groups__in=course_groups).distinct().count()
         completed_lessons = StudentProgress.objects.filter(student=target_user, is_completed=True).count()
         overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
         
@@ -696,7 +720,7 @@ class SuperAdminStudentStatsView(APIView):
         
         # 5. Enrolled Courses list
         enrolled_courses = []
-        for sg in study_groups:
+        for sg in course_groups:
             if sg.course not in [c.get('course') for c in enrolled_courses]:
                 enrolled_courses.append({
                     'id': sg.course.id,

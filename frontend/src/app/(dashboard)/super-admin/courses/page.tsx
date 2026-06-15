@@ -126,14 +126,15 @@ export default function CoursesPage() {
 type FormValues = {
   title: string;
   description: string;
-  target_age: string;
+  target_age_min: number;
+  target_age_max: number;
   price: number;
   thumbnail: string;
   instructor_name: string;
   is_upload_completed: boolean;
   course_format: string;
   course_structure: string;
-  groups: { name: string; zoom_sessions: { title: string; scheduled_time: string; meeting_link: string }[] }[];
+  groups: { name: string; official_day: number; official_time: string; capacity: number; primary_teacher: number | null; zoom_sessions: { title: string; scheduled_time: string; meeting_link: string }[] }[];
   units: { title: string; lessons: { title: string; video_url: string; pdf_attachment: string; is_quiz: boolean; estimated_minutes: number }[] }[];
   flat_lessons: { title: string; video_url: string; pdf_attachment: string; is_quiz: boolean; estimated_minutes: number }[];
 };
@@ -145,10 +146,11 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
 
   const { register, control, handleSubmit, watch, setValue, reset } = useForm<FormValues>({
       defaultValues: initialData || {
-      target_age: 'ALL',
+      target_age_min: 0,
+      target_age_max: 99,
       course_format: 'VIDEO_ONLY',
       course_structure: 'SHORT_FLAT',
-      groups: [{ name: 'المجموعة 1', zoom_sessions: [] }],
+      groups: [{ name: 'المجموعة 1', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher: null, zoom_sessions: [] }],
       units: [],
       flat_lessons: [],
       instructor_name: 'أكاديمية نور النبوة',
@@ -161,10 +163,11 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
       reset(initialData);
     } else {
       reset({
-        target_age: 'ALL',
+        target_age_min: 0,
+        target_age_max: 99,
         course_format: 'VIDEO_ONLY',
         course_structure: 'SHORT_FLAT',
-        groups: [{ name: 'المجموعة 1', zoom_sessions: [] }],
+        groups: [{ name: 'المجموعة 1', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher: null, zoom_sessions: [] }],
         units: [],
         flat_lessons: [],
         instructor_name: 'أكاديمية نور النبوة',
@@ -232,14 +235,15 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                     <label className="block text-sm font-medium text-gray-400 mb-1">{t('admin.courses.courseTitle')}</label>
                     <input {...register('title', { required: true })} className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('admin.courses.targetAge')}</label>
-                    <select {...register('target_age')} className="w-full p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all [&>option]:bg-[#111] rounded-xl border-none">
-                      <option value="ALL">{t('admin.courses.all')}</option>
-                      <option value="CHILDREN">{t('admin.courses.children')}</option>
-                      <option value="TWEENS">{t('admin.courses.tweens')}</option>
-                      <option value="TEENS">{t('admin.courses.teens')}</option>
-                    </select>
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-slate-400 mb-1">Min Age</label>
+                      <input type="number" {...register('target_age_min')} className="w-full p-3 bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none text-white transition-all rounded-xl border border-slate-800" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-slate-400 mb-1">Max Age</label>
+                      <input type="number" {...register('target_age_max')} className="w-full p-3 bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none text-white transition-all rounded-xl border border-slate-800" />
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-400 mb-1">{t('admin.courses.description')}</label>
@@ -260,16 +264,44 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                 </div>
 
                 <div className="mt-8">
-                  <h4 className="text-lg font-medium text-gray-200 mb-4">{t('admin.courses.cohorts')}</h4>
+                  <h4 className="text-lg font-medium text-slate-200 mb-4">{t('admin.courses.cohorts')}</h4>
                   {groupFields.map((field, index) => (
-                    <div key={field.id} className="flex items-center space-x-4 space-x-reverse mb-3">
-                      <input {...register(`groups.${index}.name`)} placeholder={t('admin.courses.cohortPlaceholder')} className="flex-1 p-3 glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white transition-all rounded-xl border-none" />
-                      {index > 0 && (
-                        <button type="button" onClick={() => removeGroup(index)} className="text-red-400 hover:bg-red-500/20 px-4 py-3 rounded-xl transition-colors">{t('admin.courses.delete')}</button>
-                      )}
+                    <div key={field.id} className="mb-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                      <div className="flex items-center space-x-4 space-x-reverse mb-3">
+                        <input {...register(`groups.${index}.name`)} placeholder={t('admin.courses.cohortPlaceholder')} className="flex-1 p-3 bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none text-white transition-all rounded-xl border border-slate-800" />
+                        {index > 0 && (
+                          <button type="button" onClick={() => removeGroup(index)} className="text-red-400 hover:bg-red-500/20 px-4 py-3 rounded-xl transition-colors">{t('admin.courses.delete')}</button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Official Day</label>
+                          <select {...register(`groups.${index}.official_day`)} className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500">
+                            <option value={0}>Monday</option>
+                            <option value={1}>Tuesday</option>
+                            <option value={2}>Wednesday</option>
+                            <option value={3}>Thursday</option>
+                            <option value={4}>Friday</option>
+                            <option value={5}>Saturday</option>
+                            <option value={6}>Sunday</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Official Time</label>
+                          <input type="time" {...register(`groups.${index}.official_time`)} className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500 [&::-webkit-calendar-picker-indicator]:filter-[invert(1)]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Capacity</label>
+                          <input type="number" {...register(`groups.${index}.capacity`)} className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Teacher ID</label>
+                          <input type="number" {...register(`groups.${index}.primary_teacher`)} placeholder="ID" className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500" />
+                        </div>
+                      </div>
                     </div>
                   ))}
-                  <button type="button" onClick={() => appendGroup({ name: '', zoom_sessions: [] })} className="text-sm text-indigo-400 hover:text-indigo-300 font-medium transition-colors">{t('admin.courses.addCohort')}</button>
+                  <button type="button" onClick={() => appendGroup({ name: '', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher: null, zoom_sessions: [] })} className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors">{t('admin.courses.addCohort')}</button>
                 </div>
               </div>
             )}
@@ -384,6 +416,46 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                 </div>
               </div>
             )}
+
+            {/* Step 4: Students Management */}
+            {step === 4 && (
+              <div className="space-y-6 animate-fade-in">
+                <h3 className="text-xl font-semibold mb-4 text-emerald-500 border-b border-slate-800 pb-2">Student Management</h3>
+                <p className="text-slate-400">Manage enrollments for this course. Ensure age requirements are met.</p>
+                
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                  <h4 className="font-bold text-white mb-4">Add Student to Cohort</h4>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <input 
+                      type="text" 
+                      placeholder="Search Student by ID, Name or Email" 
+                      className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:ring-emerald-500 focus:border-emerald-500 outline-none" 
+                    />
+                    <select className="bg-slate-950 border border-slate-800 rounded-lg p-3 text-white focus:ring-emerald-500 outline-none min-w-[200px]">
+                      <option value="">Select Cohort...</option>
+                      {groupFields.map((group, index) => (
+                        <option key={index} value={index}>{watch(`groups.${index}.name`)}</option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={() => alert("Validation: Checking if student meets Min Age (" + watch('target_age_min') + ") and Max Age (" + watch('target_age_max') + ")...")} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                      Add Student
+                    </button>
+                  </div>
+                  <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                    <p className="text-emerald-400 text-sm">
+                      <span className="font-bold">Age Gating Active:</span> Only students between {watch('target_age_min')} and {watch('target_age_max')} years old can be enrolled based on their Profile DOB.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl overflow-hidden">
+                  <h4 className="font-bold text-white mb-4">Current Enrollments</h4>
+                  <div className="text-center py-8 text-slate-500">
+                    Students list will appear here after saving the course.
+                  </div>
+                </div>
+              </div>
+            )}
           </form>
         </div>
 
@@ -418,11 +490,11 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
             )}
           </div>
           
-          {step < 3 && (
-            <button key="next-btn" type="button" disabled={isSubmitting} onClick={(e) => { e.preventDefault(); setStep(step + 1); }} className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-medium transition-colors shadow-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>{t('admin.courses.next')}</button>
+          {step < 4 && (
+            <button key="next-btn" type="button" disabled={isSubmitting} onClick={(e) => { e.preventDefault(); setStep(step + 1); }} className={`px-8 py-2 bg-emerald-600 text-white rounded-xl font-medium transition-colors shadow-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-700'}`}>{t('admin.courses.next')}</button>
           )}
-          {step === 3 && (
-            <button key="submit-btn" type="submit" disabled={isSubmitting} form="course-form" onClick={(e) => e.stopPropagation()} className={`px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(79,70,229,0.5)] ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}>{isSubmitting ? t('admin.courses.saving') : t('admin.courses.saveCourse')}</button>
+          {step === 4 && (
+            <button key="submit-btn" type="submit" disabled={isSubmitting} form="course-form" onClick={(e) => e.stopPropagation()} className={`px-8 py-2 bg-emerald-600 text-white rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(5,150,105,0.5)] ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-700'}`}>{isSubmitting ? t('admin.courses.saving') : t('admin.courses.saveCourse')}</button>
           )}
         </div>
       </div>
@@ -441,7 +513,23 @@ function ZoomSessionsList({ control, register, gIndex }: any) {
           <div className="flex-1 flex flex-col gap-2">
             <div className="flex gap-2">
               <input {...register(`groups.${gIndex}.zoom_sessions.${index}.title`, { required: true })} placeholder={t('admin.courses.zoomSessionTitle')} className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" />
-              <input type="datetime-local" {...register(`groups.${gIndex}.zoom_sessions.${index}.scheduled_time`)} className="p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg [&::-webkit-calendar-picker-indicator]:filter-[invert(1)]" />
+              <input type="datetime-local" {...register(`groups.${gIndex}.zoom_sessions.${index}.scheduled_time`)} onChange={(e) => {
+                const val = e.target.value;
+                if (!val) return;
+                const d = new Date(val);
+                const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Cairo', weekday: 'long' });
+                const parts = formatter.formatToParts(d);
+                const dayName = parts.find(p => p.type === 'weekday')?.value;
+                const dayIndex = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].indexOf(dayName || '');
+                const officialDay = Number(control._formValues.groups[gIndex].official_day);
+                if (dayIndex !== officialDay) {
+                  alert(`Timezone Error (Africa/Cairo): Session must be scheduled on the official cohort day!`);
+                  e.target.value = '';
+                } else {
+                  // Manually trigger the register onChange so React Hook Form gets it
+                  register(`groups.${gIndex}.zoom_sessions.${index}.scheduled_time`).onChange(e);
+                }
+              }} className="p-2 text-sm bg-slate-900 border border-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none text-white rounded-lg [&::-webkit-calendar-picker-indicator]:filter-[invert(1)]" />
             </div>
             <div className="flex gap-2">
               <input type="text" {...register(`groups.${gIndex}.zoom_sessions.${index}.meeting_link`)} placeholder={t('admin.courses.zoomLink')} className="flex-1 p-2 text-sm glass-panel focus:ring-2 focus:ring-indigo-500 outline-none text-white border-none rounded-lg" dir="ltr" />

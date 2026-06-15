@@ -31,8 +31,10 @@ export default function LoginPage() {
       setError(t('login.invalidCreds'));
       setIsLoading(false);
     } else {
-      const session = await getSession();
-      const role = session?.user?.role;
+      const sessionRes = await fetch('/api/auth/session');
+      const session = await sessionRes.json();
+      const role = session?.user?.role?.toUpperCase();
+      
       if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
         router.push('/super-admin/courses');
       } else if (role === 'TEACHER') {

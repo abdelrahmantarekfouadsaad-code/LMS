@@ -71,8 +71,8 @@ export default function Sidebar() {
   } else if (isTeacher) {
     filteredNavItems = [
       { nameKey: 'dashboard', href: '/teacher', icon: LayoutDashboard },
-      { nameKey: 'learning', href: '/teacher/courses', icon: BookOpen },
-    ];
+      { nameKey: 'courses', label: 'Courses', href: '/teacher/courses', icon: BookOpen },
+    ] as any;
   } else {
     // Standard Student: Hide settings from sidebar navigation, keeping standard list
     filteredNavItems = NAV_ITEMS.filter(item => item.href !== '/settings');
@@ -142,7 +142,7 @@ export default function Sidebar() {
                       exit={{ opacity: 0, width: 0 }}
                       className="whitespace-nowrap overflow-hidden"
                     >
-                      {t[item.nameKey as keyof typeof t]}
+                      {(item as any).label || t[item.nameKey as keyof typeof t] || item.nameKey}
                     </motion.span>
                   )}
                 </AnimatePresence>

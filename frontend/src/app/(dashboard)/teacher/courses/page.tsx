@@ -10,29 +10,54 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 // --- Components ---
 
-export default function TeacherCoursesPage() {
+export default function CoursesPage() {
   const { t } = useTranslation();
+  const [filter, setFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<any>(null);
 
-  const { data: userProfile } = useSWR('/auth/me/', fetcher);
   const { data: courses = [], mutate } = useSWR('/courses/', fetcher, {
     revalidateOnFocus: false,
     revalidateIfStale: false,
     revalidateOnReconnect: false
   });
 
-  const teacherId = userProfile?.id;
-  const filteredCourses = courses.filter((c: any) => c.groups?.some((g: any) => g.primary_teacher === teacherId) || c.instructor_name === `${userProfile?.first_name} ${userProfile?.last_name}`);
+  const filteredCourses = courses.filter((c: any) => filter === 'ALL' || c.target_age === filter);
 
   return (
     <div className="p-8 font-cairo bg-background-light dark:bg-background-dark min-h-screen" dir="rtl">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Courses</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">Manage your assigned cohorts and course materials.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('admin.courses.title')}</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">{t('admin.courses.subtitle')}</p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditingCourse(null);
+            setIsModalOpen(true);
+          }}
+          className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-sm"
+        >{t('admin.courses.addCourse')}</button>
+      </div>
+
+      {/* Filter Slider */}
+      <div className="flex space-x-4 space-x-reverse mb-8 overflow-x-auto pb-2">
+        {['ALL', 'CHILDREN', 'TWEENS', 'TEENS'].map(age => (
+          <button
+            type="button"
+            key={age}
+            onClick={() => setFilter(age)}
+            className={`px-6 py-2 rounded-full whitespace-nowrap transition-colors ${
+              filter === age
+                ? 'bg-primary text-white'
+                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/10'
+            }`}
+          >
+            {age === 'ALL' ? t('admin.courses.all') : age === 'CHILDREN' ? t('admin.courses.children') : age === 'TWEENS' ? t('admin.courses.tweens') : t('admin.courses.teens')}
+          </button>
+        ))}
       </div>
 
       {/* Course Grid */}

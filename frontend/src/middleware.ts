@@ -22,6 +22,15 @@ export default withAuth(
         }
         return NextResponse.redirect(new URL("/dashboard", req.url));
       }
+
+      // 3. Strict Role-Based Route Protection
+      if (pathname.startsWith('/teacher') && role !== 'TEACHER' && role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+      
+      if (pathname.startsWith('/super-admin') && role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
     }
   },
   {
@@ -55,6 +64,8 @@ export const config = {
     "/support/:path*",
     "/parent-dashboard/:path*",
     "/parent/:path*",
-    "/onboarding"
+    "/onboarding",
+    "/teacher/:path*",
+    "/super-admin/:path*"
   ]
 };

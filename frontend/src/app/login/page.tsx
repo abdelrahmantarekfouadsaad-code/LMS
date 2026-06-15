@@ -32,8 +32,11 @@ export default function LoginPage() {
       setIsLoading(false);
     } else {
       const session = await getSession();
-      if (session?.user?.role === 'SUPER_ADMIN') {
+      const role = session?.user?.role;
+      if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
         router.push('/super-admin/courses');
+      } else if (role === 'TEACHER') {
+        router.push('/teacher');
       } else {
         router.push('/dashboard');
       }

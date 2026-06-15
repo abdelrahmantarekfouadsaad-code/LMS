@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
 import axios from '@/lib/axios';
 import { Star, Users, Calendar, Clock, MessageSquare } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function TeacherDashboard() {
+  const { data: session } = useSession();
   const { data: userProfile, error: profileError } = useSWR('/auth/me/', fetcher);
   // Assuming a custom endpoint or filtering via /course-groups/?primary_teacher=me
   // For now, let's fetch all groups and filter, or assume an endpoint exists.
@@ -26,13 +28,16 @@ export default function TeacherDashboard() {
   // Filter groups where this teacher is the primary teacher
   const assignedGroups = allGroups.filter((g: any) => g.primary_teacher === userProfile?.id);
 
+  const firstName = session?.user?.name?.split(' ')[0] || userProfile?.first_name || '';
+  const lastName = session?.user?.name?.split(' ').slice(1).join(' ') || userProfile?.last_name || '';
+
   return (
     <div className="min-h-screen bg-slate-950 p-8 font-sans">
       {/* Header & Rating */}
       <div className="mb-10 bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between shadow-lg">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Teacher Dashboard</h1>
-          <p className="text-slate-400 text-lg">Welcome back, {userProfile?.first_name} {userProfile?.last_name}</p>
+          <p className="text-slate-400 text-lg">Welcome back, {firstName} {lastName} 👋</p>
         </div>
         
         <div className="mt-6 md:mt-0 flex flex-col items-center md:items-end bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">

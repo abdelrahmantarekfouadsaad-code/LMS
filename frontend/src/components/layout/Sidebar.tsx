@@ -53,6 +53,7 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const { isGuest } = useUserRole();
   const isParent = session?.user?.role === 'PARENT';
+  const isTeacher = session?.user?.role === 'TEACHER';
   const { locale, dict, t: translate } = useTranslation();
   const t = dict.sidebar;
   const tGuest = dict.guest;
@@ -67,6 +68,11 @@ export default function Sidebar() {
       }
       return item;
     }).filter(item => PARENT_ALLOWED_ROUTES.includes(item.href));
+  } else if (isTeacher) {
+    filteredNavItems = [
+      { nameKey: 'dashboard', href: '/teacher', icon: LayoutDashboard },
+      { nameKey: 'learning', href: '/teacher/courses', icon: BookOpen },
+    ];
   } else {
     // Standard Student: Hide settings from sidebar navigation, keeping standard list
     filteredNavItems = NAV_ITEMS.filter(item => item.href !== '/settings');

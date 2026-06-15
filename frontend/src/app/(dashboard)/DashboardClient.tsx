@@ -68,10 +68,12 @@ export default function DashboardHome() {
     useEffect(() => {
         if (session?.user?.role === 'SUPER_ADMIN') {
             router.push('/super-admin/users');
+        } else if (session?.user?.role === 'TEACHER') {
+            router.push('/teacher');
         }
     }, [session, router]);
 
-    if (status === 'loading' || session?.user?.role === 'SUPER_ADMIN') {
+    if (status === 'loading' || session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'TEACHER') {
         return (
             <div className="flex h-screen bg-background-light dark:bg-background-dark items-center justify-center">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />

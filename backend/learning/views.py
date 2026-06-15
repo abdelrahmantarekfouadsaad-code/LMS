@@ -27,7 +27,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         
-        if user.role == 'STUDENT':
+        if user.role == 'TEACHER':
+            # Teachers ONLY see courses where they are assigned as primary_teacher in a CourseGroup
+            qs = qs.filter(groups__primary_teacher=user).distinct()
+        elif user.role == 'STUDENT':
             from datetime import date
             today = date.today()
             dob = user.student_profile.date_of_birth if hasattr(user, 'student_profile') else None
@@ -410,6 +413,31 @@ class CourseGroupViewSet(viewsets.ModelViewSet):
     from .serializers import CourseGroupSerializer
     serializer_class = CourseGroupSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'TEACHER':
+            return CourseGroup.objects.filter(primary_teacher=user).select_related('course')
+        return CourseGroup.objects.all()
+
+    @action(detail=True, methods=['get'])
+    def students(self, request, pk=None):
+        """List students enrolled in this CourseGroup."""
+        if request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        group = self.get_object()
+        from accounts.models import StudentProfile
+        student_profiles = StudentProfile.objects.filter(course_groups=group).select_related('user')
+        data = [
+            {
+                'id': sp.user.id,
+                'full_name': sp.user.full_name,
+                'exact_age': sp.user.exact_age,
+                'date_of_birth': sp.date_of_birth.isoformat() if sp.date_of_birth else None,
+            }
+            for sp in student_profiles
+        ]
+        return Response(data)
 
     @action(detail=True, methods=['post'])
     def add_student(self, request, pk=None):

@@ -45,9 +45,16 @@ class ZoomSessionSerializer(serializers.ModelSerializer):
 
 class CourseGroupSerializer(serializers.ModelSerializer):
     zoom_sessions = ZoomSessionSerializer(many=True, read_only=True)
+    primary_teacher_name = serializers.SerializerMethodField()
+
     class Meta:
         model = CourseGroup
-        fields = ['id', 'name', 'official_day', 'official_time', 'capacity', 'primary_teacher', 'zoom_sessions']
+        fields = ['id', 'name', 'official_day', 'official_time', 'capacity', 'primary_teacher', 'primary_teacher_name', 'zoom_sessions']
+
+    def get_primary_teacher_name(self, obj):
+        if obj.primary_teacher:
+            return obj.primary_teacher.full_name
+        return None
 
 class LessonSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField()

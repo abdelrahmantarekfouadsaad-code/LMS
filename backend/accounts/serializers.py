@@ -74,15 +74,21 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     parent_email = serializers.SerializerMethodField()
+    teacher_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'full_name', 'role', 'is_onboarded', 'age_group', 'exact_age', 'parent_email']
+        fields = ['id', 'email', 'full_name', 'role', 'is_onboarded', 'age_group', 'exact_age', 'parent_email', 'teacher_profile']
         read_only_fields = ['role']
 
     def get_parent_email(self, obj):
         if hasattr(obj, 'student_profile'):
             return obj.student_profile.parent_email
+        return None
+
+    def get_teacher_profile(self, obj):
+        if obj.role == 'TEACHER' and hasattr(obj, 'teacher_profile'):
+            return TeacherProfileSerializer(obj.teacher_profile).data
         return None
 
 

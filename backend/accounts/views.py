@@ -795,3 +795,38 @@ class SuperAdminEnrollStudentView(APIView):
             logging.getLogger(__name__).warning(f"Chat room setup failed: {e}")
             
         return Response({'message': 'Student enrolled successfully'}, status=status.HTTP_200_OK)
+
+
+class TeacherStudentSearchView(APIView):
+    """
+    Lightweight student search endpoint for Teachers.
+    Returns ONLY id, full_name, exact_age — no PII (email, phone, etc.).
+    Supports ?q= query parameter for searching by name.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role not in ['TEACHER', 'SUPER_ADMIN', 'SUPERVISOR']:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        query = request.query_params.get('q', '').strip()
+        students = User.objects.filter(role='STUDENT')
+
+        if query:
+            from django.db.models import Q
+            students = students.filter(
+                Q(full_name__icontains=query) | Q(id__icontains=query)
+            )
+
+        students = students[:50]  # Hard limit to prevent data dumping
+
+        data = [
+            {
+                'id': s.id,
+                'full_name': s.full_name,
+                'exact_age': s.exact_age,
+            }
+            for s in students
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+

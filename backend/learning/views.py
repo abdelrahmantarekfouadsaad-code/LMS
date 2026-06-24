@@ -115,13 +115,30 @@ class CourseViewSet(viewsets.ModelViewSet):
             # Create Groups & Zoom Sessions if any
             groups_data = data.get('groups', [])
             for group_data in groups_data:
+                # Resolve teacher by email instead of raw ID
+                teacher_id = None
+                teacher_email = group_data.get('primary_teacher_email')
+                if teacher_email and str(teacher_email).strip():
+                    from accounts.models import User
+                    try:
+                        teacher_user = User.objects.get(email__iexact=teacher_email.strip(), role='TEACHER')
+                        teacher_id = teacher_user.id
+                    except User.DoesNotExist:
+                        return Response(
+                            {'error': f'No teacher found with email "{teacher_email}". Ensure the email belongs to a user with the TEACHER role.'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                else:
+                    # Backward compatibility: fall back to raw ID if provided
+                    teacher_id = group_data.get('primary_teacher') or None
+
                 group = CourseGroup.objects.create(
                     course=course, 
                     name=group_data.get('name'),
                     official_day=group_data.get('official_day', 0),
                     official_time=group_data.get('official_time'),
                     capacity=group_data.get('capacity', 25),
-                    primary_teacher_id=group_data.get('primary_teacher')
+                    primary_teacher_id=teacher_id
                 )
                 for session_data in group_data.get('zoom_sessions', []):
                     ZoomSession.objects.create(
@@ -208,13 +225,30 @@ class CourseViewSet(viewsets.ModelViewSet):
                 course.groups.all().delete()
                 groups_data = data.get('groups', [])
                 for group_data in groups_data:
+                    # Resolve teacher by email instead of raw ID
+                    teacher_id = None
+                    teacher_email = group_data.get('primary_teacher_email')
+                    if teacher_email and str(teacher_email).strip():
+                        from accounts.models import User as AccountUser
+                        try:
+                            teacher_user = AccountUser.objects.get(email__iexact=teacher_email.strip(), role='TEACHER')
+                            teacher_id = teacher_user.id
+                        except AccountUser.DoesNotExist:
+                            return Response(
+                                {'error': f'No teacher found with email "{teacher_email}". Ensure the email belongs to a user with the TEACHER role.'},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                    else:
+                        # Backward compatibility: fall back to raw ID if provided
+                        teacher_id = group_data.get('primary_teacher') or None
+
                     group = CourseGroup.objects.create(
                         course=course, 
                         name=group_data.get('name'),
                         official_day=group_data.get('official_day', 0),
                         official_time=group_data.get('official_time'),
                         capacity=group_data.get('capacity', 25),
-                        primary_teacher_id=group_data.get('primary_teacher')
+                        primary_teacher_id=teacher_id
                     )
                     for session_data in group_data.get('zoom_sessions', []):
                         ZoomSession.objects.create(

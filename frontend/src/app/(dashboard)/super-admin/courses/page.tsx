@@ -134,7 +134,7 @@ type FormValues = {
   is_upload_completed: boolean;
   course_format: string;
   course_structure: string;
-  groups: { name: string; official_day: number; official_time: string; capacity: number; primary_teacher: number | null; zoom_sessions: { title: string; scheduled_time: string; meeting_link: string }[] }[];
+  groups: { name: string; official_day: number; official_time: string; capacity: number; primary_teacher_email: string; zoom_sessions: { title: string; scheduled_time: string; meeting_link: string }[] }[];
   units: { title: string; lessons: { title: string; video_url: string; pdf_attachment: string; is_quiz: boolean; estimated_minutes: number }[] }[];
   flat_lessons: { title: string; video_url: string; pdf_attachment: string; is_quiz: boolean; estimated_minutes: number }[];
 };
@@ -150,7 +150,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
       target_age_max: 99,
       course_format: 'VIDEO_ONLY',
       course_structure: 'SHORT_FLAT',
-      groups: [{ name: 'المجموعة 1', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher: null, zoom_sessions: [] }],
+      groups: [{ name: 'المجموعة 1', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher_email: '', zoom_sessions: [] }],
       units: [],
       flat_lessons: [],
       instructor_name: 'أكاديمية نور النبوة',
@@ -167,7 +167,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
         target_age_max: 99,
         course_format: 'VIDEO_ONLY',
         course_structure: 'SHORT_FLAT',
-        groups: [{ name: 'المجموعة 1', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher: null, zoom_sessions: [] }],
+        groups: [{ name: 'المجموعة 1', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher_email: '', zoom_sessions: [] }],
         units: [],
         flat_lessons: [],
         instructor_name: 'أكاديمية نور النبوة',
@@ -295,13 +295,13 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void,
                           <input type="number" {...register(`groups.${index}.capacity`)} className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500" />
                         </div>
                         <div>
-                          <label className="block text-xs text-slate-400 mb-1">Teacher ID</label>
-                          <input type="number" {...register(`groups.${index}.primary_teacher`)} placeholder="ID" className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500" />
+                          <label className="block text-xs text-slate-400 mb-1">Teacher Email</label>
+                          <input type="email" {...register(`groups.${index}.primary_teacher_email`)} placeholder="teacher@example.com" className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-white text-sm focus:ring-emerald-500" dir="ltr" />
                         </div>
                       </div>
                     </div>
                   ))}
-                  <button type="button" onClick={() => appendGroup({ name: '', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher: null, zoom_sessions: [] })} className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors">{t('admin.courses.addCohort')}</button>
+                  <button type="button" onClick={() => appendGroup({ name: '', official_day: 0, official_time: '18:00', capacity: 25, primary_teacher_email: '', zoom_sessions: [] })} className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors">{t('admin.courses.addCohort')}</button>
                 </div>
               </div>
             )}

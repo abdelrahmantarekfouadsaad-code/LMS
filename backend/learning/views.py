@@ -388,9 +388,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
     """
     Projects for students. Only Admin/Supervisor/Teacher can create/edit.
     """
-    queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['SUPER_ADMIN', 'SUPERVISOR']:
+            return Project.objects.all()
+        elif user.role == 'TEACHER':
+            return Project.objects.filter(course__groups__primary_teacher=user).distinct()
+        elif user.role == 'STUDENT':
+            from payment.models import Subscription
+            return Project.objects.filter(
+                course__subscriptions__user=user,
+                course__subscriptions__status='approved',
+                course__subscriptions__is_active=True
+            ).distinct()
+        return Project.objects.none()
+
 
 class ProjectSubmissionViewSet(viewsets.ModelViewSet):
     """
@@ -401,8 +416,12 @@ class ProjectSubmissionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+        if user.role in ['SUPER_ADMIN', 'SUPERVISOR']:
             return ProjectSubmission.objects.all()
+        elif user.role == 'TEACHER':
+            return ProjectSubmission.objects.filter(
+                project__course__groups__primary_teacher=user
+            ).distinct()
         return ProjectSubmission.objects.filter(student=user)
 
     def perform_create(self, serializer):

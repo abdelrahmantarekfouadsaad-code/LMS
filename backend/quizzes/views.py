@@ -26,26 +26,10 @@ class QuizViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def submit(self, request, pk=None):
-        """
-        Students submit a dictionary of {question_id: choice_id} to get auto-graded.
-        Maximum 2 attempts per quiz.
-        """
         if request.user.role != 'STUDENT':
             return Response({"error": "Only students can submit quizzes."}, status=status.HTTP_403_FORBIDDEN)
             
         quiz = self.get_object()
-        
-        # Phase 3: Enforce maximum 2 attempts
-        existing_attempts = StudentResult.objects.filter(
-            student=request.user, quiz=quiz
-        ).count()
-        
-        if existing_attempts >= StudentResult.MAX_ATTEMPTS:
-            return Response(
-                {"error": f"Maximum {StudentResult.MAX_ATTEMPTS} attempts reached for this quiz."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         answers = request.data.get('answers', {})
         
         if not answers:
@@ -55,6 +39,17 @@ class QuizViewSet(viewsets.ModelViewSet):
         correct_answers = 0
 
         with transaction.atomic():
+            # Lock existing attempts to prevent concurrent insertion
+            existing_attempts = StudentResult.objects.select_for_update().filter(
+                student=request.user, quiz=quiz
+            ).count()
+            
+            if existing_attempts >= StudentResult.MAX_ATTEMPTS:
+                return Response(
+                    {"error": f"Maximum {StudentResult.MAX_ATTEMPTS} attempts reached for this quiz."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
             for question_id, choice_id in answers.items():
                 try:
                     choice = Choice.objects.get(id=choice_id, question_id=question_id)

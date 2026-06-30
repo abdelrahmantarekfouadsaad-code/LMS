@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from .models import ChatRoom, Message
 from .serializers import ChatRoomSerializer, MessageSerializer
 
@@ -22,5 +23,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         return Message.objects.filter(room__participants=self.request.user).order_by('timestamp')
 
     def perform_create(self, serializer):
-        # We assume room ID is passed in the serializer data payload
+        room = serializer.validated_data.get('room')
+        if room and not room.participants.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("You are not a participant of this room.")
         serializer.save(sender=self.request.user)

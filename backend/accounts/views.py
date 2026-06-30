@@ -13,6 +13,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
+from django.db.models import Q
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -486,12 +487,12 @@ class ParentCourseAnalyticsView(APIView):
         attendance_ratio = round((attended_count / expected_count) * 100) if expected_count > 0 else 0
         
         # 4. Overall Progress
-        total_lessons = Lesson.objects.filter(week__course=course).count()
-        completed_lessons = StudentProgress.objects.filter(student=student_user, lesson__week__course=course, is_completed=True).count()
+        total_lessons = Lesson.objects.filter(Q(course=course) | Q(unit__course=course)).distinct().count()
+        completed_lessons = StudentProgress.objects.filter(student=student_user, is_completed=True).filter(Q(lesson__course=course) | Q(lesson__unit__course=course)).distinct().count()
         overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 80
         
         # 5. Exams / Quiz Results
-        quiz_results = StudentResult.objects.filter(student=student_user, quiz__lesson__week__course=course)
+        quiz_results = StudentResult.objects.filter(student=student_user).filter(Q(quiz__lesson__course=course) | Q(quiz__lesson__unit__course=course))
         exams_list = []
         for result in quiz_results:
             exams_list.append({
@@ -690,7 +691,7 @@ class SuperAdminStudentStatsView(APIView):
         from .models import StudentProfile
         from learning.models import StudentProgress, Lesson, ProjectSubmission
         from quizzes.models import StudentResult
-        from live.models import Attendance, LiveSession
+        from live.models import Attendance, VirtualSession
         
         try:
             target_user = User.objects.get(id=student_id, role='STUDENT')
@@ -711,7 +712,7 @@ class SuperAdminStudentStatsView(APIView):
         exam_scores_avg = round(float(total_score) / quiz_results.count(), 2) if quiz_results.exists() else 0
         
         # 3. Overall Progress
-        total_lessons = Lesson.objects.filter(week__course__groups__in=course_groups).distinct().count()
+        total_lessons = Lesson.objects.filter(Q(course__groups__in=course_groups) | Q(unit__course__groups__in=course_groups)).distinct().count()
         completed_lessons = StudentProgress.objects.filter(student=target_user, is_completed=True).count()
         overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
         

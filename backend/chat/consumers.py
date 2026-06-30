@@ -147,6 +147,12 @@ class CommunityConsumer(BaseChatConsumer):
             await self.close()
             return
 
+        # Verify the user is enrolled in this study group
+        has_access = await self.verify_study_group_access(self.study_group_id, self.user)
+        if not has_access:
+            await self.close()
+            return
+
         self.room_group_name = f'community_{self.study_group_id}'
 
         await self.channel_layer.group_add(
@@ -154,6 +160,22 @@ class CommunityConsumer(BaseChatConsumer):
             self.channel_name
         )
         await self.accept()
+
+    @database_sync_to_async
+    def verify_study_group_access(self, study_group_id, user):
+        from learning.models import CourseGroup
+        try:
+            group = CourseGroup.objects.get(id=study_group_id)
+        except CourseGroup.DoesNotExist:
+            return False
+        
+        if user.role in ['SUPER_ADMIN', 'SUPERVISOR']:
+            return True
+        if group.primary_teacher == user:
+            return True
+        if hasattr(user, 'student_profile'):
+            return user.student_profile.course_groups.filter(id=study_group_id).exists()
+        return False
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(

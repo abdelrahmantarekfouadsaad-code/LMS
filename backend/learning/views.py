@@ -331,17 +331,36 @@ class StudentProgressViewSet(viewsets.ModelViewSet):
         lesson_id = request.data.get('lesson_id')
         try:
             lesson = Lesson.objects.get(id=lesson_id)
-            progress, created = StudentProgress.objects.get_or_create(
-                student=request.user, 
-                lesson=lesson
-            )
-            if not progress.is_completed:
-                progress.is_completed = True
-                progress.completed_at = timezone.now()
-                progress.save()
-            return Response({'status': 'completed'}, status=status.HTTP_200_OK)
         except Lesson.DoesNotExist:
             return Response({'error': 'Lesson not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Determine the parent course
+        parent_course = lesson.course if lesson.course else lesson.unit.course if lesson.unit else None
+        
+        # Verify active subscription
+        if parent_course:
+            from payment.models import Subscription
+            has_access = Subscription.objects.filter(
+                user=request.user,
+                course=parent_course,
+                status='approved',
+                is_active=True
+            ).exists()
+            if not has_access and request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+                return Response(
+                    {'error': 'You are not enrolled in this course.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        progress, created = StudentProgress.objects.get_or_create(
+            student=request.user, 
+            lesson=lesson
+        )
+        if not progress.is_completed:
+            progress.is_completed = True
+            progress.completed_at = timezone.now()
+            progress.save()
+        return Response({'status': 'completed'}, status=status.HTTP_200_OK)
 
 
 class StudentMilestoneViewSet(viewsets.ModelViewSet):
@@ -510,11 +529,15 @@ class CourseGroupViewSet(viewsets.ModelViewSet):
         if profile.course_groups.filter(id=group.id).exists():
             return Response({'error': 'Student already in group'}, status=status.HTTP_400_BAD_REQUEST)
             
-        current_students = profile.__class__.objects.filter(course_groups=group).count()
-        if current_students >= group.capacity:
-            return Response({'error': 'Group is at full capacity'}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            # Lock the group to prevent concurrent capacity overruns
+            locked_group = CourseGroup.objects.select_for_update().get(id=group.id)
+            current_students = StudentProfile.objects.filter(course_groups=locked_group).count()
+            if current_students >= locked_group.capacity:
+                return Response({'error': 'Group is at full capacity'}, status=status.HTTP_400_BAD_REQUEST)
             
-        profile.course_groups.add(group)
+            profile.course_groups.add(locked_group)
+            
         return Response({'message': 'Student added successfully'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])

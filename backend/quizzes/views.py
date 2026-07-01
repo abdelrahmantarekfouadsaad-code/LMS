@@ -81,6 +81,7 @@ class StudentResultViewSet(viewsets.ReadOnlyModelViewSet):
         if user.role in ['SUPER_ADMIN', 'SUPERVISOR']:
             return StudentResult.objects.all()
         if user.role == 'TEACHER':
-            # Simplified: In reality, filter by Teacher's StudyGroups
-            return StudentResult.objects.all() 
+            return StudentResult.objects.filter(
+                quiz__course__groups__primary_teacher=user
+            ).distinct()
         return StudentResult.objects.filter(student=user)

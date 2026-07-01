@@ -12,6 +12,8 @@ class IsTeacherOrAdmin(permissions.BasePermission):
             return True
         return bool(request.user and request.user.role in ['TEACHER', 'SUPER_ADMIN', 'SUPERVISOR'])
 
+from rest_framework.exceptions import PermissionDenied
+
 class VirtualSessionViewSet(viewsets.ModelViewSet):
     queryset = VirtualSession.objects.all().order_by('-scheduled_time')
     serializer_class = VirtualSessionSerializer
@@ -50,6 +52,14 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
             return Response({"error": "Only students can mark attendance."}, status=status.HTTP_403_FORBIDDEN)
             
         session = self.get_object()
+        
+        # Verify the student is enrolled in the session's course group
+        if not hasattr(request.user, 'student_profile') or \
+           not request.user.student_profile.course_groups.filter(id=session.course_group.id).exists():
+            return Response(
+                {"error": "You are not enrolled in this course group."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         attendance, created = Attendance.objects.get_or_create(
             session=session,
@@ -90,4 +100,9 @@ class SessionFeedbackViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         session = serializer.validated_data.get('session')
+        
+        # Verify the student actually attended this session
+        if not Attendance.objects.filter(session=session, student=self.request.user).exists():
+            raise PermissionDenied("You must attend the session before submitting feedback.")
+        
         serializer.save(student=self.request.user, teacher=session.teacher)

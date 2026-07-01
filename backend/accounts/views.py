@@ -13,7 +13,10 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
-from django.db.models import Q
+from django.db.models import Q, IntegerField
+from django.db.models.functions import ExtractYear
+from django.db.models.expressions import ExpressionWrapper, Value
+from rest_framework.pagination import PageNumberPagination
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -472,98 +475,57 @@ class ParentCourseAnalyticsView(APIView):
             
         student_user = student_profile.user
         
-        # 3. Calculate Attendance Metrics
-        # Get live sessions for course groups that the student belongs to
-        course_groups = student_profile.course_groups.all()
-        sessions = VirtualSession.objects.filter(course_group__in=course_groups)
+        # 3. Calculate Attendance Metrics (batched)
+        course_groups = student_profile.course_groups.all().prefetch_related('zoom_sessions')
+        sessions = VirtualSession.objects.filter(course_group__in=course_groups).select_related('course_group')
         expected_count = sessions.count()
         attended_count = Attendance.objects.filter(session__in=sessions, student=student_user).count()
-        
-        # Fallback to realistic mock defaults if empty to guarantee robust visual display
-        if expected_count == 0:
-            expected_count = 10
-            attended_count = 8
-            
         attendance_ratio = round((attended_count / expected_count) * 100) if expected_count > 0 else 0
         
-        # 4. Overall Progress
-        total_lessons = Lesson.objects.filter(Q(course=course) | Q(unit__course=course)).distinct().count()
-        completed_lessons = StudentProgress.objects.filter(student=student_user, is_completed=True).filter(Q(lesson__course=course) | Q(lesson__unit__course=course)).distinct().count()
-        overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 80
+        # 4. Overall Progress (batched, using correct ORM path)
+        total_lessons = Lesson.objects.filter(
+            Q(course=course) | Q(unit__course=course)
+        ).distinct().count()
+        completed_lessons = StudentProgress.objects.filter(
+            student=student_user, is_completed=True
+        ).filter(
+            Q(lesson__course=course) | Q(lesson__unit__course=course)
+        ).distinct().count()
+        overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
         
-        # 5. Exams / Quiz Results
-        quiz_results = StudentResult.objects.filter(student=student_user).filter(Q(quiz__lesson__course=course) | Q(quiz__lesson__unit__course=course))
+        # 5. Exams / Quiz Results (batched with select_related)
+        quiz_results = StudentResult.objects.filter(
+            student=student_user
+        ).filter(
+            Q(quiz__lesson__course=course) | Q(quiz__lesson__unit__course=course)
+        ).select_related('quiz')
+        
         exams_list = []
         for result in quiz_results:
             exams_list.append({
                 "name": result.quiz.title,
                 "score": int(result.score),
                 "attempts": f"{result.attempt_number}/2",
-                "date": result.submitted_at.strftime("%b %d, %Y") if result.submitted_at else "May 12, 2026",
+                "date": result.submitted_at.strftime("%b %d, %Y") if result.submitted_at else None,
                 "attended": True
             })
-            
-        # Fallback if empty to keep it beautiful
-        if not exams_list:
-            exams_list = [
-                {
-                    "name": "Quiz 1: Fundamental Concepts",
-                    "score": 90,
-                    "attempts": "1/2",
-                    "date": "May 12, 2026",
-                    "attended": True
-                },
-                {
-                    "name": "Midterm Exam: Comprehensive Check",
-                    "score": 85,
-                    "attempts": "2/2",
-                    "date": "May 25, 2026",
-                    "attended": True
-                }
-            ]
-            
-        # 6. Projects
-        project_submissions = ProjectSubmission.objects.filter(student=student_user, project__course=course)
+        
+        # 6. Projects (batched with select_related)
+        project_submissions = ProjectSubmission.objects.filter(
+            student=student_user, project__course=course
+        ).select_related('project')
+        
         projects_list = []
         for sub in project_submissions:
             projects_list.append({
                 "name": sub.project.title,
                 "status": "submitted",
                 "grade": sub.grade or "Pending",
-                "submission_date": sub.submitted_at.strftime("%b %d, %Y") if sub.submitted_at else "May 28, 2026"
+                "submission_date": sub.submitted_at.strftime("%b %d, %Y") if sub.submitted_at else None
             })
-            
-        if not projects_list:
-            projects_list = [
-                {
-                    "name": "Level 1 Capstone Project Research",
-                    "status": "submitted",
-                    "grade": "A+",
-                    "submission_date": "May 28, 2026"
-                }
-            ]
-            
-        # 7. Assignments & Forum Engagement
-        assignments_list = [
-            {
-                "title": "Assignment 1: Investigative Paper",
-                "status": "submitted",
-                "grade": "A-",
-                "date": "May 10, 2026"
-            },
-            {
-                "title": "Assignment 2: Lecture Outline Summary",
-                "status": "submitted",
-                "grade": "A",
-                "date": "May 22, 2026"
-            },
-            {
-                "title": "Assignment 3: Sources Review Essay",
-                "status": "pending",
-                "grade": "-",
-                "date": "May 31, 2026"
-            }
-        ]
+        
+        # 7. Assignments (return real data only; empty list if model not yet implemented)
+        assignments_list = []
         
         overall_level = "Excellent" if overall_progress >= 90 else ("Very Good" if overall_progress >= 75 else "Good")
 
@@ -584,8 +546,14 @@ class ParentCourseAnalyticsView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class SuperAdminUserListView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get(self, request):
         if request.user.role != 'SUPER_ADMIN':
@@ -595,42 +563,51 @@ class SuperAdminUserListView(APIView):
         min_age = request.query_params.get('min_age')
         max_age = request.query_params.get('max_age')
         
-        users = User.objects.all().order_by('-created_at')
+        # Use select_related to avoid N+1; annotate age in DB
+        users = User.objects.all().select_related('student_profile').order_by('-created_at')
         if role_filter and role_filter != 'All':
             users = users.filter(role=role_filter)
             
         if min_age is not None or max_age is not None:
             from datetime import date
             today = date.today()
-            filtered_users = []
-            for user in users:
-                age = user.exact_age
-                if hasattr(user, 'student_profile') and user.student_profile.date_of_birth:
-                    dob = user.student_profile.date_of_birth
-                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                
-                if age is None:
-                    continue
-                    
-                if min_age is not None and age < int(min_age):
-                    continue
-                if max_age is not None and age > int(max_age):
-                    continue
-                filtered_users.append(user)
-            users = filtered_users
-
+            users = users.annotate(
+                computed_age=ExpressionWrapper(
+                    Value(today.year) - ExtractYear('student_profile__date_of_birth'),
+                    output_field=IntegerField()
+                )
+            )
             
+            if min_age is not None:
+                users = users.filter(
+                    Q(exact_age__gte=int(min_age)) | Q(computed_age__gte=int(min_age))
+                )
+            if max_age is not None:
+                users = users.filter(
+                    Q(exact_age__lte=int(max_age)) | Q(computed_age__lte=int(max_age))
+                )
+
+        paginator = self.pagination_class()
+        result_page = paginator.paginate_queryset(users, request)
+        
         data = []
-        for user in users:
+        for user in result_page:
+            age = user.exact_age
+            if age is None and hasattr(user, 'student_profile') and user.student_profile.date_of_birth:
+                from datetime import date
+                today = date.today()
+                dob = user.student_profile.date_of_birth
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            
             data.append({
                 'id': user.id,
-                'email': user.email,
+                # 'email' removed from response
                 'full_name': user.full_name,
                 'role': user.role,
-                'exact_age': user.exact_age,
+                'exact_age': age,
                 'age_group': user.age_group,
             })
-        return Response(data, status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(data)
 
 class SuperAdminRoleUpdateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -801,17 +778,18 @@ class SuperAdminEnrollStudentView(APIView):
 class TeacherStudentSearchView(APIView):
     """
     Lightweight student search endpoint for Teachers.
-    Returns ONLY id, full_name, exact_age — no PII (email, phone, etc.).
+    Returns ONLY id, full_name, age_group — no PII (email, phone, exact_age, etc.).
     Supports ?q= query parameter for searching by name.
     """
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get(self, request):
         if request.user.role not in ['TEACHER', 'SUPER_ADMIN', 'SUPERVISOR']:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
 
         query = request.query_params.get('q', '').strip()
-        students = User.objects.filter(role='STUDENT')
+        students = User.objects.filter(role='STUDENT').only('id', 'full_name', 'age_group')
 
         if query:
             from django.db.models import Q
@@ -819,15 +797,16 @@ class TeacherStudentSearchView(APIView):
                 Q(full_name__icontains=query) | Q(id__icontains=query)
             )
 
-        students = students[:50]  # Hard limit to prevent data dumping
+        paginator = self.pagination_class()
+        result_page = paginator.paginate_queryset(students, request)
 
         data = [
             {
                 'id': s.id,
                 'full_name': s.full_name,
-                'exact_age': s.exact_age,
+                'age_group': s.age_group,  # Removed exact_age
             }
-            for s in students
+            for s in result_page
         ]
-        return Response(data, status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(data)
 

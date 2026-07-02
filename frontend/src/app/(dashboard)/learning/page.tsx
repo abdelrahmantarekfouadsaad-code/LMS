@@ -63,7 +63,7 @@ function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
               </p>
 
               <a 
-                href="https://wa.me/201062582736" 
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '201062582736'}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-e from-emerald-500 to-emerald-600 text-white font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2"
@@ -94,7 +94,11 @@ export default function LearningPage() {
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const { data: session } = useSession();
 
-  const t = dict.parent;
+  const t = (key: string) => {
+    const val = dict.parent?.(key);
+    if (val !== undefined && val !== key) return val;
+    return dict.learning?.(key) ?? key;
+  };
 
   // Fetch standard courses
   const { data: courses, error, isLoading } = useSWR(
@@ -125,7 +129,7 @@ export default function LearningPage() {
         removeFromCart(item.id);
       }
     });
-  }, [mounted, courses]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mounted, courses, cartItems, removeFromCart]);
 
   const itemCount = cartItems.length;
   const totalPrice = cartItems.reduce((sum, item) => sum + parseFloat(item.price as any || 0), 0).toFixed(2);

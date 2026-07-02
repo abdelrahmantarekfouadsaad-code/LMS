@@ -226,7 +226,7 @@ export default function CommunityPage() {
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={msg.id} className={`flex flex-col max-w-[75%] ${isMe ? 'self-end items-end' : 'self-start items-start'}`}>
                         <div className="flex items-baseline gap-2 mb-1 px-1">
                           <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{isMe ? (isAr ? 'أنت' : 'You') : msg.sender_details?.full_name}</span>
-                          <span className="text-xs text-slate-500">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                          <span className="text-xs text-slate-500">{msg.timestamp && !isNaN(new Date(msg.timestamp).getTime()) ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
                         </div>
                         <div className={`px-5 py-3 shadow-md ${isMe ? 'bg-primary text-white rounded-2xl rounded-se-sm' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-ss-sm border border-slate-200 dark:border-slate-700/50'}`}>
                           <p className="text-sm leading-relaxed"><bdi>{msg.content}</bdi></p>

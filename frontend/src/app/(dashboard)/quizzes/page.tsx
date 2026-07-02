@@ -52,9 +52,12 @@ const CircularProgress = ({ percentage, color, label, subtext }: { percentage: n
   );
 };
 
+import { useRouter } from 'next/navigation';
+
 export default function QuizzesPage() {
   const { locale, dict, t: translate } = useTranslation();
   const t = dict.quizzes;
+  const router = useRouter();
 
   const { data: quizzesData, error: quizzesError } = useSWR('/quizzes/', fetcher);
   const { data: resultsData, error: resultsError } = useSWR('/results/', fetcher);
@@ -208,6 +211,7 @@ export default function QuizzesPage() {
                         )}
 
                         <button 
+                          onClick={() => router.push(`/quizzes/${quiz.id}`)}
                           disabled={isExhausted}
                           className={`w-full py-2.5 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 ${
                             isExhausted 

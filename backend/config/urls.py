@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from accounts.views import UserViewSet, RegisterView, GoogleLoginView, ForgotPasswordView, ResetPasswordView, ParentVerifyView, ParentCreateView, ParentDashboardView, ParentCourseAnalyticsView
-from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet, GhostModeView, CourseGroupViewSet
+from learning.views import CourseViewSet, ResourceViewSet, StudentProgressViewSet, StudentMilestoneViewSet, CertificateViewSet, ProjectViewSet, ProjectSubmissionViewSet, AnnouncementViewSet, GhostModeView, CourseGroupViewSet, ProtectedResourceDownloadView, ProtectedCertificateDownloadView
 from quizzes.views import QuizViewSet, StudentResultViewSet
 from live.views import VirtualSessionViewSet, AttendanceViewSet, SessionFeedbackViewSet
 from support.views import SupportTicketViewSet
@@ -63,6 +63,10 @@ urlpatterns = [
 
     # Ghost Player Admin API
     path('api/admin/settings/ghost-mode/', GhostModeView.as_view(), name='ghost_mode'),
+    
+    # Protected file downloads
+    path('api/resources/<int:resource_id>/download/', ProtectedResourceDownloadView.as_view(), name='resource_download'),
+    path('api/certificates/<int:certificate_id>/download/', ProtectedCertificateDownloadView.as_view(), name='certificate_download'),
     
     # Core API Routers
     path('api/', include('accounts.urls')),

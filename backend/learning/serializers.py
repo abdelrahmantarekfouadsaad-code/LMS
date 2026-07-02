@@ -71,21 +71,20 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = ['id', 'lesson_number', 'title', 'video_url', 'pdf_attachment', 'is_quiz', 'estimated_minutes', 'is_ghost_mode']
 
     def get_is_ghost_mode(self, obj):
-        return _get_ghost_mode()
+        return self.context.get('ghost_mode_enabled', False)
 
     def get_video_url(self, obj):
         if not obj.video_url:
             return None
 
         request = self.context.get('request')
-        # Privileged users always get raw URLs to prevent DB corruption on save
         is_privileged = False
         if request and hasattr(request, 'user') and request.user.is_authenticated:
             if request.user.is_superuser or getattr(request.user, 'role', '') in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
                 is_privileged = True
 
-        # ONLY encrypt for regular students when ghost mode is ON
-        if _get_ghost_mode() and not is_privileged:
+        ghost_mode = self.context.get('ghost_mode_enabled', False)
+        if ghost_mode and not is_privileged:
             return encrypt_url(obj.video_url)
         return obj.video_url
 
@@ -104,6 +103,7 @@ class CourseSerializer(serializers.ModelSerializer):
     units = UnitSerializer(many=True, read_only=True)
     flat_lessons = serializers.SerializerMethodField()
     is_ghost_mode = serializers.SerializerMethodField()
+    is_enrolled = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -111,14 +111,26 @@ class CourseSerializer(serializers.ModelSerializer):
             'id', 'title', 'title_ar', 'description', 'target_age_min', 'target_age_max', 'course_format', 
             'course_structure', 'price', 'thumbnail', 'is_upload_completed', 
             'instructor_name', 'duration', 'color', 'is_active', 'groups', 'units', 
-            'flat_lessons', 'created_at', 'is_ghost_mode'
+            'flat_lessons', 'created_at', 'is_ghost_mode', 'is_enrolled'
         ]
 
     def get_flat_lessons(self, obj):
         return LessonSerializer(obj.flat_lessons.all(), many=True, context=self.context).data
 
     def get_is_ghost_mode(self, obj):
-        return _get_ghost_mode()
+        return self.context.get('ghost_mode_enabled', False)
+
+    def get_is_enrolled(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            from payment.models import Subscription
+            return Subscription.objects.filter(
+                user=request.user,
+                course=obj,
+                status='approved',
+                is_active=True
+            ).exists()
+        return False
 
 class ResourceSerializer(serializers.ModelSerializer):
     class Meta:

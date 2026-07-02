@@ -38,6 +38,11 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         if course_group and scheduled_time:
             import pytz
             cairo_tz = pytz.timezone("Africa/Cairo")
+            
+            # Ensure scheduled_time is timezone-aware before converting
+            if timezone.is_naive(scheduled_time):
+                scheduled_time = cairo_tz.localize(scheduled_time)
+            
             local_time = scheduled_time.astimezone(cairo_tz)
             if local_time.weekday() != course_group.official_day:
                 from rest_framework.exceptions import ValidationError

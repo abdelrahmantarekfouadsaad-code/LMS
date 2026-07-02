@@ -57,20 +57,17 @@ export default function PostSessionFeedbackModal({ isOpen, onClose, sessionId, t
 
     setIsSubmitting(true);
     try {
-      const payload = {
+      const payload: any = {
         session: sessionId,
         teacher: teacherId,
-        q1_rating: ratings[0],
-        q2_rating: ratings[1],
-        q3_rating: ratings[2],
-        q4_rating: ratings[3],
-        q5_rating: ratings[4],
-        q6_rating: ratings[5],
-        q7_rating: ratings[6],
-        q8_rating: ratings[7],
-        q9_rating: ratings[8],
         text_comment: textComment
       };
+      
+      // Dynamically map ratings to qX_rating fields
+      ratings.forEach((rating, index) => {
+        payload[`q${index + 1}_rating`] = rating;
+      });
+      
       await axios.post('/feedbacks/', payload);
       alert("Thank you for your feedback!");
       onClose();

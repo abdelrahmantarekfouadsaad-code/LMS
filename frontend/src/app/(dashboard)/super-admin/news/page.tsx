@@ -68,6 +68,15 @@ export default function SuperAdminNewsPage() {
     }
   };
 
+  const isValidImageUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 space-y-8 bg-background-light dark:bg-background-dark min-h-full">
       <div>
@@ -112,15 +121,21 @@ export default function SuperAdminNewsPage() {
             {announcements.map((ann: any) => (
               <div key={ann.id} className="bg-slate-800 border border-white/5 rounded-2xl overflow-hidden group">
                 <div className="h-48 relative bg-black/50">
-                  <img
-                    src={ann.image_url}
-                    alt="Announcement"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2364748b">${t('admin.news.invalidUrl')}</text></svg>`;
-                    }}
-                  />
+                  {isValidImageUrl(ann.image_url) ? (
+                    <img
+                      src={ann.image_url}
+                      alt="Announcement"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2364748b">${t('admin.news.invalidUrl')}</text></svg>`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                      <span className="text-slate-500 text-sm">{t('admin.news.invalidUrl')}</span>
+                    </div>
+                  )}
                   <div className="absolute top-3 end-3 flex gap-2">
                     <button
                       onClick={() => handleToggleActive(ann.id, ann.is_active)}

@@ -142,13 +142,13 @@ export default function CoursePlayerPage() {
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const prevTimeRef = React.useRef(0);
 
-  const handleControlsVisibility = (forceShow = false) => {
+  const handleControlsVisibility = React.useCallback((forceShow = false) => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     setShowControls(true);
     if (!forceShow && isPlaying && !isBuffering) {
       controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 10000);
     }
-  };
+  }, [isPlaying, isBuffering]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect(); 
@@ -211,14 +211,9 @@ export default function CoursePlayerPage() {
     window.addEventListener('keydown', disableShortcuts);
     window.addEventListener('contextmenu', disableContextMenu);
 
-    const devToolsTrap = setInterval(() => {
-      Function('debugger')();
-    }, 50);
-
     return () => {
       window.removeEventListener('keydown', disableShortcuts);
       window.removeEventListener('contextmenu', disableContextMenu);
-      clearInterval(devToolsTrap);
     };
   }, [course?.is_ghost_mode]);
   
@@ -311,8 +306,13 @@ export default function CoursePlayerPage() {
     }
 
     // 3. Gate the Mount: Only set if definitively YouTube
-    if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+    try {
+      const parsed = new URL(cleanUrl);
+      if (parsed.hostname === 'www.youtube.com' || parsed.hostname === 'youtube.com' || parsed.hostname === 'youtu.be') {
         setFinalVideoUrl(cleanUrl);
+      }
+    } catch {
+      // Invalid URL, do not set
     }
   }, [videoUrl, course?.is_ghost_mode]);
 

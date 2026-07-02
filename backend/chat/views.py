@@ -19,6 +19,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         # Allow fetching messages by room if room_id passed
         room_id = self.request.query_params.get('room_id')
         if room_id:
+            try:
+                room_id = int(room_id)
+            except (ValueError, TypeError):
+                return Message.objects.none()
             return Message.objects.filter(room_id=room_id, room__participants=self.request.user).order_by('timestamp')
         return Message.objects.filter(room__participants=self.request.user).order_by('timestamp')
 

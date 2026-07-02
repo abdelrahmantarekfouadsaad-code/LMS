@@ -15,22 +15,31 @@ export function useWebSocket(url: string) {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
+  const connectingRef = useRef(false);
 
   const connect = useCallback(() => {
-    // Attempt connection
+    if (!mountedRef.current || connectingRef.current) return;
+    connectingRef.current = true;
+    
     try {
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (!mountedRef.current) {
+          ws.close();
+          return;
+        }
         setIsConnected(true);
-        console.log(`Connected to WS: ${url}`);
+        connectingRef.current = false;
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
       };
 
       ws.onmessage = (event) => {
+        if (!mountedRef.current) return;
         try {
           const data: WebSocketMessage = JSON.parse(event.data);
           setMessages((prev) => [...prev, data]);
@@ -41,9 +50,10 @@ export function useWebSocket(url: string) {
 
       ws.onclose = () => {
         setIsConnected(false);
-        console.log(`Disconnected from WS: ${url}`);
-        // Auto-reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+        connectingRef.current = false;
+        if (mountedRef.current) {
+          reconnectTimeoutRef.current = setTimeout(connect, 3000);
+        }
       };
 
       ws.onerror = (error) => {
@@ -51,13 +61,16 @@ export function useWebSocket(url: string) {
         ws.close();
       };
     } catch (error) {
+      connectingRef.current = false;
       console.error("Failed to establish WS:", error);
     }
   }, [url]);
 
   useEffect(() => {
+    mountedRef.current = true;
     connect();
     return () => {
+      mountedRef.current = false;
       if (wsRef.current) {
         wsRef.current.close();
       }

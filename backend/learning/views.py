@@ -23,6 +23,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrSupervisorOrReadOnly]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        context['ghost_mode_enabled'] = _get_ghost_mode()
+        return context
+
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
@@ -399,8 +405,12 @@ class CertificateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+        if user.role in ['SUPER_ADMIN', 'SUPERVISOR']:
             return Certificate.objects.all()
+        if user.role == 'TEACHER':
+            return Certificate.objects.filter(
+                course__groups__primary_teacher=user
+            ).distinct()
         return Certificate.objects.filter(student=user)
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -556,4 +566,40 @@ class CourseGroupViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
             
         return Response({'message': 'Student removed successfully'}, status=status.HTTP_200_OK)
+
+
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
+
+class ProtectedResourceDownloadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, resource_id):
+        resource = get_object_or_404(Resource, id=resource_id)
+        from payment.models import Subscription
+        is_authorized = (
+            request.user.role in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER'] or
+            Subscription.objects.filter(
+                user=request.user,
+                course=resource.course,
+                status='approved',
+                is_active=True
+            ).exists()
+        )
+        if not is_authorized:
+            return Response({'error': 'Not enrolled in this course.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        return FileResponse(resource.file_attachment.open(), as_attachment=True)
+
+
+class ProtectedCertificateDownloadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, certificate_id):
+        certificate = get_object_or_404(Certificate, id=certificate_id)
+        if certificate.student != request.user and request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR', 'TEACHER']:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        if not certificate.certificate_image:
+            raise Http404("No certificate file available.")
+        return FileResponse(certificate.certificate_image.open(), as_attachment=True)
 

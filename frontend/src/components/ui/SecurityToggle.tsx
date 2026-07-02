@@ -12,7 +12,9 @@ export default function SecurityToggle() {
       .then(res => {
         setEnabled(res.data.ghost_mode_enabled);
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Failed to load ghost mode setting:", err);
+      })
       .finally(() => setLoading(false));
   }, []);
 

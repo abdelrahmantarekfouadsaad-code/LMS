@@ -147,6 +147,12 @@ class GoogleLoginView(APIView):
                 if not email:
                     return Response({'error': 'No email in token'}, status=status.HTTP_400_BAD_REQUEST)
                 
+                if not data.get('email_verified'):
+                    return Response(
+                        {'error': 'Email not verified with Google. Please verify your email and try again.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
                 user, created = User.objects.get_or_create(
                     email=email,
                     defaults={

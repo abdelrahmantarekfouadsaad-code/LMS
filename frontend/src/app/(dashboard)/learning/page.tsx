@@ -95,9 +95,9 @@ export default function LearningPage() {
   const { data: session } = useSession();
 
   const t = (key: string) => {
-    const val = dict.parent?.(key);
+    const val = (dict.parent as Record<string, string>)?.[key];
     if (val !== undefined && val !== key) return val;
-    return dict.learning?.(key) ?? key;
+    return (dict.learning as Record<string, string>)?.[key] ?? key;
   };
 
   // Fetch standard courses

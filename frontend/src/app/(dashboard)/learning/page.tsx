@@ -94,11 +94,9 @@ export default function LearningPage() {
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const { data: session } = useSession();
 
-  const t = (key: string) => {
-    const val = (dict.parent as Record<string, string>)?.[key];
-    if (val !== undefined && val !== key) return val;
-    return (dict.learning as Record<string, string>)?.[key] ?? key;
-  };
+  const baseLearning = (dict.learning || {}) as Record<string, string>;
+  const parentOverrides = isParent ? ((dict.parent || {}) as Record<string, string>) : {};
+  const t = { ...baseLearning, ...parentOverrides };
 
   // Fetch standard courses
   const { data: courses, error, isLoading } = useSWR(

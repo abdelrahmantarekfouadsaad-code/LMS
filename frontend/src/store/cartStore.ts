@@ -20,13 +20,6 @@ interface CartState {
   removeManyFromCart: (courseIds: string[]) => void;
   clearCart: () => void;
 }
-  cartItems: Course[];
-  _hasHydrated: boolean;
-  setHasHydrated: (state: boolean) => void;
-  addToCart: (course: Course) => void;
-  removeFromCart: (courseId: string) => void;
-  clearCart: () => void;
-}
 
 export const useCartStore = create<CartState>()(
   persist(

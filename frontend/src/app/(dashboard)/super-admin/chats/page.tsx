@@ -1,34 +1,7 @@
 "use client";
 
-"use client";
-
 import { redirect } from 'next/navigation';
 
 export default function SuperAdminChatsPage() {
   redirect('/dashboard');
-}
-import { MessageSquare } from 'lucide-react';
-import { useTranslation } from '@/i18n/TranslationContext';
-
-export default function SuperAdminChatsPage() {
-  const { t } = useTranslation();
-  return (
-    <div className="flex h-full bg-transparent overflow-hidden p-6 md:p-8">
-      <div className="flex-1 flex overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-slate-900/50 backdrop-blur-xl items-center justify-center">
-        
-        <div className="text-center p-6 max-w-md">
-          <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/5 shadow-inner">
-            <MessageSquare className="w-10 h-10 text-indigo-500/50" />
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-3">
-            {t('admin.chats.title')}
-          </h2>
-          <p className="text-slate-400">
-            {t('admin.chats.subtitle')}
-          </p>
-        </div>
-
-      </div>
-    </div>
-  );
 }

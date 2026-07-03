@@ -1,6 +1,12 @@
 "use client";
 
-import React from 'react';
+"use client";
+
+import { redirect } from 'next/navigation';
+
+export default function ChatPage() {
+  redirect('/dashboard');
+}
 import Sidebar from '@/components/layout/Sidebar';
 import { MessageSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/TranslationContext';

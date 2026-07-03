@@ -63,6 +63,7 @@ function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
               </p>
 
               <a 
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP}`} 
                 href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '201062582736'}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -86,7 +87,7 @@ export default function LearningPage() {
   const isAr = locale === 'ar';
   const router = useRouter();
   
-  const { cartItems, addToCart, removeFromCart } = useCartStore();
+  const { cartItems, addToCart, removeFromCart, removeManyFromCart } = useCartStore();
   const { isGuest, role } = useUserRole();
   const isParent = role === 'PARENT';
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
@@ -119,6 +120,14 @@ export default function LearningPage() {
   }, []);
 
   // Ghost Cart Cleanup: prune stale cart items that reference non-existent courses
+  useEffect(() => {
+    if (!mounted || !Array.isArray(courses)) return;
+    const validIds = new Set(courses.map((c: any) => String(c.id)));
+    const staleIds = cartItems.filter(item => !validIds.has(String(item.id))).map(item => item.id);
+    if (staleIds.length > 0) {
+      removeManyFromCart(staleIds);
+    }
+  }, [mounted, courses, cartItems, removeManyFromCart]);
   useEffect(() => {
     if (!mounted || !Array.isArray(courses)) return;
     const validIds = new Set(courses.map((c: any) => String(c.id)));

@@ -696,7 +696,11 @@ class SuperAdminStudentStatsView(APIView):
         
         # 3. Overall Progress
         total_lessons = Lesson.objects.filter(Q(course__groups__in=course_groups) | Q(unit__course__groups__in=course_groups)).distinct().count()
-        completed_lessons = StudentProgress.objects.filter(student=target_user, is_completed=True).count()
+        completed_lessons = StudentProgress.objects.filter(
+            student=target_user, is_completed=True
+        ).filter(
+            Q(lesson__course__groups__in=course_groups) | Q(lesson__unit__course__groups__in=course_groups)
+        ).distinct().count()
         overall_progress = round((completed_lessons / total_lessons) * 100) if total_lessons > 0 else 0
         
         # 4. Submitted Projects count

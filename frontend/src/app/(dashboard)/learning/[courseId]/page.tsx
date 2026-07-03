@@ -162,13 +162,13 @@ export default function CoursePlayerPage() {
 
   useEffect(() => {
     handleControlsVisibility(isBuffering || !isPlaying);
-  }, [isPlaying, isBuffering]);
+  }, [isPlaying, isBuffering, handleControlsVisibility]);
 
   useEffect(() => {
     if (!isStagnant && !isBuffering && isPlaying) {
       handleControlsVisibility(false); // This triggers the 10s countdown
     }
-  }, [isStagnant, isBuffering, isPlaying]);
+  }, [isStagnant, isBuffering, isPlaying, handleControlsVisibility]);
 
 
   useEffect(() => {

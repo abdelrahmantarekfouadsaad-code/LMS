@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.db import transaction
 from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission, Announcement, GlobalSettings
-from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer, AnnouncementSerializer
+from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer, AnnouncementSerializer, _get_ghost_mode
 from accounts.permissions import IsSuperAdmin, IsSupervisor
 
 class IsAdminOrSupervisorOrReadOnly(permissions.BasePermission):
@@ -666,14 +666,7 @@ class CourseGroupViewSet(viewsets.ModelViewSet):
             {
                 'id': sp.user.id,
                 'full_name': sp.user.full_name,
-                'date_of_birth': sp.date_of_birth.isoformat() if sp.date_of_birth else None,
-            }
-            for sp in student_profiles
-        ]
-            {
-                'id': sp.user.id,
-                'full_name': sp.user.full_name,
-                'exact_age': sp.user.exact_age,
+                'exact_age': getattr(sp.user, 'exact_age', None),
                 'date_of_birth': sp.date_of_birth.isoformat() if sp.date_of_birth else None,
             }
             for sp in student_profiles

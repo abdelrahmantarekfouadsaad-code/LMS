@@ -598,7 +598,7 @@ class SuperAdminUserListView(APIView):
         
         data = []
         for user in result_page:
-            age = user.exact_age
+            age = getattr(user, 'exact_age', None)
             if age is None and hasattr(user, 'student_profile') and user.student_profile.date_of_birth:
                 from datetime import date
                 today = date.today()

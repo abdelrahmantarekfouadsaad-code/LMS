@@ -60,7 +60,8 @@ export default function SuperAdminUsersPage() {
     ? '/super-admin/users/' 
     : `/super-admin/users/?role=${ROLE_MAPPING[selectedFilter]}`;
     
-  const { data: users, error, mutate } = useSWR(endpoint, fetcher);
+  const { data: usersData, error, mutate } = useSWR(endpoint, fetcher);
+  const users = usersData?.results ?? (Array.isArray(usersData) ? usersData : []);
   
   // Fetch stats when modal opens
   const { data: studentStats, error: statsError, isValidating: statsLoading } = useSWR(
@@ -69,8 +70,11 @@ export default function SuperAdminUsersPage() {
   );
 
   // Fetch data for enroll modal
-  const { data: allStudents } = useSWR(isEnrollModalOpen ? '/super-admin/users/?role=STUDENT' : null, fetcher);
-  const { data: allCourses } = useSWR(isEnrollModalOpen ? '/courses/' : null, fetcher);
+  const { data: allStudentsData } = useSWR(isEnrollModalOpen ? '/super-admin/users/?role=STUDENT' : null, fetcher);
+  const allStudents = allStudentsData?.results ?? (Array.isArray(allStudentsData) ? allStudentsData : []);
+  
+  const { data: allCoursesData } = useSWR(isEnrollModalOpen ? '/courses/' : null, fetcher);
+  const allCourses = allCoursesData?.results ?? (Array.isArray(allCoursesData) ? allCoursesData : []);
 
   const filteredUsers = users?.filter((user: any) => 
     user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || 

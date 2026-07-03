@@ -21,11 +21,12 @@ export default function TeacherCoursesPage() {
   const [editingCourse, setEditingCourse] = useState<any>(null);
 
   // Backend now scopes /courses/ to only teacher-assigned courses
-  const { data: courses = [], mutate, isLoading } = useSWR('/courses/', fetcher, {
+  const { data: coursesData, mutate, isLoading } = useSWR('/courses/', fetcher, {
     revalidateOnFocus: false,
     revalidateIfStale: false,
     revalidateOnReconnect: false
   });
+  const courses = coursesData?.results ?? (Array.isArray(coursesData) ? coursesData : []);
 
   const filteredCourses = courses.filter((c: any) => filter === 'ALL' || c.target_age === filter);
 
@@ -527,10 +528,11 @@ function StudentsTab({ courseId, groups, watchGroup, minAge, maxAge }: {
   const [selectedGroupForView, setSelectedGroupForView] = useState<number | null>(null);
 
   // Fetch enrolled students for the selected group
-  const { data: enrolledStudents = [], mutate: mutateStudents } = useSWR(
+  const { data: enrolledStudentsData, mutate: mutateStudents } = useSWR(
     selectedGroupForView ? `/course-groups/${selectedGroupForView}/students/` : null,
     fetcher
   );
+  const enrolledStudents = enrolledStudentsData?.results ?? (Array.isArray(enrolledStudentsData) ? enrolledStudentsData : []);
 
   // Auto-select first group for enrollment display
   useEffect(() => {
@@ -549,7 +551,8 @@ function StudentsTab({ courseId, groups, watchGroup, minAge, maxAge }: {
     setIsSearching(true);
     try {
       const res = await axios.get(`/students/search/?q=${encodeURIComponent(q)}`);
-      setSearchResults(res.data);
+      const resultsArray = res.data?.results ?? (Array.isArray(res.data) ? res.data : []);
+      setSearchResults(resultsArray);
     } catch {
       setSearchResults([]);
     } finally {

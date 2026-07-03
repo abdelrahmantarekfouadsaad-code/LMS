@@ -16,11 +16,12 @@ export default function CoursesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<any>(null);
 
-  const { data: courses = [], mutate } = useSWR('/courses/', fetcher, {
+  const { data: coursesData, mutate } = useSWR('/courses/', fetcher, {
     revalidateOnFocus: false,
     revalidateIfStale: false,
     revalidateOnReconnect: false
   });
+  const courses = coursesData?.results ?? (Array.isArray(coursesData) ? coursesData : []);
 
   const filteredCourses = courses.filter((c: any) => filter === 'ALL' || c.target_age === filter);
 

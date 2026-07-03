@@ -64,7 +64,6 @@ function GuestSubscribeModal({ isOpen, onClose }: { isOpen: boolean, onClose: ()
 
               <a 
                 href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP}`} 
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '201062582736'}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-e from-emerald-500 to-emerald-600 text-white font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2"

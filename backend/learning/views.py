@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Q
+from accounts.models import StudentProfile, User as AccountUser
 from .models import Course, CourseGroup, ZoomSession, Unit, Resource, StudentProgress, Lesson, StudentMilestone, Certificate, Project, ProjectSubmission, Announcement, GlobalSettings
 from .serializers import CourseSerializer, ResourceSerializer, StudentProgressSerializer, StudentMilestoneSerializer, CertificateSerializer, ProjectSerializer, ProjectSubmissionSerializer, AnnouncementSerializer, _get_ghost_mode
 from accounts.permissions import IsSuperAdmin, IsSupervisor
@@ -318,15 +320,12 @@ class CourseViewSet(viewsets.ModelViewSet):
                 course.is_upload_completed = data.get('is_upload_completed', course.is_upload_completed)
                 course.save()
 
-                course.groups.all().delete()
                 groups_data = data.get('groups', [])
-                zoom_sessions_to_create = []
+                keep_group_ids = []
                 for group_data in groups_data:
-                    # Resolve teacher by email instead of raw ID
                     teacher_id = None
                     teacher_email = group_data.get('primary_teacher_email')
                     if teacher_email and str(teacher_email).strip():
-                        from accounts.models import User as AccountUser
                         try:
                             teacher_user = AccountUser.objects.get(email__iexact=teacher_email.strip(), role='TEACHER')
                             teacher_id = teacher_user.id
@@ -336,17 +335,33 @@ class CourseViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_400_BAD_REQUEST
                             )
                     else:
-                        # Backward compatibility: fall back to raw ID if provided
                         teacher_id = group_data.get('primary_teacher') or None
 
-                    group = CourseGroup.objects.create(
-                        course=course, 
-                        name=group_data.get('name'),
-                        official_day=group_data.get('official_day', 0),
-                        official_time=group_data.get('official_time'),
-                        capacity=group_data.get('capacity', 25),
-                        primary_teacher_id=teacher_id
-                    )
+                    group_id = group_data.get('id')
+                    if group_id and str(group_id).isdigit():
+                        group_id = int(group_id)
+                        CourseGroup.objects.filter(id=group_id, course=course).update(
+                            name=group_data.get('name'),
+                            official_day=group_data.get('official_day', 0),
+                            official_time=group_data.get('official_time'),
+                            capacity=group_data.get('capacity', 25),
+                            primary_teacher_id=teacher_id
+                        )
+                        group = CourseGroup.objects.get(id=group_id)
+                        keep_group_ids.append(group.id)
+                    else:
+                        group = CourseGroup.objects.create(
+                            course=course, 
+                            name=group_data.get('name'),
+                            official_day=group_data.get('official_day', 0),
+                            official_time=group_data.get('official_time'),
+                            capacity=group_data.get('capacity', 25),
+                            primary_teacher_id=teacher_id
+                        )
+                        keep_group_ids.append(group.id)
+
+                    group.zoom_sessions.all().delete()
+                    zoom_sessions_to_create = []
                     for session_data in group_data.get('zoom_sessions', []):
                         zoom_sessions_to_create.append(ZoomSession(
                             course_group=group,
@@ -354,24 +369,90 @@ class CourseViewSet(viewsets.ModelViewSet):
                             scheduled_time=session_data.get('scheduled_time'),
                             meeting_link=session_data.get('meeting_link')
                         ))
-                if zoom_sessions_to_create:
-                    ZoomSession.objects.bulk_create(zoom_sessions_to_create)
+                    if zoom_sessions_to_create:
+                        ZoomSession.objects.bulk_create(zoom_sessions_to_create)
 
-                course.units.all().delete()
-                course.flat_lessons.all().delete()
-                
+                course.groups.exclude(id__in=keep_group_ids).delete()
+
                 if course.course_structure == 'LONG_NESTED':
+                    course.flat_lessons.all().delete()
+                    
                     units_data = data.get('units', [])
+                    keep_unit_ids = []
+                    keep_lesson_ids = []
+                    lessons_to_create = []
+                    
                     for idx, unit_data in enumerate(units_data):
-                        unit = Unit.objects.create(
-                            course=course, 
-                            title=unit_data.get('title'), 
-                            order=idx + 1
-                        )
-                        lessons_to_create = []
+                        unit_id = unit_data.get('id')
+                        if unit_id and str(unit_id).isdigit():
+                            unit_id = int(unit_id)
+                            Unit.objects.filter(id=unit_id, course=course).update(
+                                title=unit_data.get('title'), 
+                                order=idx + 1
+                            )
+                            unit = Unit.objects.get(id=unit_id)
+                            keep_unit_ids.append(unit.id)
+                        else:
+                            unit = Unit.objects.create(
+                                course=course, 
+                                title=unit_data.get('title'), 
+                                order=idx + 1
+                            )
+                            keep_unit_ids.append(unit.id)
+                            
                         for lesson_idx, lesson_data in enumerate(unit_data.get('lessons', [])):
-                            lessons_to_create.append(Lesson(
-                                unit=unit,
+                            lesson_id = lesson_data.get('id')
+                            if lesson_id and str(lesson_id).isdigit():
+                                lesson_id = int(lesson_id)
+                                Lesson.objects.filter(id=lesson_id, unit=unit).update(
+                                    lesson_number=lesson_idx + 1,
+                                    title=lesson_data.get('title'),
+                                    video_url=lesson_data.get('video_url'),
+                                    pdf_attachment=lesson_data.get('pdf_attachment'),
+                                    is_quiz=lesson_data.get('is_quiz', False),
+                                    estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                                )
+                                keep_lesson_ids.append(lesson_id)
+                            else:
+                                lessons_to_create.append(Lesson(
+                                    unit=unit,
+                                    lesson_number=lesson_idx + 1,
+                                    title=lesson_data.get('title'),
+                                    video_url=lesson_data.get('video_url'),
+                                    pdf_attachment=lesson_data.get('pdf_attachment'),
+                                    is_quiz=lesson_data.get('is_quiz', False),
+                                    estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                                ))
+                                
+                    Lesson.objects.filter(unit__course=course).exclude(id__in=keep_lesson_ids).delete()
+                    course.units.exclude(id__in=keep_unit_ids).delete()
+                    
+                    if lessons_to_create:
+                        Lesson.objects.bulk_create(lessons_to_create)
+                        
+                else:
+                    course.units.all().delete()
+                    
+                    flat_lessons_data = data.get('flat_lessons', [])
+                    flat_lessons_to_create = []
+                    keep_lesson_ids = []
+                    
+                    for lesson_idx, lesson_data in enumerate(flat_lessons_data):
+                        lesson_id = lesson_data.get('id')
+                        if lesson_id and str(lesson_id).isdigit():
+                            lesson_id = int(lesson_id)
+                            Lesson.objects.filter(id=lesson_id, course=course).update(
+                                lesson_number=lesson_idx + 1,
+                                title=lesson_data.get('title'),
+                                video_url=lesson_data.get('video_url'),
+                                pdf_attachment=lesson_data.get('pdf_attachment'),
+                                is_quiz=lesson_data.get('is_quiz', False),
+                                estimated_minutes=lesson_data.get('estimated_minutes', 0)
+                            )
+                            keep_lesson_ids.append(lesson_id)
+                        else:
+                            flat_lessons_to_create.append(Lesson(
+                                course=course,
                                 lesson_number=lesson_idx + 1,
                                 title=lesson_data.get('title'),
                                 video_url=lesson_data.get('video_url'),
@@ -379,91 +460,10 @@ class CourseViewSet(viewsets.ModelViewSet):
                                 is_quiz=lesson_data.get('is_quiz', False),
                                 estimated_minutes=lesson_data.get('estimated_minutes', 0)
                             ))
-                        if lessons_to_create:
-                            Lesson.objects.bulk_create(lessons_to_create)
-                else:
-                    flat_lessons_data = data.get('flat_lessons', [])
-                    flat_lessons_to_create = []
-                    for lesson_idx, lesson_data in enumerate(flat_lessons_data):
-                        flat_lessons_to_create.append(Lesson(
-                            course=course,
-                            lesson_number=lesson_idx + 1,
-                            title=lesson_data.get('title'),
-                            video_url=lesson_data.get('video_url'),
-                            pdf_attachment=lesson_data.get('pdf_attachment'),
-                            is_quiz=lesson_data.get('is_quiz', False),
-                            estimated_minutes=lesson_data.get('estimated_minutes', 0)
-                        ))
+                            
+                    course.flat_lessons.exclude(id__in=keep_lesson_ids).delete()
                     if flat_lessons_to_create:
                         Lesson.objects.bulk_create(flat_lessons_to_create)
-                groups_data = data.get('groups', [])
-                for group_data in groups_data:
-                    # Resolve teacher by email instead of raw ID
-                    teacher_id = None
-                    teacher_email = group_data.get('primary_teacher_email')
-                    if teacher_email and str(teacher_email).strip():
-                        from accounts.models import User as AccountUser
-                        try:
-                            teacher_user = AccountUser.objects.get(email__iexact=teacher_email.strip(), role='TEACHER')
-                            teacher_id = teacher_user.id
-                        except AccountUser.DoesNotExist:
-                            return Response(
-                                {'error': f'No teacher found with email "{teacher_email}". Ensure the email belongs to a user with the TEACHER role.'},
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
-                    else:
-                        # Backward compatibility: fall back to raw ID if provided
-                        teacher_id = group_data.get('primary_teacher') or None
-
-                    group = CourseGroup.objects.create(
-                        course=course, 
-                        name=group_data.get('name'),
-                        official_day=group_data.get('official_day', 0),
-                        official_time=group_data.get('official_time'),
-                        capacity=group_data.get('capacity', 25),
-                        primary_teacher_id=teacher_id
-                    )
-                    for session_data in group_data.get('zoom_sessions', []):
-                        ZoomSession.objects.create(
-                            course_group=group,
-                            title=session_data.get('title'),
-                            scheduled_time=session_data.get('scheduled_time'),
-                            meeting_link=session_data.get('meeting_link')
-                        )
-
-                course.units.all().delete()
-                course.flat_lessons.all().delete()
-                
-                if course.course_structure == 'LONG_NESTED':
-                    units_data = data.get('units', [])
-                    for idx, unit_data in enumerate(units_data):
-                        unit = Unit.objects.create(
-                            course=course, 
-                            title=unit_data.get('title'), 
-                            order=idx + 1
-                        )
-                        for lesson_idx, lesson_data in enumerate(unit_data.get('lessons', [])):
-                            Lesson.objects.create(
-                                unit=unit,
-                                lesson_number=lesson_idx + 1,
-                                title=lesson_data.get('title'),
-                                video_url=lesson_data.get('video_url'),
-                                pdf_attachment=lesson_data.get('pdf_attachment'),
-                                is_quiz=lesson_data.get('is_quiz', False),
-                                estimated_minutes=lesson_data.get('estimated_minutes', 0)
-                            )
-                else:
-                    flat_lessons_data = data.get('flat_lessons', [])
-                    for lesson_idx, lesson_data in enumerate(flat_lessons_data):
-                        Lesson.objects.create(
-                            course=course,
-                            lesson_number=lesson_idx + 1,
-                            title=lesson_data.get('title'),
-                            video_url=lesson_data.get('video_url'),
-                            pdf_attachment=lesson_data.get('pdf_attachment'),
-                            is_quiz=lesson_data.get('is_quiz', False),
-                            estimated_minutes=lesson_data.get('estimated_minutes', 0)
-                        )
 
             serializer = self.get_serializer(course)
             return Response(serializer.data)

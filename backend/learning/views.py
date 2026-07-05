@@ -12,7 +12,22 @@ class IsAdminOrSupervisorOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return bool(request.user and request.user.role in ['SUPER_ADMIN', 'SUPERVISOR'])
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.role in [
+            request.user.Role.SUPER_ADMIN, 
+            request.user.Role.SUPERVISOR,
+            request.user.Role.TEACHER
+        ]
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        if request.user.role in [request.user.Role.SUPER_ADMIN, request.user.Role.SUPERVISOR]:
+            return True
+        if request.user.role == request.user.Role.TEACHER:
+            return obj.groups.filter(primary_teacher=request.user).exists()
+        return False
 
 class CourseViewSet(viewsets.ModelViewSet):
     """

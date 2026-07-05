@@ -472,7 +472,7 @@ function CourseModal({ onClose, onSuccess, initialData }: { onClose: () => void;
             {step === 4 && (
               <StudentsTab
                 courseId={initialData?.id}
-                groups={groupFields}
+                groups={watch('groups')}
                 watchGroup={(idx: number) => watch(`groups.${idx}.name`)}
                 minAge={watch('target_age_min')}
                 maxAge={watch('target_age_max')}
@@ -523,13 +523,15 @@ function StudentsTab({ courseId, groups, watchGroup, minAge, maxAge }: {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedCohortId, setSelectedCohortId] = useState<number | ''>('');
+  const [selectedCohortId, setSelectedCohortId] = useState<number | string | ''>('');
   const [addStatus, setAddStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [selectedGroupForView, setSelectedGroupForView] = useState<number | null>(null);
+  const [selectedGroupForView, setSelectedGroupForView] = useState<number | string | null>(null);
+
+  const isNumericId = (id: any) => id !== null && id !== undefined && id !== '' && !isNaN(Number(id)) && String(id).match(/^\d+$/) !== null;
 
   // Fetch enrolled students for the selected group
   const { data: enrolledStudentsData, mutate: mutateStudents } = useSWR(
-    selectedGroupForView ? `/course-groups/${selectedGroupForView}/students/` : null,
+    selectedGroupForView && isNumericId(selectedGroupForView) ? `/course-groups/${selectedGroupForView}/students/` : null,
     fetcher
   );
   const enrolledStudents = enrolledStudentsData?.results ?? (Array.isArray(enrolledStudentsData) ? enrolledStudentsData : []);
@@ -635,12 +637,15 @@ function StudentsTab({ courseId, groups, watchGroup, minAge, maxAge }: {
           {/* Cohort Selector */}
           <select
             value={selectedCohortId}
-            onChange={(e) => setSelectedCohortId(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedCohortId(val ? (isNaN(Number(val)) ? val : Number(val)) : '');
+            }}
             className="bg-slate-900/60 border border-slate-700/50 rounded-xl py-3 px-4 text-white text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none min-w-[200px]"
           >
             <option value="">Select Cohort...</option>
             {groups.map((group: any, index: number) => (
-              <option key={group.id || index} value={group.id || ''}>
+              <option key={group.id || index} value={group.id || `unsaved-${index}`}>
                 {watchGroup(index) || `Group ${index + 1}`}
               </option>
             ))}

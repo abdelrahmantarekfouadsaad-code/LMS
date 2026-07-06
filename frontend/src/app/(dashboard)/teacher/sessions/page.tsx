@@ -47,7 +47,7 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function TeacherSessionsPage() {
-  const { data: sessionsData, error, isLoading } = useSWR('/sessions/', fetcher);
+  const { data: sessionsData, error, isLoading } = useSWR('/sessions/', fetcher, { errorRetryCount: 2, shouldRetryOnError: false });
   const sessions = Array.isArray(sessionsData?.results) ? sessionsData.results : (Array.isArray(sessionsData) ? sessionsData : []);
 
   return (

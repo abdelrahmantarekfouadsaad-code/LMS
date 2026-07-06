@@ -45,12 +45,17 @@ class ZoomSessionSerializer(serializers.ModelSerializer):
 
 class CourseGroupSerializer(serializers.ModelSerializer):
     zoom_sessions = ZoomSessionSerializer(many=True, read_only=True)
+    virtual_sessions = serializers.SerializerMethodField()
     primary_teacher_name = serializers.SerializerMethodField()
     primary_teacher_email = serializers.SerializerMethodField()
 
     class Meta:
         model = CourseGroup
-        fields = ['id', 'name', 'official_day', 'official_time', 'capacity', 'primary_teacher', 'primary_teacher_name', 'primary_teacher_email', 'zoom_sessions']
+        fields = ['id', 'name', 'official_day', 'official_time', 'capacity', 'primary_teacher', 'primary_teacher_name', 'primary_teacher_email', 'zoom_sessions', 'virtual_sessions']
+
+    def get_virtual_sessions(self, obj):
+        from live.serializers import VirtualSessionSerializer
+        return VirtualSessionSerializer(obj.virtual_sessions.all(), many=True, context=self.context).data
 
     def get_primary_teacher_name(self, obj):
         if obj.primary_teacher:

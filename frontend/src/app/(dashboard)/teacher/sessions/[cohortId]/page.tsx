@@ -53,8 +53,8 @@ export default function TeacherCohortTimelinePage() {
     course.groups.forEach((group: any) => {
       if (String(group.id) === cohortId) {
         cohortName = group.name;
-        if (group.zoom_sessions?.length > 0) {
-          group.zoom_sessions.forEach((session: any) => {
+        if (group.virtual_sessions?.length > 0) {
+          group.virtual_sessions.forEach((session: any) => {
             displayMilestones.push({
               id: `virtual-${session.id}`,
               milestone_type: 'VIRTUAL_SESSION',
@@ -93,34 +93,38 @@ export default function TeacherCohortTimelinePage() {
         </div>
       </div>
 
-      <div className="relative ps-7">
-        {/* Timeline Line */}
-        <div 
-          className="absolute start-14 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-emerald-500 to-transparent opacity-30" 
-          style={{ transformOrigin: "top" }}
-        />
+      <div className="max-w-4xl mx-auto py-8 relative">
+        {/* Vertical Spine */}
+        <div className="relative">
+          <div
+            className="absolute start-1/2 -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-emerald-500/60 via-blue-500/40 to-transparent"
+            style={{ transformOrigin: "top" }}
+          />
 
-        {/* Branches */}
-        <div className="space-y-8 relative">
-          {displayMilestones.map((milestone: any, index: number) => (
-            <TimelineBranch 
-              key={milestone.id} 
-              milestone={milestone} 
-              index={index} 
-              isAr={isAr} 
-              isTeacher={true} 
-              onStartSession={handleStartSession} 
-            />
-          ))}
-          {displayMilestones.length === 0 && (
-            <div className="py-12 text-center text-slate-500">
-              {isAr ? 'لا توجد بيانات متاحة لهذا المسار.' : 'No milestones available for this timeline.'}
-            </div>
-          )}
+          {/* Branches */}
+          <div className="space-y-8 relative">
+            {displayMilestones.map((milestone: any, index: number) => (
+              <TimelineBranch 
+                key={milestone.id} 
+                milestone={milestone} 
+                index={index} 
+                isAr={isAr} 
+                isTeacher={true} 
+                onStartSession={handleStartSession} 
+              />
+            ))}
+            {displayMilestones.length === 0 && (
+              <div className="py-12 text-center text-slate-500">
+                {isAr ? 'لا توجد بيانات متاحة لهذا المسار.' : 'No milestones available for this timeline.'}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom fade */}
+          <div
+            className="absolute bottom-0 start-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+          />
         </div>
-
-        {/* Bottom fade */}
-        <div className="h-32 bg-gradient-to-b from-transparent to-slate-950 absolute -bottom-10 start-0 end-0 pointer-events-none" />
       </div>
     </div>
   );

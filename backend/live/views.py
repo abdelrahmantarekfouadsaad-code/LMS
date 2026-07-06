@@ -57,6 +57,21 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         session.save(update_fields=['meeting_link'])
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def start_jitsi(self, request, pk=None):
+        session = self.get_object()
+        
+        if request.user != session.teacher and request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR']:
+            return Response({"error": "Only the assigned teacher can start this session."}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Generate Jitsi Link natively
+        import uuid
+        jitsi_link = f"https://meet.jit.si/NourAlNubuwwah_{session.course_group.id}_Session_{session.id}"
+        session.meeting_link = jitsi_link
+        session.save(update_fields=['meeting_link'])
+        
+        return Response({"meeting_link": jitsi_link}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def attend(self, request, pk=None):
         if request.user.role != 'STUDENT':
             return Response({"error": "Only students can mark attendance."}, status=status.HTTP_403_FORBIDDEN)

@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, BookOpen, GitBranch, Award, ClipboardCheck, MessageSquare, Star, Pause, Maximize, RotateCcw, Volume2, VolumeX, FastForward, Rewind } from 'lucide-react';
 import Link from 'next/link';
 import useSWR from 'swr';
+import { useSession } from 'next-auth/react';
 import { fetcher } from '@/lib/api';
 import axios from '@/lib/axios';
 import ReactPlayer from 'react-player';
@@ -27,7 +28,7 @@ const MILESTONE_CONFIG: Record<string, { icon: React.ElementType; color: string;
 };
 
 // --- Timeline Branch Component ---
-function TimelineBranch({ milestone, index, isAr }: { milestone: any; index: number; isAr: boolean }) {
+function TimelineBranch({ milestone, index, isAr, isTeacher, onStartSession }: { milestone: any; index: number; isAr: boolean; isTeacher: boolean; onStartSession: (id: string) => void }) {
   const isLeft = index % 2 === 0;
   const config = MILESTONE_CONFIG[milestone.milestone_type] || MILESTONE_CONFIG.CHECKPOINT;
   const Icon = config.icon;
@@ -67,10 +68,15 @@ function TimelineBranch({ milestone, index, isAr }: { milestone: any; index: num
             
             {milestone.milestone_type === 'VIRTUAL_SESSION' && (
               <div className={`mt-4 flex ${isLeft ? 'justify-end' : 'justify-start'}`}>
-                {milestone.meeting_link ? (
-                  <a href={milestone.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm">
+                {isTeacher ? (
+                  <button onClick={() => onStartSession(milestone.id.replace('virtual-', ''))} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-medium text-sm shadow-lg shadow-emerald-500/20">
                     <Video size={16} />
-                    {isAr ? 'انضمام للجلسة' : 'Join Session'}
+                    {isAr ? 'فتح الغرفة' : 'Start Room'}
+                  </button>
+                ) : milestone.meeting_link ? (
+                  <a href={milestone.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm shadow-lg shadow-blue-500/20">
+                    <Video size={16} />
+                    {isAr ? 'انضمام' : 'Join Session'}
                   </a>
                 ) : (
                   <div className="px-4 py-2 bg-slate-800 text-slate-500 rounded-lg text-center font-medium text-sm cursor-not-allowed">
@@ -117,6 +123,8 @@ export default function CoursePlayerPage() {
   const router = useRouter();
   const courseId = params.courseId as string;
   const { isGuest } = useUserRole();
+  const { data: session } = useSession();
+  const isTeacher = session?.user?.role === 'TEACHER';
 
   useEffect(() => {
     if (isGuest) router.push('/learning');
@@ -193,9 +201,21 @@ export default function CoursePlayerPage() {
     return () => clearInterval(interval);
   }, [isPlaying, seeking]);
 
-  const { data: course, error, isLoading } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
+  const { data: course, error, isLoading, mutate: mutateCourse } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
   const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
   const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
+
+  const handleStartSession = async (sessionId: string) => {
+    try {
+      const res = await axios.post(`/virtual-sessions/${sessionId}/start_jitsi/`);
+      const url = res.data.meeting_link;
+      window.open(url, '_blank');
+      mutateCourse();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to start session');
+    }
+  };
 
   // --- Ghost Player DevTools Trap (Backend-Driven) ---
   useEffect(() => {
@@ -753,7 +773,7 @@ export default function CoursePlayerPage() {
                   {/* Branches */}
                   <div className="space-y-8 relative">
                     {displayMilestones.map((milestone: any, index: number) => (
-                      <TimelineBranch key={milestone.id} milestone={milestone} index={index} isAr={isAr} />
+                      <TimelineBranch key={milestone.id} milestone={milestone} index={index} isAr={isAr} isTeacher={isTeacher} onStartSession={handleStartSession} />
                     ))}
                   </div>
 

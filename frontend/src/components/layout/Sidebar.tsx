@@ -72,7 +72,6 @@ export default function Sidebar() {
     filteredNavItems = [
       { nameKey: 'dashboard', href: '/teacher', icon: LayoutDashboard },
       { nameKey: 'courses', label: 'Courses', href: '/teacher/courses', icon: BookOpen },
-      { nameKey: 'sessions', label: 'Virtual Sessions', href: '/teacher/sessions', icon: Video },
     ] as any;
   } else {
     // Standard Student: Hide settings from sidebar navigation, keeping standard list

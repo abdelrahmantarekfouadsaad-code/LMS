@@ -1,6 +1,6 @@
 "use client"
 
-import Sidebar from '@/components/layout/Sidebar';
+
 import { motion } from 'framer-motion';
 import { Video, Clock, User, Timer, CheckCircle, CalendarClock } from 'lucide-react';
 import useSWR from 'swr';
@@ -51,9 +51,7 @@ export default function TeacherSessionsPage() {
   const sessions = Array.isArray(sessionsData?.results) ? sessionsData.results : (Array.isArray(sessionsData) ? sessionsData : []);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 p-6 lg:p-10 overflow-y-auto hide-scrollbar">
+    <div className="p-6 h-full overflow-y-auto">
         <header className="mb-8 text-start">
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Virtual Sessions</h1>
           <p className="text-slate-500 dark:text-slate-400">Manage and start your live sessions</p>
@@ -110,7 +108,6 @@ export default function TeacherSessionsPage() {
             </div>
           </div>
         )}
-      </main>
     </div>
   );
 }

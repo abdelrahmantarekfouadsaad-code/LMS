@@ -93,7 +93,7 @@ export default function TeacherSessionsGatewayPage() {
                       key={group.id}
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/learning/${course.id}?tab=timeline&cohortId=${group.id}`);
+                        router.push(`/teacher/sessions/${group.id}?courseId=${course.id}`);
                       }}
                       className="px-3 py-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg transition-colors text-xs font-bold border border-slate-700 hover:border-blue-500 cursor-pointer"
                     >

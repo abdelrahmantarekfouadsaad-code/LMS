@@ -71,8 +71,33 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         jitsi_link = f"https://meet.jit.si/NourAlNubuwwah_{session.course_group.id}_Session_{session.id}"
         session.meeting_link = jitsi_link
         session.save(update_fields=['meeting_link'])
-        
         return Response({"meeting_link": jitsi_link}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post', 'get'], permission_classes=[permissions.IsAuthenticated], url_path='(?P<pk>[^/.]+)/join_jitsi')
+    def join_jitsi(self, request, pk=None):
+        from learning.models import ZoomSession
+        from django.shortcuts import get_object_or_404
+        
+        session = get_object_or_404(ZoomSession, pk=pk)
+        
+        if request.user.role != 'STUDENT':
+            return Response({"error": "Only students can use the join endpoint."}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Verify the student is enrolled in the session's course group
+        if not hasattr(request.user, 'student_profile') or \
+           not request.user.student_profile.course_groups.filter(id=session.course_group.id).exists():
+            return Response(
+                {"error": "You are not enrolled in this course group."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        if not session.meeting_link:
+            return Response({"error": "Session has not been started by the teacher yet."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Generate Restricted Participant URL
+        restricted_url = f"{session.meeting_link}#config.prejoinPageEnabled=true&config.disableRemoteMute=true&config.remoteVideoMenu.disableKick=true&config.remoteVideoMenu.disableGrantModerator=true&config.enableUserRolesBasedOnToken=false"
+        
+        return Response({"meeting_link": restricted_url}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def attend(self, request, pk=None):

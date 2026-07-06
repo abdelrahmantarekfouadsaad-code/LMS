@@ -10,7 +10,7 @@ const MILESTONE_CONFIG: Record<string, { icon: React.ElementType; color: string;
   VIRTUAL_SESSION: { icon: Video, color: 'text-blue-400', gradient: 'from-blue-500/10 to-cyan-500/20' }
 };
 
-export default function TimelineBranch({ milestone, index, isAr, isTeacher, onStartSession }: { milestone: any; index: number; isAr: boolean; isTeacher?: boolean; onStartSession?: (id: string) => void }) {
+export default function TimelineBranch({ milestone, index, isAr, isTeacher, onStartSession, onJoinSession }: { milestone: any; index: number; isAr: boolean; isTeacher?: boolean; onStartSession?: (id: string) => void; onJoinSession?: (id: string) => void }) {
   const isLeft = index % 2 === 0;
   const config = MILESTONE_CONFIG[milestone.milestone_type] || MILESTONE_CONFIG.CHECKPOINT;
   const Icon = config.icon;
@@ -54,6 +54,11 @@ export default function TimelineBranch({ milestone, index, isAr, isTeacher, onSt
                   <button onClick={() => onStartSession(milestone.id.replace('virtual-', ''))} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-medium text-sm shadow-lg shadow-emerald-500/20">
                     <Video size={16} />
                     {isAr ? 'فتح الغرفة' : 'Start Room'}
+                  </button>
+                ) : milestone.meeting_link && onJoinSession ? (
+                  <button onClick={() => onJoinSession(milestone.id.replace('virtual-', ''))} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm shadow-lg shadow-blue-500/20">
+                    <Video size={16} />
+                    {isAr ? 'انضمام' : 'Join Session'}
                   </button>
                 ) : milestone.meeting_link ? (
                   <a href={milestone.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm shadow-lg shadow-blue-500/20">

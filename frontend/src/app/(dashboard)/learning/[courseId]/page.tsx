@@ -123,6 +123,17 @@ export default function CoursePlayerPage() {
     }
   };
 
+  const handleJoinSession = async (sessionId: string) => {
+    try {
+      const res = await axios.post(`/sessions/${sessionId}/join_jitsi/`);
+      const url = res.data.meeting_link;
+      window.open(url, '_blank');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to join session');
+    }
+  };
+
   // --- Ghost Player DevTools Trap (Backend-Driven) ---
   useEffect(() => {
     if (!course?.is_ghost_mode) return;
@@ -689,7 +700,7 @@ export default function CoursePlayerPage() {
                   {/* Branches */}
                   <div className="space-y-8 relative">
                     {displayMilestones.map((milestone: any, index: number) => (
-                      <TimelineBranch key={milestone.id} milestone={milestone} index={index} isAr={isAr} isTeacher={isTeacher} onStartSession={handleStartSession} />
+                      <TimelineBranch key={milestone.id} milestone={milestone} index={index} isAr={isAr} isTeacher={isTeacher} onStartSession={handleStartSession} onJoinSession={handleJoinSession} />
                     ))}
                   </div>
 

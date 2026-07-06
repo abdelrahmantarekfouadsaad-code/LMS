@@ -36,6 +36,7 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         
         if course_group and scheduled_time:
             import pytz
+            from django.utils import timezone
             cairo_tz = pytz.timezone("Africa/Cairo")
             
             # Ensure scheduled_time is timezone-aware before converting

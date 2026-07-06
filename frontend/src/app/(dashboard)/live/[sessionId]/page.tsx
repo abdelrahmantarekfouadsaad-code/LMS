@@ -2,9 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Video, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Video, AlertCircle, Clock } from 'lucide-react';
 import { useTranslation } from '@/i18n/TranslationContext';
 import axios from '@/lib/axios';
+import { useUserRole } from '@/hooks/useUserRole';
 
 declare global {
   interface Window {
@@ -14,11 +15,11 @@ declare global {
 
 export default function LiveRoomPage({ params }: { params: { sessionId: string } }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t, locale } = useTranslation();
   const isAr = locale === 'ar';
   
-  const role = searchParams?.get('role') || 'student';
+  const { role: rawRole, isStaff, isStudent, isLoading: isRoleLoading } = useUserRole();
+  const role = isStaff ? 'teacher' : 'student';
   
   const containerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
@@ -26,11 +27,15 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const [sessionPassword, setSessionPassword] = useState<string | null>(null);
+  const [isWaitingForTeacher, setIsWaitingForTeacher] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const initSession = async () => {
+      if (isRoleLoading) return;
+      
       try {
         setIsLoading(true);
         // Call the correct endpoint based on the role to fetch the dynamic meeting link
@@ -39,12 +44,20 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
         
         if (isMounted) {
           setRoomUrl(res.data.meeting_link);
+          if (res.data.password) setSessionPassword(res.data.password);
         }
       } catch (err: any) {
         console.error(err);
         if (isMounted) {
-          setError(err.response?.data?.error || (isAr ? 'فشل الانضمام للجلسة' : 'Failed to join session'));
+          const errMsg = err.response?.data?.error;
+          if (errMsg === "Session has not been started by the teacher yet." || err.response?.status === 400) {
+            setIsWaitingForTeacher(true);
+          } else {
+            setError(errMsg || (isAr ? 'فشل الانضمام للجلسة' : 'Failed to join session'));
+          }
         }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -53,7 +66,7 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
     return () => {
       isMounted = false;
     };
-  }, [params.sessionId, role, isAr]);
+  }, [params.sessionId, role, isRoleLoading, isAr]);
 
   useEffect(() => {
     if (!roomUrl || !containerRef.current) return;
@@ -83,7 +96,6 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
         const roomName = parsedUrl.pathname.substring(1); // removes the leading slash
 
         const configOverwrite: any = {};
-        const interfaceConfigOverwrite: any = {};
 
         // Apply strict student configurations based on the prompt instructions
         if (role === 'student') {
@@ -100,7 +112,9 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
           width: '100%',
           height: '100%',
           configOverwrite,
-          interfaceConfigOverwrite,
+          iframeAttributes: {
+            allow: "camera; microphone; display-capture; autoplay"
+          }
         };
 
         if (jitsiApiRef.current) {
@@ -108,6 +122,19 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
         }
 
         jitsiApiRef.current = new window.JitsiMeetExternalAPI(parsedUrl.hostname, options);
+        
+        jitsiApiRef.current.addEventListener('videoConferenceJoined', () => {
+          if (role === 'teacher' && sessionPassword) {
+            jitsiApiRef.current.executeCommand('password', sessionPassword);
+          }
+        });
+
+        jitsiApiRef.current.addEventListener('passwordRequired', () => {
+          if (role === 'student' && sessionPassword) {
+            jitsiApiRef.current.executeCommand('password', sessionPassword);
+          }
+        });
+
         setIsLoading(false);
       } catch (err) {
         console.error('Error initializing Jitsi:', err);
@@ -165,7 +192,27 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
       <div className="flex-1 p-4 lg:p-6 overflow-hidden relative">
         <div className="w-full h-full max-w-7xl mx-auto bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden relative flex flex-col">
           
-          {error ? (
+          {isRoleLoading ? (
+            <div className="flex-1 flex items-center justify-center bg-slate-900 z-10">
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+            </div>
+          ) : isWaitingForTeacher ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-900/50">
+              <Clock className="w-16 h-16 text-blue-500 mb-4 animate-pulse" />
+              <h2 className="text-2xl font-bold text-white mb-2">{isAr ? 'في الانتظار' : 'Waiting...'}</h2>
+              <p className="text-slate-400 mb-6 max-w-md">
+                {isAr 
+                  ? 'لم يقم المعلم ببدء هذه الجلسة بعد. يرجى الانتظار والمحاولة مرة أخرى قريباً.' 
+                  : 'Waiting for the instructor to start the session. Please check back shortly.'}
+              </p>
+              <button 
+                onClick={() => router.back()}
+                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors"
+              >
+                {isAr ? 'العودة' : 'Go Back'}
+              </button>
+            </div>
+          ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-900/50">
               <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
               <h2 className="text-2xl font-bold text-white mb-2">{isAr ? 'خطأ' : 'Error'}</h2>

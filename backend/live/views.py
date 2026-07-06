@@ -71,7 +71,10 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         jitsi_link = f"https://meet.jit.si/NourAlNubuwwah_{session.course_group.id}_Session_{session.id}"
         session.meeting_link = jitsi_link
         session.save(update_fields=['meeting_link'])
-        return Response({"meeting_link": jitsi_link}, status=status.HTTP_200_OK)
+        import hashlib
+        session_password = hashlib.sha256(f"jitsi_secret_{session.id}_{session.course_group.id}".encode()).hexdigest()[:12]
+        
+        return Response({"meeting_link": jitsi_link, "password": session_password}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post', 'get'], permission_classes=[permissions.IsAuthenticated], url_path='(?P<pk>[^/.]+)/join_jitsi')
     def join_jitsi(self, request, pk=None):
@@ -97,7 +100,10 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         # Generate Restricted Participant URL
         restricted_url = f"{session.meeting_link}#config.prejoinPageEnabled=true&config.disableRemoteMute=true&config.remoteVideoMenu.disableKick=true&config.remoteVideoMenu.disableGrantModerator=true&config.enableUserRolesBasedOnToken=false"
         
-        return Response({"meeting_link": restricted_url}, status=status.HTTP_200_OK)
+        import hashlib
+        session_password = hashlib.sha256(f"jitsi_secret_{session.id}_{session.course_group.id}".encode()).hexdigest()[:12]
+        
+        return Response({"meeting_link": restricted_url, "password": session_password}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def attend(self, request, pk=None):

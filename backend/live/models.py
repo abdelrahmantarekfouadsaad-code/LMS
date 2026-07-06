@@ -14,6 +14,8 @@ class VirtualSession(models.Model):
     zoom_meeting_id = models.CharField(max_length=100, blank=True, null=True)
     zoom_passcode = models.CharField(max_length=50, blank=True, null=True)
     
+    meeting_link = models.URLField(blank=True, null=True, max_length=1000)
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from .models import VirtualSession, Attendance, SessionFeedback
 from .serializers import VirtualSessionSerializer, AttendanceSerializer, SessionFeedbackSerializer
 from accounts.permissions import IsTeacher, IsSuperAdmin, IsSupervisor
-from .tasks import create_zoom_meeting_task
 
 class IsTeacherOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -49,7 +48,12 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
                 raise ValidationError({"scheduled_time": f"Session must be scheduled on {course_group.get_official_day_display()} in Africa/Cairo time."})
 
         session = serializer.save(teacher=self.request.user)
-        create_zoom_meeting_task.delay(session.id)
+        
+        # Generate Jitsi Link natively
+        import uuid
+        jitsi_link = f"https://meet.jit.si/NourAlNubuwwah_{session.course_group.id}_{uuid.uuid4().hex[:8]}"
+        session.meeting_link = jitsi_link
+        session.save(update_fields=['meeting_link'])
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def attend(self, request, pk=None):

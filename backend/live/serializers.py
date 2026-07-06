@@ -7,9 +7,9 @@ class VirtualSessionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'teacher', 'course_group', 'title', 'scheduled_time', 
             'zoom_join_url', 'zoom_start_url', 'zoom_meeting_id', 
-            'zoom_passcode', 'created_at'
+            'zoom_passcode', 'meeting_link', 'created_at'
         ]
-        read_only_fields = ['teacher', 'zoom_join_url', 'zoom_start_url', 'zoom_meeting_id', 'zoom_passcode', 'created_at']
+        read_only_fields = ['teacher', 'zoom_join_url', 'zoom_start_url', 'zoom_meeting_id', 'zoom_passcode', 'meeting_link', 'created_at']
 
     def to_representation(self, instance):
         """ Ensure students cannot see the zoom_start_url which is meant for the host """

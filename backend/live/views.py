@@ -56,11 +56,14 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         session.meeting_link = jitsi_link
         session.save(update_fields=['meeting_link'])
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='(?P<pk>[^/.]+)/start_jitsi')
     def start_jitsi(self, request, pk=None):
-        session = self.get_object()
+        from learning.models import ZoomSession
+        from django.shortcuts import get_object_or_404
         
-        if request.user != session.teacher and request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR']:
+        session = get_object_or_404(ZoomSession, pk=pk)
+        
+        if request.user != session.course_group.primary_teacher and request.user.role not in ['SUPER_ADMIN', 'SUPERVISOR']:
             return Response({"error": "Only the assigned teacher can start this session."}, status=status.HTTP_403_FORBIDDEN)
             
         # Generate Jitsi Link natively

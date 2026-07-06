@@ -53,8 +53,8 @@ export default function TeacherCohortTimelinePage() {
     course.groups.forEach((group: any) => {
       if (String(group.id) === cohortId) {
         cohortName = group.name;
-        if (group.virtual_sessions?.length > 0) {
-          group.virtual_sessions.forEach((session: any) => {
+        if (group.zoom_sessions?.length > 0) {
+          group.zoom_sessions.forEach((session: any) => {
             displayMilestones.push({
               id: `virtual-${session.id}`,
               milestone_type: 'VIRTUAL_SESSION',

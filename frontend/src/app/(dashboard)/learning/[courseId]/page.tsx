@@ -165,8 +165,8 @@ export default function CoursePlayerPage() {
   if (course?.groups?.length > 0) {
     course.groups.forEach((group: any) => {
       if (!cohortIdParam || String(group.id) === cohortIdParam) {
-        if (group.virtual_sessions?.length > 0) {
-          group.virtual_sessions.forEach((session: any) => {
+        if (group.zoom_sessions?.length > 0) {
+          group.zoom_sessions.forEach((session: any) => {
             displayMilestones.push({
               id: `virtual-${session.id}`,
               milestone_type: 'VIRTUAL_SESSION',

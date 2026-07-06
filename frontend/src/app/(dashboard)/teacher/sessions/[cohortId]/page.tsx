@@ -26,15 +26,7 @@ export default function TeacherCohortTimelinePage() {
   const { data: milestonesData, isLoading: isLoadingMilestones } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
 
   const handleStartSession = async (sessionId: string) => {
-    try {
-      const res = await axios.post(`/sessions/${sessionId}/start_jitsi/`);
-      const url = res.data.meeting_link;
-      window.open(url, '_blank');
-      mutateCourse();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to start session');
-    }
+    router.push(`/live/${sessionId}?role=teacher`);
   };
 
   if (isLoadingCourse || isLoadingMilestones) {

@@ -112,26 +112,11 @@ export default function CoursePlayerPage() {
   const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
 
   const handleStartSession = async (sessionId: string) => {
-    try {
-      const res = await axios.post(`/sessions/${sessionId}/start_jitsi/`);
-      const url = res.data.meeting_link;
-      window.open(url, '_blank');
-      mutateCourse();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to start session');
-    }
+    router.push(`/live/${sessionId}?role=teacher`);
   };
 
   const handleJoinSession = async (sessionId: string) => {
-    try {
-      const res = await axios.post(`/sessions/${sessionId}/join_jitsi/`);
-      const url = res.data.meeting_link;
-      window.open(url, '_blank');
-    } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.error || 'Failed to join session');
-    }
+    router.push(`/live/${sessionId}?role=student`);
   };
 
   // --- Ghost Player DevTools Trap (Backend-Driven) ---

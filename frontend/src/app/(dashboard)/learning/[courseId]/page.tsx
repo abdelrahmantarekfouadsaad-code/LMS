@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import { Play, CheckCircle, Circle, Video, Lock, FileText, Download, ArrowLeft, BookOpen, GitBranch, Award, ClipboardCheck, MessageSquare, Star, Pause, Maximize, RotateCcw, Volume2, VolumeX, FastForward, Rewind } from 'lucide-react';
 import Link from 'next/link';
@@ -121,6 +121,7 @@ function TimelineBranch({ milestone, index, isAr, isTeacher, onStartSession }: {
 export default function CoursePlayerPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const courseId = params.courseId as string;
   const { isGuest } = useUserRole();
   const { data: session } = useSession();
@@ -207,7 +208,7 @@ export default function CoursePlayerPage() {
 
   const handleStartSession = async (sessionId: string) => {
     try {
-      const res = await axios.post(`/virtual-sessions/${sessionId}/start_jitsi/`);
+      const res = await axios.post(`/sessions/${sessionId}/start_jitsi/`);
       const url = res.data.meeting_link;
       window.open(url, '_blank');
       mutateCourse();
@@ -247,21 +248,31 @@ export default function CoursePlayerPage() {
   const milestones = (milestonesData?.results || milestonesData || []);
   
   let displayMilestones = [...milestones];
+  const cohortIdParam = searchParams?.get('cohortId');
+
+  useEffect(() => {
+    const tab = searchParams?.get('tab');
+    if (tab === 'timeline') {
+      setActiveTab('timeline');
+    }
+  }, [searchParams]);
   
   if (course?.groups?.length > 0) {
     course.groups.forEach((group: any) => {
-      if (group.zoom_sessions?.length > 0) {
-        group.zoom_sessions.forEach((session: any) => {
-          displayMilestones.push({
-            id: `virtual-${session.id}`,
-            milestone_type: 'VIRTUAL_SESSION',
-            title: session.title,
-            description: group.name,
-            milestone_date: session.scheduled_time || new Date().toISOString(),
-            is_completed: false,
-            meeting_link: session.meeting_link
+      if (!cohortIdParam || String(group.id) === cohortIdParam) {
+        if (group.zoom_sessions?.length > 0) {
+          group.zoom_sessions.forEach((session: any) => {
+            displayMilestones.push({
+              id: `virtual-${session.id}`,
+              milestone_type: 'VIRTUAL_SESSION',
+              title: session.title,
+              description: group.name,
+              milestone_date: session.scheduled_time || new Date().toISOString(),
+              is_completed: false,
+              meeting_link: session.meeting_link
+            });
           });
-        });
+        }
       }
     });
   }

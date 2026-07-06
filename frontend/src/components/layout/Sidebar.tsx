@@ -113,7 +113,9 @@ export default function Sidebar() {
       {/* Navigation Links */}
       <div className="flex-1 py-6 px-3 space-y-2 overflow-y-auto">
         {filteredNavItems.map((item) => {
-          const isActive = pathname?.startsWith(item.href);
+          const isActive = (item.href === '/teacher' || item.href === '/dashboard' || item.href === '/parent-dashboard')
+            ? pathname === item.href 
+            : pathname?.startsWith(item.href);
           const Icon = item.icon;
 
           return (

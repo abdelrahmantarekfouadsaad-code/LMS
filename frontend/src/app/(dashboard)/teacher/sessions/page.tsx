@@ -55,8 +55,7 @@ export default function TeacherSessionsGatewayPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.06, duration: 0.4 }}
-            className="group bg-slate-900/50 rounded-2xl shadow-lg border border-slate-800/60 overflow-hidden hover:shadow-xl hover:border-blue-500/30 hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer"
-            onClick={() => router.push(`/learning/${course.id}`)}
+            className="group bg-slate-900/50 rounded-2xl shadow-lg border border-slate-800/60 overflow-hidden hover:shadow-xl hover:border-blue-500/30 hover:shadow-blue-500/5 transition-all duration-300"
           >
             <div className="h-48 bg-slate-800 relative overflow-hidden">
               {course.thumbnail ? (
@@ -86,9 +85,25 @@ export default function TeacherSessionsGatewayPage() {
               <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">{course.title}</h3>
               <p className="text-slate-400 text-sm mb-4 line-clamp-2">{course.description}</p>
               
-              <div className="mt-4 pt-4 border-t border-slate-800/60 text-sm text-slate-500 flex items-center gap-2">
-                <BookOpen size={16} />
-                {course.groups?.length || 0} {isAr ? 'مجموعات' : 'Cohorts'}
+              <div className="mt-4 pt-4 border-t border-slate-800/60 text-sm flex flex-col gap-2">
+                <span className="text-slate-500 font-medium">{isAr ? 'المجموعات:' : 'Cohorts:'}</span>
+                <div className="flex flex-wrap gap-2">
+                  {course.groups?.map((group: any) => (
+                    <button
+                      key={group.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/learning/${course.id}?tab=timeline&cohortId=${group.id}`);
+                      }}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white rounded-lg transition-colors text-xs font-bold border border-slate-700 hover:border-blue-500 cursor-pointer"
+                    >
+                      {group.name}
+                    </button>
+                  ))}
+                  {(!course.groups || course.groups.length === 0) && (
+                    <span className="text-slate-600 text-xs">{isAr ? 'لا توجد مجموعات' : 'No cohorts available'}</span>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>

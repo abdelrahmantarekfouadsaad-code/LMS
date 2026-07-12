@@ -26,7 +26,7 @@ export default function TeacherCohortTimelinePage() {
   const { data: milestonesData, isLoading: isLoadingMilestones } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
 
   const handleStartSession = async (sessionId: string) => {
-    router.push(`/live/${sessionId}?role=teacher`);
+    router.push(`/live/${sessionId}`);
   };
 
   if (isLoadingCourse || isLoadingMilestones) {

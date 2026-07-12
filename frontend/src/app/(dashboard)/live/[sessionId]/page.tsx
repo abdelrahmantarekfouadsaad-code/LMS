@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Video, AlertCircle, Clock } from 'lucide-react';
 import { useTranslation } from '@/i18n/TranslationContext';
 import axios from '@/lib/axios';
@@ -79,7 +79,7 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
         }
 
         const script = document.createElement('script');
-        script.src = 'https://meet.jit.si/external_api.js';
+        script.src = 'https://meet.ffmuc.net/external_api.js';
         script.async = true;
         script.onload = () => resolve(true);
         script.onerror = () => reject(new Error('Failed to load Jitsi API'));
@@ -131,7 +131,9 @@ export default function LiveRoomPage({ params }: { params: { sessionId: string }
 
         jitsiApiRef.current.addEventListener('passwordRequired', () => {
           if (role === 'student' && sessionPassword) {
-            jitsiApiRef.current.executeCommand('password', sessionPassword);
+            setTimeout(() => {
+              jitsiApiRef.current?.executeCommand('password', sessionPassword);
+            }, 1500);
           }
         });
 

@@ -112,11 +112,11 @@ export default function CoursePlayerPage() {
   const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
 
   const handleStartSession = async (sessionId: string) => {
-    router.push(`/live/${sessionId}?role=teacher`);
+    router.push(`/live/${sessionId}`);
   };
 
   const handleJoinSession = async (sessionId: string) => {
-    router.push(`/live/${sessionId}?role=student`);
+    router.push(`/live/${sessionId}`);
   };
 
   // --- Ghost Player DevTools Trap (Backend-Driven) ---

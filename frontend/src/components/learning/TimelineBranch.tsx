@@ -60,15 +60,11 @@ export default function TimelineBranch({ milestone, index, isAr, isTeacher, onSt
                     <Video size={16} />
                     {isAr ? 'انضمام' : 'Join Session'}
                   </button>
-                ) : milestone.meeting_link ? (
-                  <a href={milestone.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm shadow-lg shadow-blue-500/20">
-                    <Video size={16} />
-                    {isAr ? 'انضمام' : 'Join Session'}
-                  </a>
                 ) : (
-                  <div className="px-4 py-2 bg-slate-800 text-slate-500 rounded-lg text-center font-medium text-sm cursor-not-allowed">
-                    {isAr ? 'الرابط غير متوفر بعد' : 'Link not available yet'}
-                  </div>
+                  <button disabled={true} className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-slate-300 rounded-lg font-medium text-sm opacity-50 cursor-not-allowed">
+                    <Video size={16} />
+                    {isAr ? 'في انتظار المعلم...' : 'Waiting for Instructor...'}
+                  </button>
                 )}
               </div>
             )}

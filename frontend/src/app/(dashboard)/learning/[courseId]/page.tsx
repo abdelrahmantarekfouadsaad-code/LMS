@@ -108,7 +108,7 @@ export default function CoursePlayerPage() {
   }, [isPlaying, seeking]);
 
   const { data: course, error, isLoading, mutate: mutateCourse } = useSWR(courseId ? `/courses/${courseId}/` : null, fetcher);
-  const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher);
+  const { data: milestonesData } = useSWR(courseId ? `/milestones/?course=${courseId}` : null, fetcher, { refreshInterval: 5000 });
   const { data: progressData, mutate: mutateProgress } = useSWR('/progress/', fetcher, { shouldRetryOnError: false });
 
   const handleStartSession = async (sessionId: string) => {

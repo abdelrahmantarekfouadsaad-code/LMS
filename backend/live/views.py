@@ -56,6 +56,26 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         session.meeting_link = jitsi_link
         session.save(update_fields=['meeting_link'])
 
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Override retrieve to look up ZoomSession (used by start_jitsi/join_jitsi actions)
+        first, then fall back to VirtualSession. This ensures the Smart Lobby SWR poll
+        works correctly since timeline IDs originate from ZoomSession.
+        """
+        from learning.models import ZoomSession
+        pk = kwargs.get('pk')
+        try:
+            zoom_session = ZoomSession.objects.get(pk=pk)
+            return Response({
+                'id': zoom_session.id,
+                'title': zoom_session.title,
+                'meeting_link': zoom_session.meeting_link,
+                'scheduled_time': zoom_session.scheduled_time,
+                'course_group': zoom_session.course_group_id,
+            })
+        except ZoomSession.DoesNotExist:
+            return super().retrieve(request, *args, **kwargs)
+
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='(?P<pk>[^/.]+)/start_jitsi')
     def start_jitsi(self, request, pk=None):
         from learning.models import ZoomSession

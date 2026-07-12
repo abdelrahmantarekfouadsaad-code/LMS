@@ -52,7 +52,7 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
         
         # Generate Jitsi Link natively
         import uuid
-        jitsi_link = f"https://meet.ffmuc.net/NoorAlNubuwah_{session.course_group.id}_Session_{session.id}"
+        jitsi_link = f"https://meet.jit.si/NoorAlNubuwah_{session.course_group.id}_Session_{session.id}"
         session.meeting_link = jitsi_link
         session.save(update_fields=['meeting_link'])
 
@@ -68,7 +68,7 @@ class VirtualSessionViewSet(viewsets.ModelViewSet):
             
         # Generate Jitsi Link natively
         import uuid
-        jitsi_link = f"https://meet.ffmuc.net/NoorAlNubuwah_{session.course_group.id}_Session_{session.id}"
+        jitsi_link = f"https://meet.jit.si/NoorAlNubuwah_{session.course_group.id}_Session_{session.id}"
         session.meeting_link = jitsi_link
         session.save(update_fields=['meeting_link'])
         import hashlib
